@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f3efdf"><title>CHROMA / a living colour field</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}body{background:#f3efdf;color:#24221f;font-family:Arial,Helvetica,sans-serif}button{font:inherit;color:inherit}
+#field{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse at 50% 55%,#ffe6bc 0,transparent 60%)}
+.seed{position:absolute;left:50%;top:52%;width:min(64vw,64vh);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:46% 54% 66% 34% / 40% 39% 61% 60%;background:repeating-conic-gradient(from 30deg,#fc4c24 0deg 15deg,#ffbf17 15deg 30deg,#ff71ab 30deg 45deg,#5243d3 45deg 60deg);box-shadow:0 0 80px #fd925f55;animation:turn 35s linear infinite;transition:filter .3s}#field:hover .seed{filter:hue-rotate(80deg)}@keyframes turn{to{transform:translate(-50%,-50%) rotate(360deg)}}
+canvas{position:absolute;inset:0;width:100%;height:100%}header,footer{position:fixed;z-index:2;left:32px;right:32px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}header{top:25px;border-top:1px solid #24221f;padding-top:14px}footer{bottom:24px;border-top:1px solid #24221f55;padding-top:14px}.label{font-family:monospace;font-size:11px;letter-spacing:1.8px;text-transform:uppercase}.brand{font-weight:900;letter-spacing:-1.5px;font-size:26px}.brand span{font-weight:400}.edition{text-align:right;line-height:1.7}.title{position:fixed;left:32px;bottom:90px;z-index:2;pointer-events:none}h1{font-size:clamp(52px,8vw,124px);font-weight:900;letter-spacing:-.085em;line-height:.78;margin:0 0 20px}.title p{font-size:13px;line-height:1.5;margin:0;max-width:210px}.controls{display:flex;gap:8px;pointer-events:auto}button{background:#f3efdfbb;border:1px solid #24221f66;padding:10px 15px;border-radius:30px;cursor:pointer;font-family:monospace;font-size:11px;letter-spacing:.4px;backdrop-filter:blur(8px)}button:hover{background:#24221f;color:#f3efdf}button:focus-visible{outline:3px solid #e64cdd;outline-offset:4px}.side{position:fixed;right:29px;top:45%;writing-mode:vertical-rl;z-index:2}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ec4b23;margin-right:8px}.hint{position:fixed;right:32px;bottom:100px;z-index:2;text-align:right;font:11px/1.8 monospace;pointer-events:none}
+@media(max-width:600px){header,footer{left:18px;right:18px}header{top:18px}.brand{font-size:22px}.edition{font-size:9px}.title{left:18px;bottom:100px}.title p{font-size:11px;max-width:165px}.side{right:12px;font-size:9px}.hint{right:18px;bottom:110px;font-size:9px}.footer-note{max-width:110px;font-size:9px;line-height:1.6}button{padding:10px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){.seed{animation:none}}
+</style>
+</head>
+<body>
+<main id="field" aria-label="Interactive abstract flower of colourful ribbons. Move your pointer to bend the petals; click or use New bloom to change the composition."><div class="seed" aria-hidden="true"></div><canvas id="art" aria-hidden="true"></canvas></main>
+<header><div class="brand">CHROMA<span>®</span></div><div class="edition label">Studies in happy accidents<br>Edition 001 / Infinite variations</div></header>
+<div class="side label">A living colour field — made to be touched</div>
+<div class="title"><h1>BE<br>MORE<br>COLOUR.</h1><p>A little chaos. A lot of feeling.<br>Nothing here stays the same.</p></div>
+<div class="hint">MOVE TO DISTURB<br>CLICK TO REIMAGINE</div>
+<footer><div class="label footer-note"><span class="dot"></span>Beautifully unstable</div><div class="controls"><button id="pause" type="button" aria-pressed="false">Pause motion</button><button id="bloom" type="button">New bloom ↗</button></div></footer>
+</body>
+</html>
