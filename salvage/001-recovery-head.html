@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S001 — RECOVERY HEAD</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#05070e;color:#d9e6ed;font-family:monospace}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}header,footer{position:fixed;left:22px;right:22px;display:flex;justify-content:space-between;gap:12px;z-index:2;pointer-events:none;font-size:10px;line-height:1.5;letter-spacing:1.1px;text-transform:uppercase;mix-blend-mode:exclusion}header{top:19px}footer{bottom:19px;align-items:flex-end}.name{font-size:12px;letter-spacing:2px}.subtitle{opacity:.6}.readout{text-align:right}nav{display:flex;gap:6px;pointer-events:auto}button{font:10px monospace;letter-spacing:.7px;color:#d9e6ed;background:#07111ccc;border:1px solid #a8c5d855;padding:10px 12px;cursor:pointer}button:hover{color:#07111c;background:#d9e6ed}button:focus-visible{outline:2px solid #fef669;outline-offset:4px}kbd{font:inherit;border:1px solid currentColor;padding:0 3px;margin-right:2px}#help{opacity:.75}#live{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}@media(max-width:600px){header,footer{left:12px;right:12px;font-size:8px}.name{font-size:10px}.subtitle{max-width:200px}footer{flex-wrap:wrap}button{padding:9px;font-size:9px}.readout{max-width:120px}}
+</style></head><body>
+<canvas id="surface" role="img" aria-label="A ruined signal surface inherited from the end of the lineage. Moving the pointer reads through the damage; holding the pointer bruises it. Arrow keys or WASD steer a small repair head that restores the reference spectrum underneath; Space releases a restoring pulse."></canvas>
+<header><div><div class="name">S001 / RECOVERY HEAD</div><div class="subtitle">SALVAGE / PARENT 041 INTERMITTENT PICTURE ENDOFRUN</div></div><div class="readout"><span id="meter">COHERENCE 0.000%</span><br><span id="clock">RECOVERED 000 / 00:00.000</span></div></header>
+<footer><div id="help">MOVE TO READ THROUGH THE DAMAGE<br><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> STEER THE REPAIR HEAD</div><nav aria-label="Artwork controls"><button id="pause" type="button" aria-pressed="false">Pause</button><button id="reset" type="button">Reseed ↗</button><button id="export" type="button">Collect ↓</button></nav></footer><div id="live" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('surface'),ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const seedBuffer=new Uint32Array(1);crypto.getRandomValues(seedBuffer);
+const DAMAGE=['#10f4cf','#196fff','#f4d84e','#ed4e8c','#8d78ff','#b7f6ff'],SPECTRUM=['#102cfa','#28e3f4','#e4f2bf','#fe6741','#f1118b','#5920ab'];
+const TAU=Math.PI*2,CELL=14,STEER={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]};
+const NOTES=[[.25,'SOMETHING UNDERNEATH STILL HAS AN ADDRESS'],[.4,'THE SPECTRUM WAS NEVER DELETED / ONLY COVERED'],[.55,'MORE THAN HALF REMEMBERED'],[.7,'ENTROPY HAS NOTICED'],[.85,'THIS WILL NOT HOLD']];
+let seed=seedBuffer[0],state=seed,w=1,h=1,dpr=1,cols=0,rows=0,cw=1,ch=1,grid=null;
+let time=0,last=0,frame=0,paused=reduced.matches,readout=-1,spread=0,lastInput=-99,steered=false,milestone=0,recovered=0,coh=0,pointerId=null;
+const ref=document.createElement('canvas'),rc=ref.getContext('2d');
+const pointer={x:-999,y:-999,inside:false,speed:0,held:false};
+const head={x:0,y:0,vx:0,vy:0,charge:1,trail:[],placed:false};
+const keys=new Set(),pulses=[],fragments=[],notes=[];
+const rand=()=>{state^=state<<13;state^=state>>>17;state^=state<<5;return(state>>>0)/4294967296};
+const hash=n=>{const v=Math.sin(n*127.17+seed*.00017)*43758.54;return v-Math.floor(v)};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const live=t=>{document.getElementById('live').textContent=t};
+function inherited(u,v,n){
+ // ENDOFRUN left the surface roughly ninety percent incoherent, with a few windows that almost remember.
+ let c=.74+hash(n*1.37)*.3+Math.sin(u*7+seed%97)*Math.cos(v*5.3+seed%13)*.12;
+ for(let k=0;k<5;k++){const d=Math.hypot(u-hash(k+400),(v-hash(k+500))*h/w);c-=Math.max(0,.08-d)*8}
+ return clamp(c,.04,1);
+}
+function paintReference(){
+ ref.width=Math.round(w*dpr);ref.height=Math.round(h*dpr);const c=rc;c.setTransform(dpr,0,0,dpr,0,0);
+ const glow=c.createRadialGradient(w*.52,h*.49,0,w*.52,h*.49,w*.7);glow.addColorStop(0,'#153365');glow.addColorStop(.55,'#0b152c');glow.addColorStop(1,'#020409');c.fillStyle=glow;c.fillRect(0,0,w,h);
+ // The immaculate spectrum of 001, exactly where it was left.
+ const left=w*.12,top=h*.17,rw=w*.76,rh=h*.66;
+ c.save();c.beginPath();c.rect(left,top,rw,rh);c.clip();
+ const g=c.createLinearGradient(left,0,left+rw,0);SPECTRUM.forEach((col,i)=>g.addColorStop(i/5,col));c.fillStyle=g;c.fillRect(left,top,rw,rh);
+ c.globalCompositeOperation='multiply';
+ for(let i=0;i<60;i++){const yy=top+i/60*rh,ph=i*.07+seed%100;c.fillStyle='rgba(1,3,24,'+(.15+.3*(.5+.5*Math.sin(ph)))+')';c.beginPath();c.moveTo(left,yy);c.bezierCurveTo(left+rw*.3,yy+Math.sin(ph)*rh*.16,left+rw*.7,yy-Math.cos(ph)*rh*.17,left+rw,yy);c.lineTo(left+rw,yy+rh/60*.6);c.bezierCurveTo(left+rw*.7,yy-Math.cos(ph)*rh*.17+4,left+rw*.3,yy+Math.sin(ph)*rh*.16+4,left,yy+4);c.closePath();c.fill()}
+ c.globalCompositeOperation='screen';c.strokeStyle='#b5dfea50';c.lineWidth=.7;
+ for(let i=0;i<=28;i++){const xx=left+i/28*rw;c.beginPath();c.moveTo(xx,top);c.lineTo(xx,top+rh);c.stroke()}
+ for(let i=0;i<=20;i++){const yy=top+i/20*rh;c.beginPath();c.moveTo(left,yy);c.lineTo(left+rw,yy);c.stroke()}
+ c.restore();
+ c.strokeStyle='#bfe9ff80';c.lineWidth=1;c.strokeRect(left-.5,top-.5,rw+1,rh+1);
+ for(let i=0;i<4;i++){c.strokeStyle=i%2?'#f8ffffaa':'#080e1fcc';c.lineWidth=i%2?1:4;c.beginPath();c.arc(w*.5,h*.5,rh*(.24+i*.047),0,TAU);c.stroke()}
+ c.fillStyle='#e9fbff';c.font='9px monospace';c.fillText('REFERENCE SURFACE / '+seed.toString(16).toUpperCase(),left,top-12);c.fillText('01  02  04  08  16  32  64  128  256  512  1024',left,top+rh+19);
+}
+function resize(){
+ w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ // Resample whatever damage already exists rather than forgetting it.
+ const nc=Math.max(24,Math.round(w/CELL)),nr=Math.max(16,Math.round(h/CELL)),next=new Float32Array(nc*nr);
+ for(let j=0;j<nr;j++)for(let i=0;i<nc;i++){const n=j*nc+i;next[n]=grid?grid[Math.floor(j/nr*rows)*cols+Math.floor(i/nc*cols)]:inherited(i/nc,j/nr,n)}
+ cols=nc;rows=nr;grid=next;cw=w/cols;ch=h/rows;
+ if(!head.placed){head.x=w*.5;head.y=h*.5;head.placed=true}else{head.x=clamp(head.x,0,w-1);head.y=clamp(head.y,0,h-1)}
+ head.trail.length=0;paintReference();draw();
+}
+function eachCell(x,y,r,fn){
+ const i0=Math.max(0,Math.floor((x-r)/cw)),i1=Math.min(cols-1,Math.floor((x+r)/cw)),j0=Math.max(0,Math.floor((y-r)/ch)),j1=Math.min(rows-1,Math.floor((y+r)/ch));
+ for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)fn(j*cols+i,Math.hypot((i+.5)*cw-x,(j+.5)*ch-y));
+}
+function repair(x,y,r,amount){eachCell(x,y,r,(n,d)=>{if(d<r)grid[n]=Math.max(0,grid[n]-amount*(1-d/r))})}
+function infect(x,y,power){eachCell(x,y,cw*2.5,(n,d)=>{grid[n]=clamp(grid[n]+power*.3/(1+d*d/(cw*cw)))})}
+function spawnFragment(){
+ let n=0;for(let k=0;k<40;k++){n=Math.floor(rand()*grid.length);if(grid[n]>.55)break}
+ fragments.push({x:(n%cols+.5)*cw,y:(Math.floor(n/cols)+.5)*ch,phase:rand()*TAU,id:Math.floor(rand()*65535)});
+}
+function coherence(){let s=0;for(let n=0;n<grid.length;n++)s+=grid[n];return 1-s/grid.length}
+function pulse(){if(head.charge<1)return;head.charge=0;pulses.push({x:head.x,y:head.y,r:0,max:Math.min(w,h)*.26})}
+function advance(dt){
+ time+=dt;pointer.speed*=Math.exp(-dt*4);
+ let ax=0,ay=0;for(const code of keys){ax+=STEER[code][0];ay+=STEER[code][1]}
+ const thrust=ax!==0||ay!==0;
+ if(thrust){const m=Math.hypot(ax,ay);ax/=m;ay/=m;lastInput=time}
+ else if(time-lastInput>10){
+  // Left alone, the head resumes its own slow, aimless maintenance.
+  const tx=w*(.5+.34*Math.sin(time*.11+1)),ty=h*(.5+.3*Math.sin(time*.157));ax=(tx-head.x)/w*.5;ay=(ty-head.y)/h*.5;
+ }
+ head.vx+=ax*1100*dt;head.vy+=ay*1100*dt;
+ const friction=Math.exp(-dt*(thrust?1.8:2.8));head.vx*=friction;head.vy*=friction;
+ const speed=Math.hypot(head.vx,head.vy);if(speed>460){head.vx*=460/speed;head.vy*=460/speed}
+ head.x+=head.vx*dt;head.y+=head.vy*dt;let cut=false;
+ if(head.x<0){head.x+=w;cut=true}else if(head.x>=w){head.x-=w;cut=true}
+ if(head.y<0){head.y+=h;cut=true}else if(head.y>=h){head.y-=h;cut=true}
+ head.trail.push({x:head.x,y:head.y,cut});if(head.trail.length>54)head.trail.shift();
+ head.charge=Math.min(1,head.charge+dt/3.5);
+ repair(head.x,head.y,cw*2.2,dt*(1.7+Math.min(speed,460)/460*1.6));
+ for(let k=pulses.length-1;k>=0;k--){
+  const p=pulses[k],inner=p.r;p.r+=dt*420;
+  eachCell(p.x,p.y,p.r,(n,d)=>{if(d>=inner-cw&&d<p.r)grid[n]=Math.max(0,grid[n]-(.2+.5*(1-p.r/p.max)))});
+  if(p.r>p.max)pulses.splice(k,1);
+ }
+ while(fragments.length<3)spawnFragment();
+ for(let k=fragments.length-1;k>=0;k--){const f=fragments[k];if(Math.hypot(f.x-head.x,f.y-head.y)<cw*1.7){fragments.splice(k,1);recovered++;pulses.push({x:f.x,y:f.y,r:0,max:Math.min(w,h)*.17});live('Last good pixel '+f.id.toString(16)+' recovered')}}
+ coh=coherence();
+ // Entropy accelerates in proportion to what has been saved.
+ spread+=dt*(14+coh*150);
+ while(spread>=1){spread--;const i=Math.floor(rand()*grid.length),v=grid[i];if(v>.35){const j=i+[1,-1,cols,-cols][Math.floor(rand()*4)];if(j>=0&&j<grid.length)grid[j]=clamp(grid[j]+v*.22)}else grid[i]=clamp(v+.04+coh*.05)}
+ if(pointer.held)infect(pointer.x,pointer.y,dt*3.2);
+ if(milestone<NOTES.length&&coh>NOTES[milestone][0]){notes.push({text:NOTES[milestone][1],t:time});live(NOTES[milestone][1]);milestone++}
+ else if(milestone>0&&coh<NOTES[milestone-1][0]-.1)milestone--;
+ while(notes.length&&time-notes[0].t>5)notes.shift();
+}
+function draw(){
+ ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.drawImage(ref,0,0,w,h);
+ const lensR=Math.max(90,Math.min(w,h)*.17),px=pointer.x,py=pointer.y,tear=Math.min(1,pointer.speed*.4),flicker=Math.floor(time*14);
+ for(let n=0;n<grid.length;n++){
+  const v=grid[n];if(v<.03)continue;
+  const i=n%cols,j=(n/cols)|0;let x=i*cw,lens=0;const y=j*ch;
+  if(pointer.inside){const d=Math.hypot(x+cw/2-px,y+ch/2-py);if(d<lensR){lens=1-d/lensR;lens=lens*lens*(3-2*lens);x+=Math.sin(j*1.7+time*9)*cw*1.6*lens*tear}}
+  const shown=v*(1-lens*.82);if(shown<.03)continue;
+  const r=hash(n);ctx.globalAlpha=Math.min(.96,shown*1.08);
+  if(v>.72){ctx.fillStyle=hash(n+flicker)>.985?DAMAGE[(n+flicker)%6]:'#03040b';ctx.fillRect(x,y,cw+.5,ch+.5)}
+  else{ctx.fillStyle=DAMAGE[Math.floor(r*6)];ctx.fillRect(x,y,cw*(r>.88?2.4:1)+.4,ch+.4);if(v>.25){ctx.fillStyle=DAMAGE[(n+2)%6];for(let k=0;k<3;k++)if(hash(n+k*31)>.45)ctx.fillRect(x+k/3*cw,y+ch*.2,cw*.17,ch*.6)}}
+ }
+ ctx.font='8px monospace';ctx.lineWidth=1;
+ for(const f of fragments){
+  // Last good pixels are nearly invisible until something passes near them.
+  const near=pointer.inside?clamp(1-Math.hypot(f.x-px,f.y-py)/lensR):0,byHead=clamp(1-Math.hypot(f.x-head.x,f.y-head.y)/(lensR*.8)),blink=.5+.5*Math.sin(time*5+f.phase);
+  ctx.globalAlpha=Math.min(1,.1+blink*.12+Math.max(near,byHead)*.85);ctx.fillStyle=ctx.strokeStyle='#fffde0';
+  ctx.fillRect(f.x-2.5,f.y-2.5,5,5);ctx.strokeRect(f.x-6-blink*3,f.y-6-blink*3,12+blink*6,12+blink*6);
+  if(near>.25){ctx.globalAlpha=near;ctx.fillText('LAST GOOD PIXEL / '+f.id.toString(16).toUpperCase().padStart(4,'0'),f.x+13,f.y-9)}
+ }
+ ctx.strokeStyle='#e4f2bf';ctx.lineWidth=1.2;
+ for(const p of pulses){const a=clamp(1-p.r/p.max);ctx.globalAlpha=a*.9;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.stroke();ctx.globalAlpha=a*.35;ctx.beginPath();ctx.arc(p.x,p.y,p.r*.86,0,TAU);ctx.stroke()}
+ ctx.strokeStyle='#28e3f4';ctx.lineWidth=1;
+ for(let k=1;k<head.trail.length;k++){const a=head.trail[k-1],b=head.trail[k];if(b.cut)continue;ctx.globalAlpha=k/head.trail.length*.6;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+ const s=cw*1.6,speed=Math.hypot(head.vx,head.vy),manual=time-lastInput<=10;
+ ctx.globalAlpha=1;ctx.strokeStyle=ctx.fillStyle='#faffdb';ctx.beginPath();
+ for(const [sx,sy] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ctx.moveTo(head.x+sx*s,head.y+sy*s*.45);ctx.lineTo(head.x+sx*s,head.y+sy*s);ctx.lineTo(head.x+sx*s*.45,head.y+sy*s)}
+ ctx.stroke();
+ ctx.save();ctx.translate(head.x,head.y);ctx.rotate(speed>8?Math.atan2(head.vy,head.vx):time*.6);ctx.beginPath();ctx.moveTo(7,0);ctx.lineTo(0,3.5);ctx.lineTo(-4,0);ctx.lineTo(0,-3.5);ctx.closePath();ctx.fill();ctx.restore();
+ ctx.globalAlpha=.55;ctx.beginPath();ctx.arc(head.x,head.y,s*1.3,-Math.PI/2,-Math.PI/2+TAU*head.charge);ctx.stroke();
+ ctx.globalAlpha=.7;ctx.fillText((manual?'REPAIR / MANUAL':'REPAIR / IDLE')+(head.charge>=1?' / PULSE READY':''),head.x+s+7,head.y+s+3);
+ if(pointer.inside){
+  ctx.globalAlpha=.6;ctx.strokeStyle='#faffdb';ctx.beginPath();ctx.arc(px,py,lensR,0,TAU);ctx.stroke();
+  ctx.beginPath();for(let k=0;k<32;k++){const a=k/32*TAU+time*.05,l=k%4?3:8;ctx.moveTo(px+Math.cos(a)*lensR,py+Math.sin(a)*lensR);ctx.lineTo(px+Math.cos(a)*(lensR-l),py+Math.sin(a)*(lensR-l))}ctx.stroke();
+  ctx.globalAlpha=.9;ctx.strokeRect(px-7,py-7,14,14);
+  const n=clamp(Math.floor(py/ch),0,rows-1)*cols+clamp(Math.floor(px/cw),0,cols-1);
+  ctx.fillStyle='#e0faff';ctx.fillText(Math.floor(px).toString(16)+':'+Math.floor(py).toString(16)+(pointer.held?' / BRUISING':' / LOSS '+(grid[n]*100).toFixed(1)+'%'),px+14,py-10);
+ }
+ ctx.font='10px monospace';ctx.textAlign='center';ctx.fillStyle='#faffdb';
+ notes.forEach((note,k)=>{const age=time-note.t;ctx.globalAlpha=clamp(Math.min(age*2,(5-age)*.8))*.9;ctx.fillText(note.text,w/2,h*.12+k*16)});
+ ctx.textAlign='left';ctx.globalAlpha=1;ctx.fillStyle='#01040e22';for(let y=0;y<h;y+=4)ctx.fillRect(0,y,w,1);
+ if(time-readout>.15||paused){readout=time;document.getElementById('meter').textContent='COHERENCE '+(coherence()*100).toFixed(3)+'%';document.getElementById('clock').textContent='RECOVERED '+String(recovered).padStart(3,'0')+' / '+new Date(time*1000).toISOString().slice(14,23)}
+}
+function queue(){if(!frame&&!paused&&!document.hidden)frame=requestAnimationFrame(tick)}
+function tick(now){frame=0;advance(Math.min(Math.max((now-last)||16,0),40)/1000);last=now;draw();queue()}
+function setPaused(value){paused=value;const b=document.getElementById('pause');b.textContent=value?'Resume':'Pause';b.setAttribute('aria-pressed',String(value));keys.clear();if(value){cancelAnimationFrame(frame);frame=0;draw()}else{last=performance.now();queue()}}
+function reseed(){
+ crypto.getRandomValues(seedBuffer);seed=seedBuffer[0];state=seed;
+ for(let n=0;n<grid.length;n++)grid[n]=inherited(n%cols/cols,Math.floor(n/cols)/rows,n);
+ time=0;recovered=0;milestone=0;spread=0;readout=-1;lastInput=-99;pulses.length=fragments.length=notes.length=head.trail.length=0;
+ Object.assign(head,{x:w*.5,y:h*.5,vx:0,vy:0,charge:1});paintReference();live('New specimen '+seed.toString(16));draw();
+}
+function move(e){
+ if(!e.isPrimary||(pointerId!==null&&e.pointerId!==pointerId))return;
+ const dist=Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)/Math.max(w,h);
+ pointer.speed=pointer.inside?Math.min(5,pointer.speed+dist*12):0;pointer.x=e.clientX;pointer.y=e.clientY;pointer.inside=true;if(paused)draw();
+}
+canvas.addEventListener('pointermove',move,{passive:true});
+canvas.addEventListener('pointerdown',e=>{if(!e.isPrimary||e.button!==0||pointerId!==null)return;pointerId=e.pointerId;pointer.held=true;canvas.setPointerCapture(e.pointerId);move(e)});
+function release(e){if(pointerId!==e.pointerId)return;pointer.held=false;pointerId=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(e.pointerType!=='mouse')pointer.inside=false;if(paused)draw()}
+canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('pointerleave',()=>{if(pointerId===null){pointer.inside=false;if(paused)draw()}});
+window.addEventListener('blur',()=>{pointer.held=false;pointerId=null;keys.clear()});
+document.getElementById('pause').onclick=()=>setPaused(!paused);
+document.getElementById('reset').onclick=reseed;
+document.getElementById('export').onclick=()=>canvas.toBlob(blob=>{if(!blob)return;const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='s001-'+seed.toString(16)+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),30000)},'image/png');
+window.addEventListener('keydown',e=>{
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ const onButton=e.target instanceof Element&&e.target.closest('button');
+ if(STEER[e.code]){e.preventDefault();if(paused)return;keys.add(e.code);lastInput=time;if(!steered){steered=true;document.getElementById('help').innerHTML='<kbd>SPACE</kbd> RELEASES A RESTORING PULSE<br>HOLD THE MOUSE TO BRUISE WHAT YOU SAVED'}}
+ else if(e.code==='Space'&&!onButton){e.preventDefault();if(!e.repeat&&!paused)pulse()}
+ else if(e.code==='Escape')setPaused(!paused);
+ else if(e.code==='KeyR'&&!e.repeat&&!onButton)reseed();
+});
+window.addEventListener('keyup',e=>keys.delete(e.code));
+reduced.addEventListener('change',e=>setPaused(e.matches));document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;keys.clear()}else{last=performance.now();queue()}});
+window.addEventListener('resize',resize);resize();setPaused(paused);window.focus();
+})();
+</script>
+</body></html>

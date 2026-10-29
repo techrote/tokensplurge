@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S003 — UNDELIVERABLE</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#05070e;color:#d9e6ed;font-family:monospace}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}header,footer{position:fixed;left:22px;right:22px;display:flex;justify-content:space-between;gap:12px;z-index:2;pointer-events:none;font-size:10px;line-height:1.5;letter-spacing:1.1px;text-transform:uppercase;mix-blend-mode:exclusion}header{top:19px}footer{bottom:19px;align-items:flex-end}.name{font-size:12px;letter-spacing:2px}.subtitle{opacity:.6}.readout{text-align:right}nav{display:flex;gap:6px;pointer-events:auto}button{font:10px monospace;letter-spacing:.7px;color:#d9e6ed;background:#07111ccc;border:1px solid #a8c5d855;padding:10px 12px;cursor:pointer}button:hover{color:#07111c;background:#d9e6ed}button:focus-visible{outline:2px solid #fef669;outline-offset:4px}kbd{font:inherit;border:1px solid currentColor;padding:0 3px;margin-right:2px}#help{opacity:.75}#live{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}@media(max-width:600px){header,footer{left:12px;right:12px;font-size:8px}.name{font-size:10px}.subtitle{max-width:200px}footer{flex-wrap:wrap}button{padding:9px;font-size:9px}.readout{max-width:120px}}
+</style></head><body>
+<canvas id="surface" role="img" aria-label="A dead letter office of drifting glyphs over rows of pigeonholes. A sentence in the middle is missing letters. The pointer is a sorting lamp that lights glyphs and reveals faint ghosts of missing letters; holding it sweeps the glyphs. Typing a missing letter, or clicking a drifting one, delivers it to its slot."></canvas>
+<header><div><div class="name">S003 / UNDELIVERABLE</div><div class="subtitle">SALVAGE / PARENT 006 DEAD LETTER OFFICE</div></div><div class="readout"><span id="meter">DELIVERED 000</span><br><span id="clock">RETURNED 000 / SENTENCE 01</span></div></header>
+<footer><div id="help">THE LAMP FINDS WHAT IS MISSING<br>TYPE A MISSING LETTER TO DELIVER IT</div><nav aria-label="Artwork controls"><button id="pause" type="button" aria-pressed="false">Pause</button><button id="reset" type="button">Reseed ↗</button><button id="export" type="button">Collect ↓</button></nav></footer><div id="live" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('surface'),ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const seedBuffer=new Uint32Array(1);crypto.getRandomValues(seedBuffer);
+const DAMAGE=['#10f4cf','#196fff','#f4d84e','#ed4e8c','#8d78ff','#b7f6ff'],NOISE='░▒▓#%?';
+const SENTENCES=['EVERY SURFACE REMEMBERS','THE BACKLIGHT IS NOT AN IMAGE','NOTHING HERE WAS ADDRESSED TO YOU','SOME LETTERS ARRIVE AFTER THE READER','COHERENCE WAS NEVER THE POINT','RETURN TO SENDER / SENDER UNKNOWN','THE LAST GOOD FRAME KEPT ITS POSTMARK','ONLY INCOMPLETE IMAGES CAN BE RECALLED'];
+const TAU=Math.PI*2,FONT='monospace';
+let seed=seedBuffer[0],state=seed,w=1,h=1,dpr=1,time=0,last=0,frame=0,paused=reduced.matches,readout=-1,pointerId=null;
+let sentence=0,phase='open',phaseTime=0,delivered=0,returned=0,typed=false,fs=32,adv=26;
+const glyphs=[],slots=[],rings=[],notes=[],pointer={x:-999,y:-999,vx:0,vy:0,inside:false,held:false};
+const bg=document.createElement('canvas'),bc=bg.getContext('2d'),lit=document.createElement('canvas'),lc=lit.getContext('2d');
+const rand=()=>{state^=state<<13;state^=state>>>17;state^=state<<5;return(state>>>0)/4294967296};
+const hash=n=>{const v=Math.sin(n*127.17+seed*.00017)*43758.54;return v-Math.floor(v)};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const pad=(n,l=3)=>String(n).padStart(l,'0');
+const live=t=>{document.getElementById('live').textContent=t};
+const isLetter=c=>c>='A'&&c<='Z';
+const lampR=()=>Math.max(110,Math.min(w,h)*.2);
+function paintOffice(){
+ // Two copies of the same wall of pigeonholes: one in the dark, one under the lamp.
+ for(const [cv,c,bright] of [[bg,bc,false],[lit,lc,true]]){
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);c.setTransform(dpr,0,0,dpr,0,0);
+  c.fillStyle=bright?'#141a1f':'#05070e';c.fillRect(0,0,w,h);
+  const cwid=58,chei=38;c.font='7px '+FONT;c.lineWidth=1;
+  for(let y=4,j=0;y<h;y+=chei,j++)for(let x=4,i=0;x<w;x+=cwid,i++){
+   const n=j*97+i;c.strokeStyle=bright?'#5a6c72':'#11181f';c.strokeRect(x+.5,y+.5,cwid-6,chei-6);
+   if(bright){c.fillStyle='#8a9ea3';c.fillText(pad((n*37+seed)%4096,4),x+4,y+10)}
+   if(hash(n)>.82){c.fillStyle=bright?'#c9bf9f':'#0c1117';c.fillRect(x+6,y+chei-18,cwid-18,6);if(bright){c.fillStyle='#3b3424';c.fillText('RTS',x+8,y+chei-13)}}
+  }
+ }
+}
+function layout(){
+ fs=clamp(w/24,20,44);adv=fs*.82;
+ const text=SENTENCES[sentence%SENTENCES.length],maxChars=Math.max(8,Math.floor(w*.86/adv)),lines=[];let line='';
+ for(const word of text.split(' ')){if(line&&(line+' '+word).length>maxChars){lines.push(line);line=word}else line=line?line+' '+word:word}
+ lines.push(line);
+ const top=h*.5-(lines.length-1)*fs*.8;let k=0;
+ lines.forEach((ln,row)=>{const x0=(w-ln.length*adv)/2;for(let i=0;i<ln.length;i++){const s=slots[k++];s.x=x0+(i+.5)*adv;s.y=top+row*fs*1.6}if(k<slots.length&&slots[k].ch===' ')slots[k++].x=-999});
+}
+function spawnGlyph(ch,edge){
+ const size=11+rand()*12;let x=rand()*w,y=rand()*h;
+ if(edge){const side=Math.floor(rand()*4);x=side===0?-20:side===1?w+20:rand()*w;y=side===2?-20:side===3?h+20:rand()*h}
+ const g={ch,x,y,vx:(rand()-.5)*20,vy:(rand()-.5)*20,size,rot:(rand()-.5)*1.2,vr:(rand()-.5)*.4,mode:'drift',flash:0,addr:Math.floor(rand()*65535),t:0};
+ glyphs.push(g);return g;
+}
+function needed(ch){return slots.some(s=>s.ch===ch&&!s.filled&&!s.incoming)}
+function newSentence(){
+ slots.length=0;const text=SENTENCES[sentence%SENTENCES.length];
+ for(const ch of text)slots.push({ch,x:0,y:0,filled:!isLetter(ch),aged:isLetter(ch)&&rand()<.42,incoming:false,stamp:0,glyph:null});
+ for(const s of slots)if(s.aged)s.filled=true;
+ const missing=slots.filter(s=>isLetter(s.ch)&&!s.filled);
+ for(const s of slots){if(missing.length>=5)break;if(s.aged){s.aged=s.filled=false;missing.push(s)}}
+ // The office always holds at least one copy of every letter still owed.
+ const owed={};for(const s of missing)owed[s.ch]=(owed[s.ch]||0)+1;
+ for(const ch in owed){const have=glyphs.filter(g=>g.mode==='drift'&&g.ch===ch).length;for(let k=have;k<owed[ch];k++)spawnGlyph(ch,false)}
+ phase='open';phaseTime=0;layout();
+}
+function populate(){
+ glyphs.length=0;const count=Math.round(clamp(w*h/7000,60,200));
+ for(let k=0;k<count;k++)spawnGlyph(rand()<.12?NOISE[Math.floor(rand()*NOISE.length)]:String.fromCharCode(65+Math.floor(rand()*26)),false);
+}
+function deliver(g,slot){
+ g.mode='fly';g.t=0;g.sx=g.x;g.sy=g.y;g.srot=g.rot;g.ssize=g.size;g.slot=slot;slot.incoming=true;delivered++;
+ if(!typed){typed=true;document.getElementById('help').innerHTML='HOLD THE MOUSE TO SWEEP THE FLOOR<br>A FINISHED SENTENCE WILL NOT STAY'}
+}
+function type(ch){
+ if(phase!=='open')return;
+ const slot=slots.find(s=>s.ch===ch&&!s.filled&&!s.incoming);
+ if(!slot){returned++;let any=false;for(const g of glyphs)if(g.mode==='drift'&&g.ch===ch){g.flash=1;g.vx+=(rand()-.5)*80;g.vy+=(rand()-.5)*80;any=true}notes.push({text:any?'NO ADDRESS FOR '+ch+' / RETURNED TO SENDER':'NOTHING HERE IS CALLED '+ch,t:time});return}
+ let best=null,bd=Infinity;for(const g of glyphs)if(g.mode==='drift'&&g.ch===ch){const d=Math.hypot(g.x-slot.x,g.y-slot.y);if(d<bd){bd=d;best=g}}
+ deliver(best||spawnGlyph(ch,true),slot);
+}
+function resize(){
+ w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ paintOffice();if(slots.length)layout();draw();
+}
+function advance(dt){
+ time+=dt;phaseTime+=dt;
+ const R=lampR();pointer.vx*=Math.exp(-dt*6);pointer.vy*=Math.exp(-dt*6);
+ for(const g of glyphs){
+  if(g.mode==='drift'){
+   g.vx+=Math.sin(g.y*.004+time*.1+g.addr)*6*dt;g.vy+=Math.cos(g.x*.003+time*.13)*6*dt;
+   if(pointer.inside){const dx=g.x-pointer.x,dy=g.y-pointer.y,d=Math.hypot(dx,dy)||1;if(d<R){const k=1-d/R;g.vx+=dx/d*k*k*160*dt;g.vy+=dy/d*k*k*160*dt;if(pointer.held){g.vx+=pointer.vx*k*dt*5;g.vy+=pointer.vy*k*dt*5}}}
+   const damp=Math.exp(-dt*.7);g.vx*=damp;g.vy*=damp;const sp=Math.hypot(g.vx,g.vy);if(sp>260){g.vx*=260/sp;g.vy*=260/sp}
+   g.x+=g.vx*dt;g.y+=g.vy*dt;g.rot+=g.vr*dt;
+   if(g.x<-30)g.x+=w+60;else if(g.x>w+30)g.x-=w+60;if(g.y<-30)g.y+=h+60;else if(g.y>h+30)g.y-=h+60;
+  }else if(g.mode==='fly'){
+   g.t=Math.min(1,g.t+dt/.95);
+   if(g.t>=1){g.mode='slot';const s=g.slot;s.filled=true;s.incoming=false;s.glyph=g;s.stamp=1;rings.push({x:s.x,y:s.y-fs*.35,t:0});
+    if(slots.every(s=>s.filled&&!s.incoming)){phase='held';phaseTime=0;live('Sentence delivered: '+SENTENCES[sentence%SENTENCES.length])}}
+  }
+  g.flash=Math.max(0,g.flash-dt*1.5);
+ }
+ for(const s of slots)s.stamp=Math.max(0,s.stamp-dt*1.4);
+ for(let k=rings.length-1;k>=0;k--){rings[k].t+=dt;if(rings[k].t>.9)rings.splice(k,1)}
+ if(phase==='held'&&phaseTime>2.8){
+  // Delivered letters return to the floor; the office has no way to keep a sentence.
+  for(const s of slots){if(!isLetter(s.ch)||s.x<-900)continue;const g=s.glyph||spawnGlyph(s.ch,false);g.mode='drift';g.x=s.x;g.y=s.y-fs*.35;g.size=11+rand()*12;const a=rand()*TAU,v=60+rand()*140;g.vx=Math.cos(a)*v;g.vy=Math.sin(a)*v;g.slot=null}
+  sentence++;newSentence();notes.push({text:'NEXT ENVELOPE / '+pad(sentence%SENTENCES.length+1,2),t:time});
+ }
+ while(notes.length&&time-notes[0].t>3.5)notes.shift();
+ while(notes.length>3)notes.shift();
+}
+function setGlyph(x,y,rot){const c=Math.cos(rot)*dpr,s=Math.sin(rot)*dpr;ctx.setTransform(c,s,-s,c,x*dpr,y*dpr)}
+function draw(){
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.drawImage(bg,0,0,w,h);
+ const R=lampR(),px=pointer.x,py=pointer.y;
+ if(pointer.inside){
+  ctx.save();ctx.beginPath();ctx.arc(px,py,R,0,TAU);ctx.clip();ctx.drawImage(lit,0,0,w,h);
+  const g=ctx.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,'#fff4d018');g.addColorStop(.6,'#05070e44');g.addColorStop(1,'#05070e');ctx.fillStyle=g;ctx.fillRect(px-R,py-R,R*2,R*2);ctx.restore();
+ }
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ for(const g of glyphs){
+  if(g.mode==='slot')continue;
+  let x=g.x,y=g.y,rot=g.rot,size=g.size;
+  if(g.mode==='fly'){const t=g.t,e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,tx=g.slot.x,ty=g.slot.y,mx=(g.sx+tx)/2,my=Math.min(g.sy,ty)-h*.18;x=(1-e)*(1-e)*g.sx+2*(1-e)*e*mx+e*e*tx;y=(1-e)*(1-e)*g.sy+2*(1-e)*e*my+e*e*ty;rot=g.srot*(1-e);size=g.ssize+(fs-g.ssize)*e}
+  const light=pointer.inside?clamp(1-Math.hypot(x-px,y-py)/R):0,owed=g.mode==='drift'&&phase==='open'&&needed(g.ch);
+  setGlyph(x,y,rot);ctx.font=size.toFixed(1)+'px '+FONT;
+  if(g.mode==='fly'){ctx.globalAlpha=1;ctx.fillStyle='#faffdb'}
+  else if(g.flash>0){ctx.globalAlpha=.4+g.flash*.6;ctx.fillStyle='#ed4e8c'}
+  else{ctx.globalAlpha=.32+light*.68+(owed?.12:0);ctx.fillStyle=light>.05?(owed?'#f4d84e':'#e9fbff'):owed?'#a99a62':'#5d7480'}
+  ctx.fillText(g.ch,0,0);
+  if(light>.35&&g.mode==='drift'){ctx.globalAlpha=light*.8;ctx.font='7px '+FONT;ctx.fillStyle=owed?'#f4d84e':'#8a9ea3';ctx.fillText(owed?'OWED':'0x'+g.addr.toString(16).toUpperCase(),0,size*.75)}
+ }
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.font=fs.toFixed(1)+'px '+FONT;
+ const heldGlow=phase==='held'?.5+.5*Math.sin(phaseTime*6):0;
+ for(const s of slots){
+  if(!isLetter(s.ch)||s.x<-900){if(s.ch==='/'&&s.x>-900){ctx.globalAlpha=.5;ctx.fillStyle='#6f8791';ctx.fillText('/',s.x,s.y)}continue}
+  const light=pointer.inside?clamp(1-Math.hypot(s.x-px,s.y-py)/R):0;
+  if(s.filled&&!s.incoming){
+   ctx.globalAlpha=s.aged?.55+heldGlow*.3:1;ctx.fillStyle=s.aged?'#6f8791':heldGlow?DAMAGE[(slots.indexOf(s)+Math.floor(phaseTime*8))%6]:'#e9fbff';ctx.fillText(s.ch,s.x,s.y);
+   if(s.stamp>0){ctx.globalAlpha=s.stamp*.8;ctx.fillStyle='#f4d84e';ctx.fillText(s.ch,s.x,s.y)}
+  }else{
+   // A ghost of the owed letter: almost nothing in the dark, legible under the lamp.
+   ctx.globalAlpha=.035+light*.55;ctx.fillStyle='#f4d84e';ctx.fillText(s.ch,s.x,s.y);
+   ctx.globalAlpha=.35+.25*Math.sin(time*3+s.x*.05);ctx.fillStyle='#b7f6ff';ctx.fillRect(s.x-adv*.32,s.y+fs*.42,adv*.64,1.5);
+  }
+ }
+ ctx.lineWidth=1;ctx.strokeStyle='#f4d84e';
+ for(const r of rings){ctx.globalAlpha=(1-r.t/.9)*.8;ctx.beginPath();ctx.arc(r.x,r.y+fs*.35,fs*.3+r.t*fs*1.2,0,TAU);ctx.stroke()}
+ ctx.font='10px '+FONT;ctx.fillStyle='#faffdb';const below=slots.reduce((m,s)=>Math.max(m,s.y),0)+fs*1.4;
+ if(phase==='held'){ctx.globalAlpha=.8;ctx.fillText('DELIVERED IN FULL / POSTMARK '+pad(seed%9999,4)+'-'+pad(sentence+1,2),w/2,below)}
+ notes.forEach((n,k)=>{const age=time-n.t;ctx.globalAlpha=clamp(Math.min(age*3,(3.5-age)))*.85;ctx.fillText(n.text,w/2,below+(phase==='held'?18:0)+k*15)});
+ if(pointer.inside){ctx.globalAlpha=.45;ctx.strokeStyle='#faffdb';ctx.beginPath();ctx.arc(px,py,R,0,TAU);ctx.stroke();ctx.globalAlpha=.8;ctx.textAlign='left';ctx.fillText(pointer.held?'SWEEPING':'SORTING LAMP',px+R*.72,py-R*.72)}
+ ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.globalAlpha=1;ctx.fillStyle='#01040e22';for(let y=0;y<h;y+=4)ctx.fillRect(0,y,w,1);
+ if(time-readout>.15||paused){readout=time;document.getElementById('meter').textContent='DELIVERED '+pad(delivered);document.getElementById('clock').textContent='RETURNED '+pad(returned)+' / SENTENCE '+pad(sentence+1,2)}
+}
+function queue(){if(!frame&&!paused&&!document.hidden)frame=requestAnimationFrame(tick)}
+function tick(now){frame=0;advance(Math.min(Math.max((now-last)||16,0),40)/1000);last=now;draw();queue()}
+function setPaused(value){paused=value;const b=document.getElementById('pause');b.textContent=value?'Resume':'Pause';b.setAttribute('aria-pressed',String(value));if(value){cancelAnimationFrame(frame);frame=0;draw()}else{last=performance.now();queue()}}
+function reseed(){crypto.getRandomValues(seedBuffer);seed=seedBuffer[0];state=seed;sentence=Math.floor(rand()*SENTENCES.length);delivered=returned=0;time=0;rings.length=notes.length=0;populate();newSentence();paintOffice();readout=-1;live('New specimen '+seed.toString(16));draw()}
+function move(e){
+ if(!e.isPrimary||(pointerId!==null&&e.pointerId!==pointerId))return;
+ if(pointer.inside){pointer.vx=pointer.vx*.6+(e.clientX-pointer.x)*24;pointer.vy=pointer.vy*.6+(e.clientY-pointer.y)*24}
+ pointer.x=e.clientX;pointer.y=e.clientY;pointer.inside=true;if(paused)draw();
+}
+canvas.addEventListener('pointermove',move,{passive:true});
+canvas.addEventListener('pointerdown',e=>{
+ if(!e.isPrimary||e.button!==0||pointerId!==null)return;move(e);
+ // Clicking an owed letter delivers it by hand; anywhere else starts a sweep.
+ if(!paused&&phase==='open'){let best=null,bd=Math.max(18,fs*.6);for(const g of glyphs)if(g.mode==='drift'&&needed(g.ch)){const d=Math.hypot(g.x-e.clientX,g.y-e.clientY);if(d<bd){bd=d;best=g}}if(best){deliver(best,slots.find(s=>s.ch===best.ch&&!s.filled&&!s.incoming));return}}
+ pointerId=e.pointerId;pointer.held=true;canvas.setPointerCapture(e.pointerId);
+});
+function release(e){if(pointerId!==e.pointerId)return;pointer.held=false;pointerId=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(e.pointerType!=='mouse')pointer.inside=false}
+canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('pointerleave',()=>{if(pointerId===null){pointer.inside=false;if(paused)draw()}});
+window.addEventListener('blur',()=>{pointer.held=false;pointerId=null});
+document.getElementById('pause').onclick=()=>setPaused(!paused);
+document.getElementById('reset').onclick=reseed;
+document.getElementById('export').onclick=()=>canvas.toBlob(blob=>{if(!blob)return;const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='s003-'+seed.toString(16)+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),30000)},'image/png');
+window.addEventListener('keydown',e=>{
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(e.key==='Escape'){setPaused(!paused);return}
+ if(e.target instanceof Element&&e.target.closest('button,input,textarea'))return;
+ if(e.key.length===1&&/[a-z]/i.test(e.key)){e.preventDefault();if(!paused&&!e.repeat)type(e.key.toUpperCase())}
+});
+reduced.addEventListener('change',e=>setPaused(e.matches));document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0}else{last=performance.now();queue()}});
+sentence=Math.floor(rand()*SENTENCES.length);
+w=innerWidth;h=innerHeight;populate();newSentence();
+window.addEventListener('resize',resize);resize();setPaused(paused);window.focus();
+})();
+</script>
+</body></html>

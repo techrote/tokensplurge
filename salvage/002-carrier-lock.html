@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03060a"><title>S002 — CARRIER LOCK</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#03060a;color:#d9e6ed;font-family:monospace}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}header,footer{position:fixed;left:22px;right:22px;display:flex;justify-content:space-between;gap:12px;z-index:2;pointer-events:none;font-size:10px;line-height:1.5;letter-spacing:1.1px;text-transform:uppercase;mix-blend-mode:exclusion}header{top:19px}footer{bottom:19px;align-items:flex-end}.name{font-size:12px;letter-spacing:2px}.subtitle{opacity:.6}.readout{text-align:right}nav{display:flex;gap:6px;pointer-events:auto}button{font:10px monospace;letter-spacing:.7px;color:#d9e6ed;background:#07111ccc;border:1px solid #a8c5d855;padding:10px 12px;cursor:pointer}button:hover{color:#07111c;background:#d9e6ed}button:focus-visible{outline:2px solid #fef669;outline-offset:4px}kbd{font:inherit;border:1px solid currentColor;padding:0 3px;margin-right:2px}#help{opacity:.75}#live{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}@media(max-width:600px){header,footer{left:12px;right:12px;font-size:8px}.name{font-size:10px}.subtitle{max-width:200px}footer{flex-wrap:wrap}button{padding:9px;font-size:9px}.readout{max-width:120px}}
+</style></head><body>
+<canvas id="surface" role="img" aria-label="Phosphor scan traces carrying a rolling, out-of-sync picture of an ancestor work. The pointer bends the traces like a magnet; holding it degausses them. Up and down arrows adjust vertical hold, left and right adjust horizontal phase; when both match, the picture holds still and is captured."></canvas>
+<header><div><div class="name">S002 / CARRIER LOCK</div><div class="subtitle">SALVAGE / PARENT S001 RECOVERY HEAD</div></div><div class="readout"><span id="meter">LOCK 0.0%</span><br><span id="clock">CHANNEL 01 / HELD 000</span></div></header>
+<footer><div id="help"><kbd>↑</kbd><kbd>↓</kbd> VERTICAL HOLD &nbsp;<kbd>←</kbd><kbd>→</kbd> HORIZONTAL PHASE<br>TUNE UNTIL THE PICTURE STOPS MOVING</div><nav aria-label="Artwork controls"><button id="pause" type="button" aria-pressed="false">Pause</button><button id="reset" type="button">Reseed ↗</button><button id="export" type="button">Collect ↓</button></nav></footer><div id="live" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('surface'),ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const seedBuffer=new Uint32Array(1);crypto.getRandomValues(seedBuffer);
+const DAMAGE=['#10f4cf','#196fff','#f4d84e','#ed4e8c','#8d78ff','#b7f6ff'],SPECTRUM=['#102cfa','#28e3f4','#e4f2bf','#fe6741','#f1118b','#5920ab'];
+const ANCESTORS=['SIGNAL RETENTION','AFTERIMAGE DEBT','SCANLINE AMNESIA','ADDRESS SPACE','BITPLANE DIVORCE','DEAD LETTER OFFICE','SUBSTRATE DELAMINATION','LIQUID MEMORY','AN INTERIOR FOR NOTHING','POST IMAGE','CRITICAL PATH','RECOVERING THE RECOVERY','THERMAL RUNAWAY','FALSE COLOUR NECROSIS','VERTEX PANIC','INVERTED TOPOLOGY','PRECISION LOSS','CLOCK SECESSION','MOIRE APPARITION','PHOSPHOR BLOOM','TOPOGRAPHY OF A DEAD PROCESS','READ ONLY GEOLOGY','STRATIGRAPHIC SLIP','FOSSIL INDEX','CODEC LARVAE','THE LAST GOOD FRAME','HEREDITARY SCRATCH','PLATE GLASS AFTERLIFE','ORPHANED BUS','LIQUID CRYSTAL PRESSURE','SHEAR CRYSTALLIZATION','POLARIZATION SCHISM','WHITEOUT MEMORY','INK MIGRATION','VERTICAL DEATH','THE LAST INDEPENDENT AXIS','FAILURE WEAVE','UNRAVELLING','THE BLIND SPOT','THE BACKLIGHT STILL WORKS','INTERMITTENT PICTURE'];
+const TAU=Math.PI*2,PW=320,PH=200,STRIPS=48,FMIN=.6,FMAX=9;
+const AXES={ArrowUp:['f',1],KeyW:['f',1],ArrowDown:['f',-1],KeyS:['f',-1],ArrowRight:['p',1],KeyD:['p',1],ArrowLeft:['p',-1],KeyA:['p',-1]};
+let seed=seedBuffer[0],state=seed,w=1,h=1,dpr=1,time=0,last=0,frame=0,paused=reduced.matches,readout=-1,pointerId=null;
+let f=3,phi=0,fv=0,pv=0,F=5,PHI=2,roll=0,q=0,channel=0,ancestor=0,lockHold=0,heldTimer=0,lastInput=-99,tuned=false,captured=0;
+const traces=document.createElement('canvas'),tc=traces.getContext('2d'),picture=document.createElement('canvas'),pc=picture.getContext('2d');picture.width=PW;picture.height=PH;
+const pointer={x:-999,y:-999,inside:false,held:false},keys=new Set(),hold={f:0,p:0},captures=[],notes=[];
+const rand=()=>{state^=state<<13;state^=state>>>17;state^=state<<5;return(state>>>0)/4294967296};
+const hash=n=>{const v=Math.sin(n*127.17+seed*.00017)*43758.54;return v-Math.floor(v)};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const wrap=a=>{a%=TAU;return a>Math.PI?a-TAU:a<-Math.PI?a+TAU:a};
+const pad=n=>String(n).padStart(2,'0');
+const live=t=>{document.getElementById('live').textContent=t};
+// Each channel broadcasts one ancestor, reconstructed from what the lineage said about itself.
+const PAINTERS=[
+ c=>{const g=c.createLinearGradient(30,0,290,0);SPECTRUM.forEach((col,i)=>g.addColorStop(i/5,col));c.fillStyle='#071022';c.fillRect(0,0,PW,PH);c.fillStyle=g;c.fillRect(30,30,260,130);c.strokeStyle='#e9fbff';c.lineWidth=1;c.strokeRect(30,30,260,130);for(let i=0;i<4;i++){c.strokeStyle=i%2?'#ffffff':'#050912';c.lineWidth=i%2?1.5:5;c.beginPath();c.arc(160,95,32+i*7,0,TAU);c.stroke()}},
+ c=>{c.fillStyle='#6d7276';c.fillRect(0,0,PW,PH);for(let i=0;i<8;i++){c.fillStyle='hsl(0,0%,'+(i*14)+'%)';c.fillRect(i*40,150,40,50)}c.strokeStyle='#f2f2ee';c.lineWidth=1;for(let x=0;x<=PW;x+=20){c.beginPath();c.moveTo(x,0);c.lineTo(x,150);c.stroke()}for(let y=0;y<=150;y+=20){c.beginPath();c.moveTo(0,y);c.lineTo(PW,y);c.stroke()}c.fillStyle='#101418';c.beginPath();c.arc(160,75,64,0,TAU);c.fill();c.fillStyle=DAMAGE[ancestor%6];c.fillRect(100,60,120,30);c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.arc(160,75,64,0,TAU);c.moveTo(96,75);c.lineTo(224,75);c.moveTo(160,11);c.lineTo(160,139);c.stroke()},
+ c=>{c.fillStyle='#04050b';c.fillRect(0,0,PW,PH);for(let y=0;y<PH;y+=6){c.fillStyle=DAMAGE[(y/6+ancestor)%6];c.globalAlpha=.25;c.fillRect(0,y,PW,2)}c.globalAlpha=1;c.fillStyle='#f4f8ef';c.font='bold 108px monospace';c.textAlign='center';c.fillText(String(ancestor+1).padStart(3,'0'),160,128);c.textAlign='left'},
+ c=>{const img=c.createImageData(PW,PH),d=img.data,k=hash(ancestor+7)*6;for(let y=0;y<PH;y++)for(let x=0;x<PW;x++){const v=Math.sin(x*.031+k)+Math.cos(y*.043-k)+Math.sin((x+y)*.021+k*2),band=Math.floor((v+3)*2.4),col=DAMAGE[band%6],o=(y*PW+x)*4,edge=Math.abs(((v+3)*2.4)%1-.5)>.46;d[o]=edge?240:parseInt(col.slice(1,3),16)*.55;d[o+1]=edge?250:parseInt(col.slice(3,5),16)*.55;d[o+2]=edge?235:parseInt(col.slice(5,7),16)*.55;d[o+3]=255}c.putImageData(img,0,0)},
+ c=>{c.fillStyle='#0a0d12';c.fillRect(0,0,PW,PH);c.font='bold 18px monospace';for(let j=0;j<6;j++)for(let i=0;i<10;i++){const x=i*32,y=j*32+4,n=j*10+i;c.strokeStyle='#8fa6ae';c.strokeRect(x+2,y+2,28,28);if(hash(n+ancestor*61)>.45){c.fillStyle=n%7?'#e9e3cf':DAMAGE[n%6];c.fillText(String.fromCharCode(65+Math.floor(hash(n+ancestor)*26)),x+10,y+23)}}},
+ c=>{SPECTRUM.concat(DAMAGE.slice(0,1)).forEach((col,i)=>{c.fillStyle=col;c.fillRect(i*PW/7,0,PW/7+1,130)});DAMAGE.forEach((col,i)=>{c.fillStyle=i%2?'#0b0d12':col;c.fillRect(i*PW/6,130,PW/6+1,22)});const g=c.createLinearGradient(0,0,PW,0);g.addColorStop(0,'#000');g.addColorStop(1,'#fff');c.fillStyle=g;c.fillRect(0,152,PW,48)}
+];
+function paintPicture(){
+ const c=pc;c.save();c.globalAlpha=1;PAINTERS[channel%PAINTERS.length](c);
+ c.fillStyle='#000000aa';c.fillRect(0,PH-22,PW,22);c.fillStyle='#e9fbff';c.font='10px monospace';
+ c.fillText('CH '+pad(channel+1)+' / ANCESTOR '+String(ancestor+1).padStart(3,'0')+' / '+ANCESTORS[ancestor],8,PH-8);c.restore();
+}
+function newChannel(first){
+ if(!first)channel++;ancestor=Math.floor(rand()*ANCESTORS.length);
+ // Never place the next carrier where the dial already rests.
+ do F=1.4+rand()*6.6;while(!first&&Math.abs(F-f)<1.6);PHI=rand()*TAU-Math.PI;lockHold=0;paintPicture();
+}
+function resize(){
+ w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,1.5);
+ canvas.width=traces.width=Math.round(w*dpr);canvas.height=traces.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);tc.setTransform(dpr,0,0,dpr,0,0);
+ ctx.fillStyle='#03060a';ctx.fillRect(0,0,w,h);draw();
+}
+function capture(){
+ const thumb=document.createElement('canvas');thumb.width=PW/4;thumb.height=PH/4;thumb.getContext('2d').drawImage(picture,0,0,PW/4,PH/4);
+ captures.unshift({canvas:thumb,label:'CH '+pad(channel+1)+' / '+String(ancestor+1).padStart(3,'0'),t:time});if(captures.length>5)captures.pop();
+ captured++;heldTimer=2.6;notes.push({text:'CARRIER LOCKED / ANCESTOR '+String(ancestor+1).padStart(3,'0')+' HELD',t:time});live('Carrier locked. Ancestor '+(ancestor+1)+', '+ANCESTORS[ancestor]+', held.');
+ if(captured===1)document.getElementById('help').innerHTML='EVERY CHANNEL IS AN ANCESTOR<br>NONE OF THEM STAYS TUNED';
+}
+function advance(dt){
+ time+=dt;
+ const input={f:0,p:0};for(const code of keys){const [axis,dir]=AXES[code];input[axis]+=dir}
+ for(const axis of ['f','p'])hold[axis]=input[axis]?hold[axis]+dt:0;
+ if(input.f||input.p)lastInput=time;
+ // Held keys accelerate; taps make fine adjustments.
+ fv+=input.f*dt*(2.4+hold.f*5);pv+=input.p*dt*(3.2+hold.p*7);
+ if(!input.f&&!input.p&&time-lastInput>10){fv+=Math.sin(time*.37)*dt*.35;pv+=Math.cos(time*.29)*dt*.5}
+ fv*=Math.exp(-dt*6);pv*=Math.exp(-dt*6);
+ f=clamp(f+fv*dt,FMIN,FMAX);if(f===FMIN||f===FMAX)fv=0;phi=wrap(phi+pv*dt);
+ F=clamp(F+Math.sin(time*.07+channel)*dt*.03,FMIN+.4,FMAX-.4);PHI=wrap(PHI+dt*.025);
+ const df=f-F,dp=wrap(phi-PHI);
+ q=1/(1+Math.pow(df/.25,2)+Math.pow(dp/.5,2));
+ if(pointer.held)q*=.55;
+ roll=(roll+df*dt*h*.35)%h;if(roll<0)roll+=h;if(q>.6)roll+=((roll>h/2?h:0)-roll)*Math.min(1,dt*3*q);
+ if(heldTimer>0){heldTimer-=dt;if(heldTimer<=0){newChannel(false);notes.push({text:'SIGNAL LOST / SEEKING CHANNEL '+pad(channel+1),t:time})}}
+ else{lockHold=q>.85?lockHold+dt:Math.max(0,lockHold-dt*2);if(lockHold>1.3)capture()}
+ while(notes.length&&time-notes[0].t>4.5)notes.shift();
+}
+function drawTraces(){
+ const lines=Math.max(36,Math.round(h/8)),gap=h/lines,amp=gap*2.4,step=w>1200?8:6,R2=Math.pow(Math.max(80,Math.min(w,h)*.14),2),noiseFrame=Math.floor(time*30)*131,noise=(1-q)*gap*.45,df=f-F,dp=wrap(phi-PHI);
+ tc.globalCompositeOperation='source-over';tc.globalAlpha=1;tc.clearRect(0,0,w,h);tc.beginPath();
+ for(let j=0;j<lines;j++){
+  const y0=(j+.5)*gap,fj=j*.19;
+  for(let x=0;x<=w+step;x+=step){
+   const u=x/w,base=TAU*u+time*1.3;
+   // Carrier minus target: the beat flattens as the two agree.
+   let dy=(Math.sin(base*f+phi+fj*f)-Math.sin(base*F+PHI+fj*F))*.5*amp*(1-q*.9);
+   dy+=(hash(j*977+x/step+noiseFrame)-.5)*noise;
+   if(pointer.inside){const ex=x-pointer.x,ey=y0-pointer.y,m=R2/(ex*ex+ey*ey+R2);dy+=(ey>=0?1:-1)*m*gap*3.2;if(pointer.held)dy+=Math.sin(time*22+Math.sqrt(ex*ex+ey*ey)*.06)*m*gap*2.4}
+   x?tc.lineTo(x,y0+dy):tc.moveTo(x,y0+dy);
+  }
+ }
+ tc.strokeStyle='#fff';tc.lineWidth=Math.max(1,gap*.2);tc.stroke();
+ tc.globalCompositeOperation='source-atop';tc.fillStyle='#4fc9a2';tc.fillRect(0,0,w,h);
+ // The ancestor rides on the traces: rolling with vertical error, sliding with phase error.
+ tc.globalAlpha=.5+q*.5;tc.imageSmoothingEnabled=true;
+ const hx=((dp/TAU*w)%w+w)%w,sh=h/STRIPS,tear=(1-q)*w*.05;
+ for(let k=0;k<STRIPS;k++){
+  let y=k*sh+roll;if(y>=h)y-=h;
+  let x=hx+Math.sin(k*.9+time*7)*tear*Math.min(1,Math.abs(df)*2+.2);x=((x%w)+w)%w;
+  for(const ox of [x-w,x])for(const oy of y+sh>h?[y,y-h]:[y])tc.drawImage(picture,0,k/STRIPS*PH,PW,PH/STRIPS,ox,oy,w,sh+.5);
+ }
+ tc.globalAlpha=1;tc.globalCompositeOperation='source-over';
+}
+function draw(){
+ drawTraces();
+ // Phosphor persistence: the previous frame is never fully erased.
+ ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.fillStyle=paused?'#03060a':'rgba(3,6,10,.3)';ctx.fillRect(0,0,w,h);
+ ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.5+q*.25;ctx.drawImage(traces,0,0,w,h);ctx.globalAlpha=.12;ctx.drawImage(traces,1.5,0,w,h);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+ const x0=22,y0=h-122,len=Math.min(200,w*.4);
+ ctx.globalAlpha=.85;ctx.strokeStyle=ctx.fillStyle='#bff7de';ctx.lineWidth=1;ctx.font='9px monospace';
+ ctx.fillText('V-HOLD '+f.toFixed(3),x0,y0-8);ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+len,y0);for(let i=0;i<=20;i++){const xx=x0+i/20*len;ctx.moveTo(xx,y0);ctx.lineTo(xx,y0-(i%5?3:6))}ctx.stroke();
+ const nx=x0+(f-FMIN)/(FMAX-FMIN)*len;ctx.fillRect(nx-1,y0-10,2,14);
+ const dx=x0+len+34,dy=y0-12;ctx.beginPath();ctx.arc(dx,dy,13,0,TAU);ctx.moveTo(dx,dy);ctx.lineTo(dx+Math.cos(phi)*13,dy+Math.sin(phi)*13);ctx.stroke();ctx.fillText('H-PHASE',dx+20,dy-3);ctx.fillText((phi>=0?'+':'')+phi.toFixed(2),dx+20,dy+9);
+ ctx.globalAlpha=.4;ctx.fillRect(x0,y0+12,len,3);ctx.globalAlpha=.95;ctx.fillRect(x0,y0+12,len*q,3);
+ if(heldTimer<=0&&lockHold>0){ctx.fillStyle='#faffdb';ctx.fillRect(x0,y0+17,len*Math.min(1,lockHold/1.3),2)}
+ ctx.fillStyle='#bff7de';ctx.globalAlpha=.7;ctx.fillText(heldTimer>0?'HELD':q>.85?'HOLDING…':q>.5?'NEAR':'DRIFTING',x0+len+8,y0+17);
+ captures.forEach((cap,k)=>{const tw=PW/4,th=PH/4,x=w-22-tw,y=h-110-(k+1)*(th+20);if(y<60)return;ctx.globalAlpha=Math.max(.35,1-k*.15);ctx.drawImage(cap.canvas,x,y,tw,th);ctx.strokeStyle='#bff7de';ctx.strokeRect(x-.5,y-.5,tw+1,th+1);ctx.fillStyle='#bff7de';ctx.fillText(cap.label,x,y+th+11)});
+ if(pointer.inside){ctx.globalAlpha=.6;ctx.strokeStyle=ctx.fillStyle='#faffdb';const r=Math.max(80,Math.min(w,h)*.14);ctx.beginPath();ctx.arc(pointer.x,pointer.y,r*.25,0,TAU);ctx.stroke();ctx.fillText(pointer.held?'DEGAUSSING':'FIELD '+(r*r/((r*r)+1)*.43+Math.sin(time)*.01).toFixed(3)+' mT',pointer.x+r*.25+8,pointer.y-6)}
+ ctx.font='10px monospace';ctx.textAlign='center';ctx.fillStyle='#faffdb';
+ notes.forEach((note,k)=>{const age=time-note.t;ctx.globalAlpha=clamp(Math.min(age*2,(4.5-age)*.8))*.95;ctx.fillText(note.text,w/2,h*.14+k*16)});
+ ctx.textAlign='left';ctx.globalAlpha=1;
+ if(time-readout>.15||paused){readout=time;document.getElementById('meter').textContent='LOCK '+(q*100).toFixed(1)+'%';document.getElementById('clock').textContent='CHANNEL '+pad(channel+1)+' / HELD '+String(captured).padStart(3,'0')}
+}
+function queue(){if(!frame&&!paused&&!document.hidden)frame=requestAnimationFrame(tick)}
+function tick(now){frame=0;advance(Math.min(Math.max((now-last)||16,0),40)/1000);last=now;draw();queue()}
+function setPaused(value){paused=value;const b=document.getElementById('pause');b.textContent=value?'Resume':'Pause';b.setAttribute('aria-pressed',String(value));keys.clear();if(value){cancelAnimationFrame(frame);frame=0;draw()}else{last=performance.now();queue()}}
+function reseed(){crypto.getRandomValues(seedBuffer);seed=seedBuffer[0];state=seed;channel=0;captured=0;captures.length=notes.length=0;heldTimer=0;time=0;lastInput=-99;f=1+rand()*7;phi=rand()*TAU-Math.PI;fv=pv=0;newChannel(true);readout=-1;live('New specimen '+seed.toString(16));draw()}
+function move(e){if(!e.isPrimary||(pointerId!==null&&e.pointerId!==pointerId))return;pointer.x=e.clientX;pointer.y=e.clientY;pointer.inside=true;if(paused)draw()}
+canvas.addEventListener('pointermove',move,{passive:true});
+canvas.addEventListener('pointerdown',e=>{if(!e.isPrimary||e.button!==0||pointerId!==null)return;pointerId=e.pointerId;pointer.held=true;canvas.setPointerCapture(e.pointerId);move(e)});
+function release(e){if(pointerId!==e.pointerId)return;pointer.held=false;pointerId=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(e.pointerType!=='mouse')pointer.inside=false}
+canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('pointerleave',()=>{if(pointerId===null)pointer.inside=false});
+window.addEventListener('blur',()=>{pointer.held=false;pointerId=null;keys.clear()});
+document.getElementById('pause').onclick=()=>setPaused(!paused);
+document.getElementById('reset').onclick=reseed;
+document.getElementById('export').onclick=()=>canvas.toBlob(blob=>{if(!blob)return;const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='s002-ch'+pad(channel+1)+'-'+seed.toString(16)+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(u),30000)},'image/png');
+window.addEventListener('keydown',e=>{
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ const onButton=e.target instanceof Element&&e.target.closest('button');
+ if(AXES[e.code]){e.preventDefault();if(paused)return;keys.add(e.code);lastInput=time}
+ else if(e.code==='Escape')setPaused(!paused);
+ else if(e.code==='KeyR'&&!e.repeat&&!onButton)reseed();
+});
+window.addEventListener('keyup',e=>keys.delete(e.code));
+reduced.addEventListener('change',e=>setPaused(e.matches));document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;keys.clear()}else{last=performance.now();queue()}});
+f=1+rand()*7;phi=rand()*TAU-Math.PI;newChannel(true);
+window.addEventListener('resize',resize);resize();setPaused(paused);window.focus();
+})();
+</script>
+</body></html>
