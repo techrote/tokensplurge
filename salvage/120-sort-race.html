@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S120 — SORT RACE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Four ways of putting the same pile in order. The data decides who wins; bet before it starts.
+const NAMES=['BUBBLE','INSERTION','SELECTION','QUICK'],KINDS=['RANDOM','NEARLY SORTED','REVERSED','FEW DISTINCT'],NB=56;
+function* bubble(a,st){for(let i=0;i<a.length;i++)for(let j=0;j<a.length-i-1;j++){st.act=[j,j+1];st.ops++;yield;if(a[j]>a[j+1]){[a[j],a[j+1]]=[a[j+1],a[j]];st.ops++;yield}}}
+function* insertion(a,st){for(let i=1;i<a.length;i++){let j=i;while(j>0){st.act=[j-1,j];st.ops++;yield;if(a[j-1]>a[j]){[a[j-1],a[j]]=[a[j],a[j-1]];st.ops++;yield;j--}else break}}}
+function* selection(a,st){for(let i=0;i<a.length;i++){let m=i;for(let j=i+1;j<a.length;j++){st.act=[m,j];st.ops++;yield;if(a[j]<a[m])m=j}if(m!==i){[a[i],a[m]]=[a[m],a[i]];st.act=[i,m];st.ops++;yield}}}
+function* quick(a,st){const stack=[[0,a.length-1]];while(stack.length){const [lo,hi]=stack.pop();if(lo>=hi)continue;const p=a[hi];let i=lo;for(let j=lo;j<hi;j++){st.act=[j,hi];st.ops++;yield;if(a[j]<p){[a[i],a[j]]=[a[j],a[i]];st.ops++;yield;i++}}[a[i],a[hi]]=[a[hi],a[i]];st.ops++;st.act=[i,hi];yield;stack.push([lo,i-1],[i+1,hi])}}
+const ALG=[bubble,insertion,selection,quick];
+let data=[],lanes=[],bet=0,state='ready',kind=0,score=0,rounds=0,right=0,winner=-1,streak=0,best=0,speed=260,acc=0,drag=null;
+function makeData(K){const a=Array.from({length:NB},(_,i)=>i+1);if(kind===0)for(let i=a.length-1;i>0;i--){const j=Math.floor(K.rand()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+ else if(kind===1){for(let k=0;k<5;k++){const i=Math.floor(K.rand()*NB),j=Math.floor(K.rand()*NB);[a[i],a[j]]=[a[j],a[i]]}}else if(kind===2)a.reverse();else{for(let i=0;i<NB;i++)a[i]=1+Math.floor(K.rand()*4)*14;for(let i=a.length-1;i>0;i--){const j=Math.floor(K.rand()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}return a}
+function setup(K){kind=Math.floor(K.rand()*4);data=makeData(K);lanes=[];state='ready';winner=-1;acc=0;bet=bet%4}
+function startRace(){lanes=ALG.map(f=>{const a=data.slice(),st={ops:0,act:[-1,-1],done:false},g=f(a,st);return{a,st,g}});state='run';winner=-1}
+Salvage({id:'S120',title:'SORT RACE',parent:'036 THE LAST INDEPENDENT AXIS',
+ help:'<kbd>←</kbd><kbd>→</kbd> BET ON A WINNER &nbsp;<kbd>SPACE</kbd> START THE RACE<br>DIFFERENT DATA FAVOURS DIFFERENT METHODS / DRAG ACROSS THE BARS BEFORE THE START TO SCRAMBLE THEM, CLICK A LANE TO BET',
+ aria:'A sorting-algorithm race. Four panels each sort the same set of bars using a different method: bubble, insertion, selection and quick sort. Before the start you bet on which will finish first by choosing with the left and right arrows, then press Space. The starting data changes between races, which changes who wins. Dragging the pointer across the bars before the start scrambles them, and clicking a panel places your bet on it. The number of comparisons and swaps each method needs is shown.',
+ reset(K){score=rounds=right=streak=best=0;bet=0;setup(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(state==='ready')startRace();else if(state==='done'){setup(K)}}return true}
+  if(fresh&&state==='ready'&&(e.code==='ArrowLeft'||e.code==='KeyA')){bet=(bet+3)%4;return true}if(fresh&&state==='ready'&&(e.code==='ArrowRight'||e.code==='KeyD')){bet=(bet+1)%4;return true}
+  if(e.code==='ArrowUp'||e.code==='KeyW'){if(fresh)speed=Math.min(1200,speed*1.5);return true}if(e.code==='ArrowDown'||e.code==='KeyS'){if(fresh)speed=Math.max(60,speed/1.5);return true}
+ },
+ down(K,x,y){const g=grid(K);for(let i=0;i<4;i++){const l=g[i];if(x>=l.x&&x<=l.x+l.w&&y>=l.y&&y<=l.y+l.h){if(state==='ready')bet=i;if(state==='done')setup(K);drag=i;return false}}return false},up(){drag=null},
+ step(K,dt){
+  const p=K.pointer;if(state==='ready'&&p.held&&p.inside&&drag!==null){const g=grid(K)[drag];const i=Math.floor((p.x-g.x)/g.w*NB);if(i>=0&&i<NB){data[i]=1+Math.floor(K.rand()*NB);kind=-1}}
+  if(state==='run'){acc+=dt*speed;let n=Math.floor(acc);acc-=n;n=Math.min(n,120);while(n-->0){let alive=false;lanes.forEach((l,i)=>{if(l.st.done)return;const r=l.g.next();if(r.done){l.st.done=true;l.st.act=[-1,-1];if(winner<0){winner=i;rounds++;if(winner===bet){right++;streak++;best=Math.max(best,streak);score+=100+streak*10;K.note('YOU CALLED IT / '+NAMES[winner]+' IN '+l.st.ops+' OPS')}else{streak=0;K.note(NAMES[winner]+' WON / YOU BET '+NAMES[bet])}speed=Math.max(speed,1500)}}else alive=true})}
+   if(lanes.every(l=>l.st.done)||winner>=0&&lanes.filter(l=>l.st.done).length>=1&&false){}
+   if(lanes.every(l=>l.st.done)){state='done';speed=260}}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=grid(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(let i=0;i<4;i++){const l=g[i],arr=state==='ready'?data:lanes[i].a,st=state==='ready'?{act:[-1,-1],ops:0,done:false}:lanes[i].st,on=i===bet;c.fillStyle='#08111c';c.fillRect(l.x,l.y,l.w,l.h);c.strokeStyle=state==='done'&&i===winner?'#f4d84e':on?'#faffdb':'#17283a';c.lineWidth=on||i===winner&&state==='done'?2.4:1;c.strokeRect(l.x+.5,l.y+.5,l.w-1,l.h-1);c.lineWidth=1;
+   const bw=l.w/NB,mx=Math.max(...arr);for(let k=0;k<NB;k++){const bh=arr[k]/mx*(l.h-26),act=st.act[0]===k||st.act[1]===k;c.fillStyle=act?'#faffdb':K.DAMAGE[Math.floor(arr[k]/mx*5.99)];c.fillRect(l.x+k*bw+.5,l.y+l.h-bh,bw-1,bh)}
+   c.font='9px monospace';c.fillStyle=on?'#faffdb':'#9fc4d6';c.fillText((on?'▶ ':'')+NAMES[i]+(state!=='ready'?' / '+st.ops+' OPS'+(st.done?(i===winner?' / FIRST':' / DONE'):''):''),l.x+6,l.y+12)}
+  c.font='10px monospace';c.textAlign='center';c.fillStyle='#faffdb';c.fillText('DATA: '+(kind<0?'YOUR SCRAMBLE':KINDS[kind])+' / BET: '+NAMES[bet]+' / '+(state==='ready'?'SPACE TO START':state==='run'?'RACING AT '+speed.toFixed(0)+' OPS/S (↑↓)':'SPACE FOR ANOTHER RACE'),w/2,h*.1);c.textAlign='left';
+  if(p.inside&&state==='ready'){c.fillStyle='#faffdb';c.fillText(p.held?'SCRAMBLING':'CLICK TO BET',p.x+12,p.y-8)}
+ },
+ readout:K=>['CALLED '+K.pad(right)+'/'+K.pad(rounds),'SCORE '+K.pad(score,5)+' / STREAK '+K.pad(streak)+' / BEST '+K.pad(best)]
+});
+function grid(K){const gx=K.w*.06,gy=K.h*.16,gw=K.w*.88,gh=K.h*.72,pw=(gw-12)/2,ph=(gh-12)/2;return[{x:gx,y:gy,w:pw,h:ph},{x:gx+pw+12,y:gy,w:pw,h:ph},{x:gx,y:gy+ph+12,w:pw,h:ph},{x:gx+pw+12,y:gy+ph+12,w:pw,h:ph}]}
+})();
+</script></body></html>

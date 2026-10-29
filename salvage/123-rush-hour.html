@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S123 — RUSH HOUR</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A jam of blocks in a small lot. Slide them along their own length until the red one can leave through the gap on the right. Every lot was made by shuffling a solved one.
+const N=6;
+let cars=[],sel=0,moves=0,wins=0,level=0,solved=0,cell=60,ox=0,oy=0,drag=null,best=0,undo=[];
+const occ=()=>{const o=new Int8Array(N*N).fill(-1);cars.forEach((c,i)=>{for(let k=0;k<c.len;k++)o[(c.h?c.r:c.r+k)*N+(c.h?c.c+k:c.c)]=i});return o};
+function canMove(o,i,d){const c=cars[i],r=c.h?c.r:c.r+(d>0?c.len:-1),q=c.h?c.c+(d>0?c.len:-1):c.c;if(c.h){const cc=d>0?c.c+c.len:c.c-1;return cc>=0&&cc<N&&o[c.r*N+cc]<0}const rr=d>0?c.r+c.len:c.r-1;return rr>=0&&rr<N&&o[rr*N+c.c]<0}
+function gen(K){
+ for(let tries=0;tries<200;tries++){cars=[{r:2,c:0,len:2,h:true,red:true}];const o=new Int8Array(N*N).fill(-1);o[2*N]=0;o[2*N+1]=0;const nc=Math.min(12,7+level);
+  for(let a=0;a<80&&cars.length<nc;a++){const h=K.rand()<.5,len=K.rand()<.7?2:3,r=Math.floor(K.rand()*(h?N:N-len+1)),c=Math.floor(K.rand()*(h?N-len+1:N));let ok=true;for(let k=0;k<len;k++)if(o[(h?r:r+k)*N+(h?c+k:c)]>=0)ok=false;if(h&&r===2)ok=false;if(!ok)continue;cars.push({r,c,len,h});for(let k=0;k<len;k++)o[(h?r:r+k)*N+(h?c+k:c)]=cars.length-1}
+  for(let s=0;s<260+level*40;s++){const oo=occ(),i=Math.floor(K.rand()*cars.length),d=K.rand()<.5?-1:1;if(canMove(oo,i,d)){if(cars[i].h)cars[i].c+=d;else cars[i].r+=d}}
+  if(cars[0].c<=2&&cars.length>=nc-1)break}
+ sel=0;moves=0;solved=0;undo=[];cell=Math.min(K.w*.7/N,K.h*.7/N,86);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8}
+function mv(K,i,d){if(solved)return false;const o=occ();if(!canMove(o,i,d))return false;undo.push(cars.map(c=>({...c})));if(cars[i].h)cars[i].c+=d;else cars[i].r+=d;moves++;if(cars[0].c+cars[0].len>=N){wins++;solved=.001;best=best?Math.min(best,moves):moves;K.note('THE RED BLOCK IS OUT / '+moves+' MOVES')}return true}
+const at=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);if(r<0||c<0||r>=N||c>=N)return -1;return occ()[r*N+c]};
+Salvage({id:'S123',title:'RUSH HOUR',parent:'035 VERTICAL DEATH',
+ help:'<kbd>SPACE</kbd> / <kbd>TAB</kbd> NEXT BLOCK &nbsp;<kbd>←</kbd><kbd>→</kbd> SLIDE A HORIZONTAL ONE &nbsp;<kbd>↑</kbd><kbd>↓</kbd> A VERTICAL ONE &nbsp;<kbd>Z</kbd> UNDO<br>FREE THE RED BLOCK / DRAG ANY BLOCK ALONG ITS LENGTH WITH THE POINTER',
+ aria:'A sliding-block traffic-jam puzzle on a six by six lot. Blocks slide only along their own length. Space cycles which block is selected, left and right slide horizontal blocks and up and down slide vertical ones. Z undoes a move. The goal is to slide the red block out through the gap on the right of its row. Each lot is made by shuffling a solved one, so it is always solvable. Dragging a block with the pointer slides it along its length, one cell at a time.',
+ reset(K){level=0;wins=0;best=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.7/N,K.h*.7/N,86);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Tab'){if(fresh)sel=(sel+1)%cars.length;return true}
+  if(e.code==='KeyZ'||e.code==='Backspace'){if(fresh&&undo.length&&!solved){cars=undo.pop();moves=Math.max(0,moves-1)}return true}
+  const d={ArrowLeft:[1,-1],KeyA:[1,-1],ArrowRight:[1,1],KeyD:[1,1],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[e.code];
+  if(d){if(fresh&&!!cars[sel].h===!!d[0])mv(K,sel,d[1]);else if(fresh&&!!cars[sel].h!==!!d[0]){/* try the nearest block of the arrow's axis */}return true}
+ },
+ down(K,x,y){const i=at(K,x,y);if(i>=0){sel=i;drag={x,y,acc:0}}return false},up(){drag=null},
+ step(K,dt){
+  const p=K.pointer;if(p.held&&drag&&p.inside){const c=cars[sel],dx=p.x-drag.x,dy=p.y-drag.y,d=c.h?dx:dy;if(Math.abs(d)>cell*.55){if(mv(K,sel,d>0?1:-1)){drag.x=p.x;drag.y=p.y}else{drag.x=p.x;drag.y=p.y}}}
+  if(solved){solved+=dt;if(solved>2.4){level++;gen(K)}}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.fillStyle='#08111c';c.fillRect(ox,oy,cell*N,cell*N);c.strokeStyle='#17283a';for(let i=0;i<=N;i++){c.beginPath();c.moveTo(ox+i*cell+.5,oy);c.lineTo(ox+i*cell+.5,oy+N*cell);c.moveTo(ox,oy+i*cell+.5);c.lineTo(ox+N*cell,oy+i*cell+.5);c.stroke()}
+  c.strokeStyle='#2a3d5e';c.lineWidth=4;c.strokeRect(ox-2,oy-2,cell*N+4,cell*N+4);c.fillStyle='#05070e';c.fillRect(ox+cell*N-3,oy+2*cell+4,8,cell-8);c.lineWidth=1;c.fillStyle='#f4d84e';c.font='9px monospace';c.fillText('EXIT →',ox+cell*N+10,oy+2.5*cell);
+  const hv=p.inside?at(K,p.x,p.y):-1;
+  cars.forEach((cr,i)=>{const x=ox+cr.c*cell,y=oy+cr.r*cell,w2=(cr.h?cr.len:1)*cell,h2=(cr.h?1:cr.len)*cell;c.fillStyle=cr.red?'#ed4e8c':K.DAMAGE[(i*2+1)%6];c.globalAlpha=i===sel||i===hv?1:.82;c.fillRect(x+3,y+3,w2-6,h2-6);c.globalAlpha=1;c.strokeStyle=i===sel?'#faffdb':'#05070e';c.lineWidth=i===sel?3:1;c.strokeRect(x+3.5,y+3.5,w2-7,h2-7);c.lineWidth=1;c.fillStyle='#05070e55';c.fillRect(x+w2/2-(cr.h?8:cell*.18),y+h2/2-(cr.h?cell*.18:8),cr.h?16:cell*.36,cr.h?cell*.36:16)});
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('MOVES '+moves+' / BLOCK '+(sel+1)+'/'+cars.length+' ('+(cars[sel].red?'RED, ':'')+(cars[sel].h?'HORIZONTAL':'VERTICAL')+')',ox,oy-12);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.strokeRect(ox-5,oy-5,cell*N+10,cell*N+10);c.globalAlpha=1}
+  if(p.inside&&hv>=0){c.fillStyle='#faffdb';c.fillText(p.held?'SLIDING':'DRAG TO SLIDE',p.x+12,p.y-8)}
+ },
+ readout:K=>['MOVES '+K.pad(moves,3),'FREED '+K.pad(wins)+' / BEST '+(best?K.pad(best,3):'—')+' / '+cars.length+' BLOCKS']
+});
+})();
+</script></body></html>

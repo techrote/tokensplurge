@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#030409"><title>S121 — ZOOM HUNT</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The boundary of the Mandelbrot set is infinitely long. These are some places worth stopping.
+const PLACES=[['SEAHORSE VALLEY',-.7453,.1127,.012],['ELEPHANT VALLEY',.275,.0,.014],['ANTENNA MINIBROT',-1.7549,0,.012],['SPIRAL ARMS',-.761574,-.0847596,.01],['TRIPLE SPIRAL',-.088,.654,.015],['SCEPTRE',-1.4811,0,.01]];
+const IT=180;
+let cx=-.5,cy=0,sc=3.2,found=new Set(),holdT=0,cur=-1,dirty=true,fine=false,lowImg=null,hiImg=null,lc=null,hc=null,idle=0,pal=[],zoomV=0,panX=0,panY=0,hunted=0;
+for(let i=0;i<256;i++){const t=i/255;pal.push([Math.round(10+Math.pow(t,.5)*245),Math.round(14+Math.pow(t,1.2)*210),Math.round(40+Math.sin(t*3.4)*90+t*120)])}
+function bufs(K){const asp=K.h/K.w;LW=130;LH=Math.max(40,Math.round(130*asp));lc=document.createElement('canvas');lc.width=LW;lc.height=LH;hc=document.createElement('canvas');hc.width=LW*2;hc.height=LH*2;lowImg=lc.getContext('2d').createImageData(LW,LH);hiImg=hc.getContext('2d').createImageData(LW*2,LH*2)}
+let LW=130,LH=84;
+function render(K,w,h,img,ctx){const d=img.data,asp=h/w;for(let y=0;y<h;y++)for(let x=0;x<w;x++){const c0=cx+(x/w-.5)*sc,c1=cy+(y/h-.5)*sc*asp;let zr=0,zi=0,k=0;while(k<IT&&zr*zr+zi*zi<256){const t=zr*zr-zi*zi+c0;zi=2*zr*zi+c1;zr=t;k++}const o=(y*w+x)*4;if(k>=IT){d[o]=3;d[o+1]=4;d[o+2]=10}else{const sm=k+1-Math.log2(Math.log2(zr*zr+zi*zi+1e-9)/2+1e-9),q=pal[Math.floor(sm*7)%256];d[o]=q[0];d[o+1]=q[1];d[o+2]=q[2]}d[o+3]=255}ctx.putImageData(img,0,0)}
+Salvage({id:'S121',title:'ZOOM HUNT',parent:'017 PRECISION LOSS',bg:'#030409',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> PAN &nbsp;HOLD <kbd>SPACE</kbd> ZOOM IN &nbsp;HOLD <kbd>X</kbd> ZOOM OUT<br>PARK ON EACH NAMED PLACE AT A HIGH ZOOM / CLICK TO CENTRE AND ZOOM IN, HOLD TO KEEP ZOOMING',
+ aria:'A Mandelbrot set explorer. Arrow keys pan across the complex plane, holding Space zooms in and holding X zooms out. Six named regions of the boundary, such as the seahorse valley and the elephant valley, can be found by centring on them at a deep enough zoom and holding still for two seconds. Clicking centres the view on that point and zooms in, and holding the pointer keeps zooming toward it. Found places are listed. The picture is drawn coarsely while moving and refined when still.',
+ reset(K){bufs(K);cx=-.5;cy=0;sc=3.2;found=new Set();holdT=0;dirty=true;fine=false;idle=0;hunted=0},
+ resize(K){bufs(K);dirty=true;fine=false},
+ key(K,e,fresh){if(e.code==='Space'||e.code==='KeyX'||/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){cx+=(x/K.w-.5)*sc;cy+=(y/K.h-.5)*sc*(K.h/K.w);dirty=true;fine=false;return false},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0),zi=(K.keys.has('Space')?1:0)-(K.keys.has('KeyX')?1:0),p=K.pointer;
+  let moved=false;if(dx||dy){cx+=dx*dt*sc*.5;cy+=dy*dt*sc*.5;moved=true}
+  const z=zi||(p.held&&p.inside?1:0);if(z){sc=K.clamp(sc*Math.exp(-z*dt*.9),2e-6,4);moved=true;if(p.held&&p.inside){const asp=K.h/K.w;cx+=((p.x/K.w)-.5)*sc*dt*1.4;cy+=((p.y/K.h)-.5)*sc*asp*dt*1.4}}
+  if(moved){dirty=true;fine=false;idle=0}else idle+=dt;
+  if(dirty){render(K,LW,LH,lowImg,lc.getContext('2d'));dirty=false}else if(!fine&&idle>.25){render(K,LW*2,LH*2,hiImg,hc.getContext('2d'));fine=true}
+  let hit=-1;PLACES.forEach(([n,a,b,s],i)=>{if(Math.hypot(cx-a,cy-b)<Math.max(s*.4,sc*.35)&&sc<s*3.5)hit=i});
+  if(hit>=0&&!moved){if(hit===cur)holdT+=dt;else{cur=hit;holdT=0}if(holdT>2&&!found.has(hit)){found.add(hit);hunted++;K.note('FOUND / '+PLACES[hit][0]+' / '+found.size+' OF '+PLACES.length)}}else{if(hit<0)cur=-1;holdT=0}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#030409';c.fillRect(0,0,w,h);c.imageSmoothingEnabled=true;c.drawImage(fine?hc:lc,0,0,w,h);
+  c.strokeStyle='#faffdb';c.lineWidth=1.4;c.beginPath();c.moveTo(w/2-14,h/2);c.lineTo(w/2-4,h/2);c.moveTo(w/2+4,h/2);c.lineTo(w/2+14,h/2);c.moveTo(w/2,h/2-14);c.lineTo(w/2,h/2-4);c.moveTo(w/2,h/2+4);c.lineTo(w/2,h/2+14);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('CENTRE '+cx.toFixed(6)+(cy>=0?' + ':' − ')+Math.abs(cy).toFixed(6)+'i / ZOOM ×'+(3.2/sc).toExponential(1),22,h*.12);
+  c.fillStyle='#05070ecc';c.fillRect(22,h*.12+10,150,PLACES.length*14+22);c.fillStyle='#9fc4d6';c.fillText('PLACES',28,h*.12+24);PLACES.forEach(([n],i)=>{c.fillStyle=found.has(i)?'#f4d84e':i===cur?'#faffdb':'#4f6b80';c.fillText((found.has(i)?'● ':'○ ')+n,28,h*.12+38+i*14)});
+  if(cur>=0&&!found.has(cur)){c.fillStyle='#ffffff22';c.fillRect(w/2-60,h-68,120,4);c.fillStyle='#f4d84e';c.fillRect(w/2-60,h-68,120*Math.min(1,holdT/2),4);c.fillStyle='#faffdb';c.textAlign='center';c.fillText('HOLD STILL AT '+PLACES[cur][0],w/2,h-76);c.textAlign='left'}
+  if(p.inside){c.fillStyle='#faffdb';c.fillText(p.held?'ZOOMING':'CLICK TO CENTRE',p.x+12,p.y-8)}
+ },
+ readout:K=>['FOUND '+found.size+'/'+PLACES.length,'ZOOM ×'+(3.2/sc).toExponential(1)+' / '+(fine?'REFINED':'COARSE')]
+});
+})();
+</script></body></html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#02040a"><title>S125 — INTERCEPTORS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Falling streaks of corrupted signal, aimed at the cities. Meet them in the air before they arrive.
+const ER=46;
+let cities=[],bats=[],enemy=[],mine=[],booms=[],cur={x:0,y:0,vx:0,vy:0},wave=1,score=0,spawnLeft=0,spawnT=0,over=0,best=0,flash=0,waveT=0,sx=0;
+function setup(K){const gy=K.h-40;cities=[];bats=[];for(let i=0;i<6;i++)cities.push({x:K.w*(.14+i*.145+(i>2?.07:0)),y:gy,alive:true});for(const f of [.06,.5,.94])bats.push({x:K.w*f,y:gy,ammo:10});enemy=[];mine=[];booms=[];spawnLeft=8;spawnT=1}
+function launch(K,x,y){if(over)return;let best=null,bd=1e9;for(const b of bats){if(b.ammo<=0)continue;const d=Math.hypot(b.x-x,b.y-y);if(d<bd){bd=d;best=b}}if(!best){K.note('OUT OF AMMUNITION');return}best.ammo--;const a=Math.atan2(y-best.y,x-best.x),dist=Math.hypot(x-best.x,y-best.y);mine.push({x:best.x,y:best.y,tx:x,ty:y,vx:Math.cos(a)*560,vy:Math.sin(a)*560,dist,trav:0})}
+Salvage({id:'S125',title:'INTERCEPTORS',parent:'027 HEREDITARY SCRATCH',bg:'#02040a',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE SIGHT &nbsp;<kbd>SPACE</kbd> FIRE FROM THE NEAREST BATTERY<br>DEFEND THE CITIES / CLICK TO FIRE AT A POINT, BURSTS CHAIN INTO OTHER INCOMING STREAKS',
+ aria:'A missile-defence game. Streaks of corrupted signal fall from the top toward six cities and three batteries at the bottom. Arrow keys move a sight and Space fires an interceptor from the nearest battery with ammunition; clicking with the pointer fires at that point. The interceptor explodes at its target, and any streak touching the burst is destroyed. Batteries have limited ammunition and are resupplied each wave. The game ends when all cities are lost.',
+ reset(K){wave=1;score=0;over=0;best=0;setup(K);cur={x:K.w/2,y:K.h*.4,vx:0,vy:0}},
+ resize(K){setup(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh){if(over){wave=1;score=0;over=0;setup(K)}else launch(K,cur.x,cur.y)}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){if(over){wave=1;score=0;over=0;setup(K);return true}launch(K,x,y);return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  cur.vx+=dx*2200*dt;cur.vy+=dy*2200*dt;const f=Math.exp(-dt*7);cur.vx*=f;cur.vy*=f;cur.x=K.clamp(cur.x+cur.vx*dt,0,K.w);cur.y=K.clamp(cur.y+cur.vy*dt,0,K.h-60);flash=Math.max(0,flash-dt*2);if(over)return;
+  const alive=cities.filter(c=>c.alive);
+  spawnT-=dt;if(spawnLeft>0&&spawnT<=0&&alive.length){spawnLeft--;spawnT=Math.max(.35,1.5-wave*.1)*(.6+K.rand()*.8);const tgt=K.rand()<.7?alive[Math.floor(K.rand()*alive.length)]:bats[Math.floor(K.rand()*3)],sx=K.rand()*K.w,sp=Math.min(160,55+wave*9);const a=Math.atan2(tgt.y-0,tgt.x-sx);enemy.push({x:sx,y:0,sx,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,tx:tgt.x,ty:tgt.y,trail:[]})}
+  for(let i=enemy.length-1;i>=0;i--){const e=enemy[i];e.x+=e.vx*dt;e.y+=e.vy*dt;e.trail.push([e.x,e.y]);if(e.trail.length>30)e.trail.shift();if(e.y>=e.ty-2){for(const c of cities)if(Math.abs(c.x-e.tx)<2&&c.alive){c.alive=false;flash=1;K.note('A CITY IS LOST')}for(const b of bats)if(Math.abs(b.x-e.tx)<2){b.ammo=0}booms.push({x:e.x,y:e.y,t:0,r:30,col:'#ed4e8c',enemy:true});enemy.splice(i,1)}}
+  for(let i=mine.length-1;i>=0;i--){const m=mine[i];m.x+=m.vx*dt;m.y+=m.vy*dt;m.trav+=560*dt;if(m.trav>=m.dist){booms.push({x:m.tx,y:m.ty,t:0,r:ER,col:'#28e3f4'});mine.splice(i,1)}}
+  for(let i=booms.length-1;i>=0;i--){const b=booms[i];b.t+=dt;const rr=b.t<.5?b.r*(b.t/.5):b.t<1.3?b.r:b.r*Math.max(0,1-(b.t-1.3)/.5);b.rr=rr;if(b.t>1.8){booms.splice(i,1);continue}
+   if(!b.enemy)for(let j=enemy.length-1;j>=0;j--){const e=enemy[j];if(Math.hypot(e.x-b.x,e.y-b.y)<rr){score+=25;booms.push({x:e.x,y:e.y,t:0,r:ER*.7,col:'#f4d84e'});enemy.splice(j,1)}}}
+  if(!spawnLeft&&!enemy.length&&!booms.some(b=>b.enemy)&&!over){waveT+=dt;if(waveT>1.6){waveT=0;wave++;const bonus=cities.filter(c=>c.alive).length*100;score+=bonus;K.note('WAVE '+wave+' / +'+bonus+' FOR THE CITIES');for(const b of bats)b.ammo=10;spawnLeft=8+wave*2;spawnT=1;if(wave%3===0&&cities.some(c=>!c.alive)){const d=cities.find(c=>!c.alive);d.alive=true}}}
+  if(!cities.some(c=>c.alive)&&!over){over=1;best=Math.max(best,score);K.note('EVERY CITY IS GONE / SPACE TO RESTART')}
+  best=Math.max(best,score);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#02040a';c.fillRect(0,0,w,h);if(flash){c.fillStyle='#ed4e8c';c.globalAlpha=flash*.12;c.fillRect(0,0,w,h);c.globalAlpha=1}
+  c.fillStyle='#0f1c10';c.fillRect(0,h-34,w,34);
+  for(const e of enemy){c.strokeStyle='#ed4e8c66';c.beginPath();c.moveTo(e.sx,0);c.lineTo(e.x,e.y);c.stroke();c.fillStyle='#faffdb';c.fillRect(e.x-2,e.y-2,4,4)}
+  for(const m of mine){c.strokeStyle='#28e3f4';c.beginPath();c.moveTo(m.x-m.vx*.05,m.y-m.vy*.05);c.lineTo(m.x,m.y);c.stroke();c.strokeStyle='#28e3f444';c.beginPath();c.moveTo(m.tx-5,m.ty-5);c.lineTo(m.tx+5,m.ty+5);c.moveTo(m.tx+5,m.ty-5);c.lineTo(m.tx-5,m.ty+5);c.stroke()}
+  for(const b of booms){const rr=b.rr||0;c.fillStyle=b.col;c.globalAlpha=.25;c.beginPath();c.arc(b.x,b.y,rr,0,TAU);c.fill();c.globalAlpha=.9;c.strokeStyle=b.col;c.beginPath();c.arc(b.x,b.y,rr,0,TAU);c.stroke();c.globalAlpha=1}
+  for(const ct of cities){if(ct.alive){c.fillStyle='#4f8dff';c.fillRect(ct.x-16,ct.y-14,32,14);c.fillStyle='#8d78ff';c.fillRect(ct.x-10,ct.y-22,8,8);c.fillRect(ct.x+2,ct.y-18,10,4)}else{c.fillStyle='#2a1f24';c.fillRect(ct.x-16,ct.y-4,32,4)}}
+  for(const b of bats){c.fillStyle='#10f4cf';c.beginPath();c.moveTo(b.x-14,b.y);c.lineTo(b.x,b.y-18);c.lineTo(b.x+14,b.y);c.fill();c.fillStyle='#faffdb';c.font='9px monospace';c.textAlign='center';c.fillText(b.ammo,b.x,b.y+14);c.textAlign='left'}
+  const gx=p.inside?p.x:cur.x,gy=p.inside?p.y:cur.y;c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.arc(gx,gy,ER*.55,0,TAU);c.moveTo(gx-12,gy);c.lineTo(gx+12,gy);c.moveTo(gx,gy-12);c.lineTo(gx,gy+12);c.stroke();c.lineWidth=1;
+  if(p.inside){c.strokeStyle='#faffdb';c.strokeRect(0,0,0,0)}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('WAVE '+wave+' / STREAKS TO COME '+spawnLeft,22,h*.1);
+  if(over){c.fillStyle='#02040acc';c.fillRect(w/2-150,h*.4,300,50);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText('EVERY CITY IS GONE / SPACE',w/2,h*.4+30);c.textAlign='left'}
+ },
+ readout:K=>['SCORE '+K.pad(score,5),'WAVE '+K.pad(wave,2)+' / CITIES '+cities.filter(c=>c.alive).length+'/6 / BEST '+K.pad(best,5)]
+});
+})();
+</script></body></html>

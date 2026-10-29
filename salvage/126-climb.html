@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S126 — CLIMB</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Bounce upward on whatever is there. The strata fall away behind you and some of them are not solid.
+const PW=64,PH=12,JUMP=-760,SPRING=-1150,GRAV=1700;
+let me={x:0,y:0,vy:0,vx:0,face:1},plats=[],cam=0,best=0,score=0,over=0,hiY=0,flash=0,fell=0,sx=0;
+function plat(K,y){const r=K.rand(),w=Math.max(46,PW-Math.min(20,score*.01));return{x:K.rand()*(K.w-w),y,w,type:r<.12+Math.min(.2,score*.0001)?'move':r<.2?'break':r<.25?'spring':'solid',dir:K.rand()<.5?-1:1,broken:false}}
+function init(K){me={x:K.w/2,y:K.h*.72,vy:JUMP,vx:0,face:1};plats=[];cam=0;let y=K.h*.85;while(y>-K.h){plats.push(plat(K,y));y-=44+K.rand()*34}plats[0].x=K.w/2-PW/2;plats[0].type='solid';plats[0].y=K.h*.85;score=0;over=0;hiY=me.y;flash=0}
+Salvage({id:'S126',title:'CLIMB',parent:'023 STRATIGRAPHIC SLIP',
+ help:'<kbd>←</kbd><kbd>→</kbd> STEER (THE SCREEN EDGES WRAP) &nbsp;<kbd>SPACE</kbd> RESTART<br>BOUNCE UPWARD AS FAR AS YOU CAN / THE POINTER STEERS: THE CLIMBER FOLLOWS ITS HORIZONTAL POSITION',
+ aria:'A bouncing-climber game. A small square bounces automatically whenever it lands on a platform; left and right arrows steer it, and leaving one side of the screen brings it back on the other. Some platforms slide, some crumble when landed on and some are springy. The screen scrolls upward as you climb and the score is height. Falling below the screen ends the run. Moving the pointer steers the climber toward the pointer\'s horizontal position.',
+ reset(K){best=0;init(K)},
+ resize(K){},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh&&over)init(K);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K){if(over)init(K);return false},
+ step(K,dt){
+  if(over)return;const p=K.pointer,d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  if(d)me.vx+=d*2600*dt;else if(p.inside)me.vx+=K.clamp((p.x-me.x)*10,-1800,1800)*dt;me.vx*=Math.exp(-dt*4.5);me.vx=K.clamp(me.vx,-420,420);if(Math.abs(me.vx)>20)me.face=Math.sign(me.vx);
+  me.x+=me.vx*dt;if(me.x<-10)me.x=K.w+10;if(me.x>K.w+10)me.x=-10;
+  const py=me.y;me.vy+=GRAV*dt;me.y+=me.vy*dt;
+  for(const q of plats){if(q.type==='move'){q.x+=q.dir*70*dt;if(q.x<0||q.x+q.w>K.w)q.dir*=-1}
+   if(!q.broken&&me.vy>0&&py+10<=q.y&&me.y+10>=q.y&&me.x+8>q.x&&me.x-8<q.x+q.w){if(q.type==='break'){q.broken=true;continue}me.vy=q.type==='spring'?SPRING:JUMP;if(q.type==='spring')K.live('Spring')}}
+  for(const q of plats)if(q.broken)q.y+=500*dt;
+  const top=K.h*.58;if(me.y<top){const dy=top-me.y;me.y=top;for(const q of plats)q.y+=dy;score+=dy;if(score>best)best=score}
+  plats=plats.filter(q=>q.y<K.h+60);let hi=Math.min(...plats.map(q=>q.y));while(hi>-60){hi-=44+K.rand()*34+Math.min(40,score*.004);plats.push(plat(K,hi))}
+  if(me.y>K.h+30){over=1;best=Math.max(best,score);K.note('FELL / '+Math.floor(score/10)+'m / SPACE')}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#0a0f1f');g.addColorStop(1,'#16102a');c.fillStyle=g;c.fillRect(0,0,w,h);
+  for(let i=0;i<30;i++){c.globalAlpha=.15+K.hash(i)*.3;c.fillStyle='#b7f6ff';c.fillRect(K.hash(i*3.1)*w,((K.hash(i*7.3)*h*1.4+score*.1*(1+K.hash(i)))%h),1.3,1.3)}c.globalAlpha=1;
+  for(const q of plats){const col=q.type==='move'?'#8d78ff':q.type==='break'?'#fe6741':q.type==='spring'?'#f4d84e':'#10f4cf';c.globalAlpha=q.broken?.4:1;c.fillStyle=col;c.fillRect(q.x,q.y,q.w,PH);c.fillStyle='#ffffff44';c.fillRect(q.x,q.y,q.w,2);if(q.type==='break'){c.strokeStyle='#05070e';c.beginPath();c.moveTo(q.x+q.w*.3,q.y);c.lineTo(q.x+q.w*.4,q.y+PH);c.moveTo(q.x+q.w*.7,q.y);c.lineTo(q.x+q.w*.6,q.y+PH);c.stroke()}if(q.type==='spring'){c.fillStyle='#faffdb';c.fillRect(q.x+q.w/2-6,q.y-5,12,5)}c.globalAlpha=1}
+  c.save();c.translate(me.x,me.y);const sq=1-Math.min(.3,Math.abs(me.vy)/2500),st=1+Math.min(.3,Math.abs(me.vy)/2500);c.scale(sq,st);const gr=c.createLinearGradient(-10,0,10,0);K.SPECTRUM.forEach((s,i)=>gr.addColorStop(i/5,s));c.fillStyle=gr;c.fillRect(-10,-10,20,20);c.strokeStyle='#faffdb';c.strokeRect(-9.5,-9.5,19,19);c.fillStyle='#05070e';c.fillRect(me.face>0?2:-6,-4,4,4);c.restore();
+  c.font='18px monospace';c.textAlign='center';c.fillStyle='#faffdb';c.fillText(Math.floor(score/10)+' m',w/2,h*.1);c.textAlign='left';c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('BEST '+Math.floor(best/10)+' m',22,h*.1);
+  if(over){c.fillStyle='#05070ecc';c.fillRect(w/2-130,h*.42,260,50);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText('FELL / SPACE TO CLIMB AGAIN',w/2,h*.42+30);c.textAlign='left'}
+  if(p.inside){c.fillStyle='#faffdb';c.fillText('STEERING TO HERE',p.x+12,p.y-8);c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.moveTo(p.x,0);c.lineTo(p.x,h);c.stroke();c.globalAlpha=1}
+ },
+ readout:K=>['HEIGHT '+K.pad(score/10,4)+'m','BEST '+K.pad(best/10,4)+'m']
+});
+})();
+</script></body></html>

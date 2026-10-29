@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S127 — MAKE 24</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Four numbers, four operations, every number used once. Combine two at a time until one is left and it is 24. Each set is checked to be possible.
+const OPS=['+','−','×','÷'];
+let nums=[],hist=[],pick=-1,op=0,cur=0,target=24,wins=0,streak=0,best=0,solved=0,level=0,msg='',solution='',moves=0,hintOn=false;
+const eps=1e-6;
+function apply(a,b,o){return o===0?a+b:o===1?a-b:o===2?a*b:Math.abs(b)<eps?NaN:a/b}
+function solve(arr,exprs){if(arr.length===1)return Math.abs(arr[0]-target)<eps?exprs[0]:null;for(let i=0;i<arr.length;i++)for(let j=0;j<arr.length;j++){if(i===j)continue;for(let o=0;o<4;o++){const v=apply(arr[i],arr[j],o);if(!isFinite(v))continue;const rest=arr.filter((_,k)=>k!==i&&k!==j),re=exprs.filter((_,k)=>k!==i&&k!==j),r=solve(rest.concat(v),re.concat('('+exprs[i]+OPS[o]+exprs[j]+')'));if(r)return r}}return null}
+function gen(K){level++;target=24;let s=null,a;for(let t=0;t<300;t++){a=Array.from({length:4},()=>1+Math.floor(K.rand()*9));s=solve(a,a.map(String));if(s&&(level<4||s.includes('÷')))break}nums=a.map(v=>({v,label:String(v)}));solution=s||'';hist=[];pick=-1;op=0;cur=0;solved=0;moves=0;msg='';hintOn=false}
+function show(v){if(Math.abs(v-Math.round(v))<eps)return String(Math.round(v));for(let d=2;d<=12;d++){const n=v*d;if(Math.abs(n-Math.round(n))<1e-5)return Math.round(n)+'/'+d}return v.toFixed(3)}
+function combine(K,i,j){if(solved)return;const v=apply(nums[i].v,nums[j].v,op);if(!isFinite(v)){msg='CANNOT DIVIDE BY ZERO';K.note(msg);pick=-1;return}hist.push({nums:nums.map(n=>({...n}))});const lab='('+nums[i].label+OPS[op]+nums[j].label+')';const rest=nums.filter((_,k)=>k!==i&&k!==j);rest.push({v,label:lab});nums=rest;pick=-1;moves++;cur=Math.min(cur,nums.length-1);
+ if(nums.length===1){if(Math.abs(nums[0].v-target)<eps){wins++;streak++;best=Math.max(best,streak);solved=.001;K.note('TWENTY-FOUR / '+K.pad(wins)+' / '+lab)}else{msg='ENDED ON '+show(nums[0].v)+' / Z TO STEP BACK';streak=0;K.note(msg)}}}
+function act(K,i){if(solved||nums.length<2&&!hist.length)return;if(pick<0)pick=i;else if(pick===i)pick=-1;else combine(K,pick,i)}
+const geo=K=>{const n=nums.length,cw=Math.min(120,K.w/(n+1)),x0=(K.w-cw*n)/2,y=K.h*.36;return{n,cw,x0,y,oy:K.h*.62}};
+Salvage({id:'S127',title:'MAKE 24',parent:'017 PRECISION LOSS',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A NUMBER &nbsp;<kbd>SPACE</kbd> PICK IT, THEN PICK A SECOND &nbsp;<kbd>↑</kbd><kbd>↓</kbd> CHANGE THE OPERATION &nbsp;<kbd>Z</kbd> UNDO &nbsp;<kbd>H</kbd> HINT<br>USE EACH NUMBER ONCE TO MAKE 24 / CLICK A NUMBER, AN OPERATION, THEN ANOTHER NUMBER',
+ aria:'The Make 24 arithmetic puzzle. Four numbers are shown. Pick one with Space, choose an operation with up and down, then pick a second number to combine them; the result replaces the pair. Keep combining until one number is left, which should be 24. Left and right move between numbers, Z undoes and H shows a hint. Every set is checked to have a solution. The pointer can click a number, then an operation button, then a second number.',
+ reset(K){level=0;wins=streak=best=0;gen(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(solved)return true;act(K,cur)}return true}
+  if(e.code==='KeyZ'||e.code==='Backspace'){if(fresh&&hist.length&&!solved){nums=hist.pop().nums;pick=-1;moves=Math.max(0,moves-1);msg='';cur=Math.min(cur,nums.length-1)}return true}
+  if(e.code==='KeyH'){if(fresh){hintOn=true;msg='ONE WAY: '+solution.replace(/^\(|\)$/g,'')}return true}if(e.code==='KeyN'&&fresh){streak=0;gen(K);return true}
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){cur=Math.max(0,cur-1);return true}if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){cur=Math.min(nums.length-1,cur+1);return true}
+  if(fresh&&(e.code==='ArrowUp'||e.code==='KeyW')){op=(op+3)%4;return true}if(fresh&&(e.code==='ArrowDown'||e.code==='KeyS')){op=(op+1)%4;return true}
+ },
+ down(K,x,y){const g=geo(K);for(let i=0;i<g.n;i++){const bx=g.x0+i*g.cw;if(x>=bx+4&&x<=bx+g.cw-4&&y>=g.y-g.cw*.5&&y<=g.y+g.cw*.5){cur=i;act(K,i);return true}}
+  for(let o=0;o<4;o++){const bx=K.w/2-130+o*70;if(x>=bx&&x<=bx+60&&y>=g.oy&&y<=g.oy+50){op=o;return true}}return false},
+ step(K,dt){if(solved){solved+=dt;if(solved>2){gen(K)}}},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.font='10px monospace';c.textAlign='center';c.fillStyle='#9fc4d6';c.fillText('MAKE '+target+' / '+(nums.length>1?nums.length+' NUMBERS LEFT':'ONE NUMBER LEFT'),w/2,h*.14);
+  for(let i=0;i<g.n;i++){const bx=g.x0+i*g.cw,on=i===pick,cu=i===cur,v=nums[i];c.fillStyle=on?'#f4d84e':'#0c1420';c.fillRect(bx+4,g.y-g.cw*.5,g.cw-8,g.cw);c.strokeStyle=cu?'#faffdb':on?'#f4d84e':'#2a3d5e';c.lineWidth=cu||on?3:1.4;c.strokeRect(bx+4.5,g.y-g.cw*.5+.5,g.cw-9,g.cw-1);c.lineWidth=1;c.fillStyle=on?'#05070e':K.DAMAGE[i%6];c.font='bold '+Math.round(g.cw*.38)+'px monospace';c.fillText(show(v.v),bx+g.cw/2,g.y+g.cw*.1);c.font='8px monospace';c.fillStyle=on?'#05070e':'#7f97a5';c.fillText(v.label.length>16?v.label.slice(0,15)+'…':v.label,bx+g.cw/2,g.y+g.cw*.38)}
+  for(let o=0;o<4;o++){const bx=w/2-130+o*70;c.fillStyle=o===op?'#faffdb':'#0c1420';c.fillRect(bx,g.oy,60,50);c.strokeStyle='#2a3d5e';c.strokeRect(bx+.5,g.oy+.5,59,49);c.fillStyle=o===op?'#05070e':'#c8d6e0';c.font='bold 26px monospace';c.fillText(OPS[o],bx+30,g.oy+34)}
+  c.font='10px monospace';c.fillStyle='#faffdb';c.fillText(pick>=0?show(nums[pick].v)+' '+OPS[op]+' …':'PICK A NUMBER',w/2,g.oy+78);c.fillStyle='#9fc4d6';c.font='9px monospace';c.fillText(msg,w/2,g.oy+98);
+  if(solved){c.fillStyle='#10f4cf';c.font='13px monospace';c.fillText('24',w/2,g.y-g.cw*.8)}c.textAlign='left';
+ },
+ readout:K=>['WINS '+K.pad(wins)+' / STREAK '+K.pad(streak),'MOVES '+K.pad(moves)+' / BEST STREAK '+K.pad(best)]
+});
+})();
+</script></body></html>

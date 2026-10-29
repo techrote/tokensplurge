@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S122 — ELEMENTS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Sand, water, stone, plants and fire. Plants drink and grow; lightning lights them; water puts it out. Grow a garden and keep it.
+const CELL=5,EL=['AIR','SAND','WATER','STONE','PLANT','FIRE'],RGB=[[5,7,14],[214,190,120],[40,120,235],[120,128,138],[44,200,96],[255,120,40]];
+let cols=0,rows=0,g=null,life=null,ic=null,id=null,sel=2,cur={x:0,y:0,vx:0,vy:0},plants=0,target=250,heldT=0,gardens=0,strike=0,bolt=null,burns=0,flip=0;
+const idx=(x,y)=>y*cols+x;
+function init(K){cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);g=new Uint8Array(cols*rows);life=new Uint8Array(cols*rows);ic=document.createElement('canvas');ic.width=cols;ic.height=rows;id=ic.getContext('2d').createImageData(cols,rows);
+ for(let x=0;x<cols;x++)for(let y=rows-6;y<rows;y++)g[idx(x,y)]=3;for(let x=Math.floor(cols*.3);x<cols*.7;x++)for(let y=rows-14;y<rows-6;y++)g[idx(x,y)]=1;cur={x:K.w/2,y:K.h*.4,vx:0,vy:0};strike=14;heldT=0}
+function paint(K,x,y,r,t){const ci=Math.floor(x/CELL),cj=Math.floor(y/CELL),rc=Math.ceil(r/CELL);for(let j=cj-rc;j<=cj+rc;j++)for(let i=ci-rc;i<=ci+rc;i++){if(i<0||j<0||i>=cols||j>=rows||Math.hypot(i-ci,j-cj)>rc)continue;const k=idx(i,j);if(t===0||g[k]===0){g[k]=t;life[k]=t===5?30+Math.floor(K.rand()*40):0}}}
+function update(K){
+ flip^=1;let np=0;
+ for(let y=rows-2;y>=0;y--){for(let k=0;k<cols;k++){const x=flip?k:cols-1-k,i=idx(x,y),t=g[i];if(!t||t===3)continue;
+  if(t===4){np++;const nb=[[1,0],[-1,0],[0,-1],[0,1]];let wi=-1;for(const [dx,dy] of nb){const a=x+dx,b=y+dy;if(a>=0&&b>=0&&a<cols&&b<rows&&g[idx(a,b)]===2){wi=idx(a,b);break}}
+   if(wi>=0&&K.rand()<.06){const opts=[[0,-1],[1,0],[-1,0],[1,-1],[-1,-1]].filter(([dx,dy])=>{const a=x+dx,b=y+dy;return a>=0&&b>=0&&a<cols&&b<rows&&!g[idx(a,b)]});if(opts.length){const [dx,dy]=opts[Math.floor(K.rand()*opts.length)];g[idx(x+dx,y+dy)]=4;g[wi]=0}}continue}
+  if(t===5){life[i]--;let out=false;for(const [dx,dy] of [[1,0],[-1,0],[0,-1],[0,1]]){const a=x+dx,b=y+dy;if(a<0||b<0||a>=cols||b>=rows)continue;const j=idx(a,b);if(g[j]===2){g[i]=0;g[j]=0;out=true;break}if(g[j]===4&&K.rand()<.35){g[j]=5;life[j]=22+Math.floor(K.rand()*30);burns++}}if(out)continue;if(life[i]<=0){g[i]=0;continue}if(y>0&&!g[idx(x,y-1)]&&K.rand()<.2){g[idx(x,y-1)]=5;life[idx(x,y-1)]=life[i]-4;g[i]=0}continue}
+  const b=idx(x,y+1);
+  if(t===1){if(!g[b]||g[b]===2){const o=g[b];g[b]=1;g[i]=o}else{const dl=x>0&&!g[b-1]&&!g[i-1],dr=x<cols-1&&!g[b+1]&&!g[i+1];if(dl&&dr){const m=K.rand()<.5?-1:1;g[b+m]=1;g[i]=0}else if(dl){g[b-1]=1;g[i]=0}else if(dr){g[b+1]=1;g[i]=0}}}
+  else if(t===2){if(!g[b]){g[b]=2;g[i]=0}else{const dl=x>0&&!g[i-1],dr=x<cols-1&&!g[i+1],dd=x>0&&!g[b-1],de=x<cols-1&&!g[b+1];if(dd&&de){const m=K.rand()<.5?-1:1;g[b+m]=2;g[i]=0}else if(dd){g[b-1]=2;g[i]=0}else if(de){g[b+1]=2;g[i]=0}else if(dl&&dr){const m=K.rand()<.5?-1:1;g[i+m]=2;g[i]=0}else if(dl){g[i-1]=2;g[i]=0}else if(dr){g[i+1]=2;g[i]=0}}}}}
+ plants=np;
+}
+Salvage({id:'S122',title:'ELEMENTS',parent:'008 LIQUID MEMORY',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> PAINT &nbsp;<kbd>1</kbd>–<kbd>6</kbd> OR <kbd>Q</kbd><kbd>E</kbd> CHOOSE (AIR, SAND, WATER, STONE, PLANT, FIRE)<br>GROW THE GARDEN AND KEEP IT FOR TEN SECONDS / PAINT WITH THE POINTER',
+ aria:'A falling-element simulation with air, sand, water, stone, plants and fire. Arrow keys move a brush, Space paints the chosen element, and number keys one to six or Q and E choose it. Sand and water fall and flow, plants grow next to water by drinking it, fire spreads through plants and is put out by water, and lightning occasionally ignites the garden. The goal is to keep a target number of plant cells alive for ten seconds. The pointer paints too while held.',
+ reset(K){init(K);sel=2;plants=0;target=250;gardens=0;burns=0},
+ resize(K){init(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'){return true}
+  if(fresh&&e.code==='KeyQ'){sel=(sel+5)%6;return true}if(fresh&&e.code==='KeyE'){sel=(sel+1)%6;return true}
+  const m=/^(Digit|Numpad)([1-6])$/.exec(e.code);if(m){sel=+m[2]-1;return true}
+  if(/^Arrow|^Key[WASD]$/.test(e.code))return true;
+ },
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  cur.vx+=dx*1300*dt;cur.vy+=dy*1300*dt;const f=Math.exp(-dt*6);cur.vx*=f;cur.vy*=f;cur.x=K.clamp(cur.x+cur.vx*dt,0,K.w);cur.y=K.clamp(cur.y+cur.vy*dt,0,K.h);
+  if(K.keys.has('Space'))paint(K,cur.x,cur.y,sel===1||sel===2?9:6,sel);const p=K.pointer;if(p.held&&p.inside)paint(K,p.x,p.y,sel===1||sel===2?9:6,sel);
+  update(K);update(K);
+  strike-=dt;if(strike<=0){strike=12+K.rand()*8;const pl=[];for(let i=0;i<g.length;i+=3)if(g[i]===4)pl.push(i);if(pl.length>20){const i=pl[Math.floor(K.rand()*pl.length)];bolt={x:(i%cols)*CELL,y:Math.floor(i/cols)*CELL,t:0};g[i]=5;life[i]=40;K.note('LIGHTNING')}}
+  if(bolt){bolt.t+=dt;if(bolt.t>.3)bolt=null}
+  if(plants>=target){heldT+=dt;if(heldT>10){gardens++;K.note('GARDEN KEPT / '+K.pad(gardens)+' / A LARGER ONE IS NEEDED');target+=150;heldT=0}}else heldT=Math.max(0,heldT-dt*.6);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,d=id.data;
+  for(let i=0;i<g.length;i++){const k=RGB[g[i]],o=i*4,v=g[i]===5?(Math.random()*40):g[i]===4?((i*7)%30):0;d[o]=Math.min(255,k[0]+v);d[o+1]=Math.min(255,k[1]+(g[i]===1||g[i]===2?(i%17)*1.5:0));d[o+2]=k[2];d[o+3]=255}
+  ic.getContext('2d').putImageData(id,0,0);c.imageSmoothingEnabled=false;c.drawImage(ic,0,0,cols*CELL,rows*CELL);c.imageSmoothingEnabled=true;
+  if(bolt){c.strokeStyle='#e9fbff';c.lineWidth=3;c.beginPath();c.moveTo(bolt.x,0);let y=0,x=bolt.x;while(y<bolt.y){y+=14;x+=(Math.random()-.5)*26;c.lineTo(x,y)}c.lineTo(bolt.x,bolt.y);c.stroke();c.lineWidth=1}
+  c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.arc(cur.x,cur.y,sel===1||sel===2?9:6,0,TAU);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#05070edd';c.fillRect(18,h*.12-12,300,34);c.fillStyle='#faffdb';c.fillText('BRUSH: '+EL[sel]+' / PLANTS '+plants+' / TARGET '+target+' / HOLD '+heldT.toFixed(0)+'s',22,h*.12);c.fillStyle='#ffffff22';c.fillRect(22,h*.12+8,200,4);c.fillStyle=plants>=target?'#f4d84e':'#10f4cf';c.fillRect(22,h*.12+8,200*Math.min(1,plants/target),4);
+  EL.forEach((n,i)=>{c.fillStyle=i===sel?'#faffdb':'#7f97a5';c.fillText((i+1)+' '+n,w-86,h*.12+i*13)});
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,(sel===1||sel===2?9:6),0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'PAINTING '+EL[sel]:'READY',p.x+14,p.y-8)}
+ },
+ readout:K=>['PLANTS '+K.pad(plants,4)+'/'+K.pad(target,4),'GARDENS '+K.pad(gardens)+' / BURNT '+K.pad(burns,4)+' / '+EL[sel]]
+});
+})();
+</script></body></html>
