@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S100 — WALL OF SPECIMENS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Every specimen in the series on one wall. The ones you have opened in this browser are lit; the rest are waiting.
+const NAMES='RECOVERY HEAD|CARRIER LOCK|UNDELIVERABLE|CLOCK RESYNC|BITPLANE REMARRIAGE|VERTEX CALM|LIQUID RETENTION|PHOSPHOR RECALL|CONTOUR CLIMB|SEDIMENT|LARVAL STAGE|GLAZIER|BUS REPAIR|FILL-IN|REWEAVE|HEAT SINK|MOIRE KEY|INK KEEPER|ANALYZER|UPSIDE DOWN|BIT BUDGET|EXCAVATION|VERTICAL CATCH|DEAD PIXELS|CODEC MERGE|BACKLIGHT GRID|REASSEMBLE|SAND TABLE|SOFT LANDING|RIPPLE TANK|HERD|DEBRIS FIELD|ADDRESS GUESS|BEAT FREQUENCY|SCANLINE RUNNER|FOG MAZE|PLINKO DRIFT|LIFE SUPPORT|SLINGSHOT|ETCH TRACE|SORTING OFFICE|SHIELD RING|LETTER RAIN|TERRITORY|HARMONOGRAPH|BEAM PATH|LAYER STACK|PINBALL|CROSSING|CACHE|PHOSPHOR PONG|FALLING FRAMES|FLOOD|RULE DIAL|TURING GARDEN|CHLADNI|MIRROR GARDEN|SLIME NETWORK|SALVO|TRUCHET LOOPS|SLIDE TO WALL|FIVE LETTERS|TERRAFORM|ORBIT PAINTER|PAIRS|TOWER|PIXEL SWEEP|INTRUDERS|DIG SITE|PENDULUM WAVE|CORRIDOR|ATTRACTOR GARDEN|CRYSTAL LAB|LIGHT CYCLES|WORD SEARCH|COLLAPSE|SAFE CRACKER|SANDPILE|JULIA HUNT|LONG EXPOSURE|MARBLE MAZE|LOGIC BUS|SPIROGRAPH|THREE KINGDOMS|ZEN RAKE|POCKET|CHROMA MATCH|CUT THE CORD|POUR SORT|NONOGRAM|TUNNEL RUN|STACK BLOCKS|SWAP MATCH|PARTICLE LIFE|MINI SUDOKU|DEAD PIXEL HUNT|OSCILLOSCOPE|DEFUSE|BUBBLE SHOOTER|WALL OF SPECIMENS|FIREFLIES|FOUR IN A ROW|REVERSI'.split('|');
+const slug=(i)=>String(i+1).padStart(3,'0')+'-'+NAMES[i].toLowerCase().replace(/ /g,'-');
+const COLS=12;
+let seen={},cur=0,rows=0,cell=44,ox=0,oy=0,count=0,ripples=[];
+function readSeen(){try{seen=JSON.parse(localStorage.getItem('salvage-seen')||'{}')}catch(e){seen={}}count=0;for(let i=0;i<NAMES.length;i++)if(seen['S'+String(i+1).padStart(3,'0')])count++}
+function layout(K){rows=Math.ceil(NAMES.length/COLS);cell=Math.min(K.w*.88/COLS,K.h*.7/rows,64);ox=(K.w-cell*COLS)/2;oy=(K.h-cell*rows)/2+10}
+const open=i=>{try{location.href=slug(i)+'.html'}catch(e){}};
+Salvage({id:'S100',title:'WALL OF SPECIMENS',parent:'ALL OF THEM',bg:'#05070e',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> OPEN THE SPECIMEN<br>LIT TILES ARE ONES YOU HAVE ALREADY OPENED IN THIS BROWSER / HOVER TO READ, CLICK TO OPEN',
+ aria:'A wall of tiles, one for every specimen in the Salvage series. Tiles that have been opened in this browser are lit and show how many times they were visited; the others are dim. Arrow keys move a cursor, Space opens the selected specimen, and hovering the pointer shows its name and visit count; clicking opens it. A counter shows how many of the series have been visited.',
+ reset(K){readSeen();layout(K);cur=0;ripples=[]},
+ resize(K){layout(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)open(cur);return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];
+  if(d){if(fresh){let r=Math.floor(cur/COLS)+d[0],c=cur%COLS+d[1];r=K.clamp(r,0,rows-1);c=K.clamp(c,0,COLS-1);cur=Math.min(NAMES.length-1,r*COLS+c);ripples.push({i:cur,t:0})}return true}
+ },
+ down(K,x,y){const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);if(c<0||r<0||c>=COLS||r>=rows)return false;const i=r*COLS+c;if(i>=NAMES.length)return false;cur=i;open(i);return true},
+ step(K,dt){for(const q of ripples)q.t+=dt;ripples=ripples.filter(q=>q.t<.8);if(Math.floor(K.time)!==Math.floor(K.time-dt))readSeen()},
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const hv=p.inside?(()=>{const cc=Math.floor((p.x-ox)/cell),rr=Math.floor((p.y-oy)/cell),i=rr*COLS+cc;return cc>=0&&rr>=0&&cc<COLS&&rr<rows&&i<NAMES.length?i:-1})():-1;
+  for(let i=0;i<NAMES.length;i++){const r=Math.floor(i/COLS),q=i%COLS,x=ox+q*cell,y=oy+r*cell,n=seen['S'+String(i+1).padStart(3,'0')]||0,hue=(i*37)%360;
+   c.fillStyle=n?'hsl('+hue+',70%,'+Math.min(55,28+n*3)+'%)':'#0b1420';c.fillRect(x+2,y+2,cell-4,cell-4);
+   c.strokeStyle=i===hv?'#ed4e8c':i===cur?'#faffdb':n?'#ffffff33':'#17283a';c.lineWidth=i===cur||i===hv?2:1;c.strokeRect(x+2.5,y+2.5,cell-5,cell-5);c.lineWidth=1;
+   c.fillStyle=n?'#05070e':'#4f6b80';c.font='bold '+Math.round(cell*.3)+'px monospace';c.textAlign='center';c.fillText(String(i+1).padStart(3,'0'),x+cell/2,y+cell*.6);if(n>1){c.font=Math.round(cell*.18)+'px monospace';c.fillText('×'+n,x+cell/2,y+cell*.85)}}
+  c.textAlign='left';for(const q of ripples){const i=q.i,r=Math.floor(i/COLS),cc=i%COLS;c.strokeStyle='#faffdb';c.globalAlpha=1-q.t/.8;c.strokeRect(ox+cc*cell-q.t*10,oy+r*cell-q.t*10,cell+q.t*20,cell+q.t*20)}c.globalAlpha=1;
+  const j=hv>=0?hv:cur;c.font='11px monospace';c.fillStyle='#e9fbff';c.fillText('S'+String(j+1).padStart(3,'0')+' — '+NAMES[j]+(seen['S'+String(j+1).padStart(3,'0')]?'  ('+seen['S'+String(j+1).padStart(3,'0')]+' VISITS)':'  (NOT YET OPENED)'),ox,oy-16);
+  c.fillStyle='#ffffff22';c.fillRect(ox,oy+rows*cell+10,COLS*cell,4);c.fillStyle='#f4d84e';c.fillRect(ox,oy+rows*cell+10,COLS*cell*count/NAMES.length,4);c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(count+' OF '+NAMES.length+' OPENED',ox,oy+rows*cell+28);
+ },
+ readout:K=>['OPENED '+K.pad(count,3)+'/'+K.pad(NAMES.length,3),'SELECTED S'+K.pad(cur+1,3)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#020805"><title>S097 — OSCILLOSCOPE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A trace from somewhere else. Bring your own signal into agreement with it.
+const PN=['AMPLITUDE','FREQUENCY','PHASE','HARMONIC'];
+let tg={a:.6,f:3,p:1,h:0},me={a:.3,f:2,p:0,h:0},sel=0,err=1,holdT=0,wins=0,level=0,solved=0,tolr=.06,drag=null,rep=0;
+const wave=(P,x,t)=>P.a*Math.sin(x*P.f*Math.PI*2+P.p)+P.h*Math.sin(x*P.f*2*Math.PI*2+P.p*2);
+function newT(K){const harm=level>=2;tg={a:.35+K.rand()*.5,f:1+Math.floor(K.rand()*6)*.5+K.rand()*.4,p:K.rand()*Math.PI*2,h:harm?.2+K.rand()*.25:0};me={a:.3,f:2.5,p:0,h:0};holdT=0;solved=0;tolr=Math.max(.03,.07-level*.006)}
+const lim=[[0.05,1],[.5,8],[0,Math.PI*2],[0,.6]];
+const prm=()=>[ 'a','f','p','h' ];
+const geo=K=>({x0:K.w*.1,x1:K.w*.9,y0:K.h*.18,y1:K.h*.74});
+Salvage({id:'S097',title:'OSCILLOSCOPE',parent:'020 PHOSPHOR BLOOM',bg:'#020805',
+ help:'<kbd>↑</kbd><kbd>↓</kbd> CHOOSE A KNOB &nbsp;<kbd>←</kbd><kbd>→</kbd> TURN IT (HOLD TO SPEED UP)<br>MAKE YOUR TRACE LAND ON THE TARGET / DRAG LEFT OR RIGHT ON THE SCREEN TO TURN THE CHOSEN KNOB',
+ aria:'An oscilloscope matching game. A bright target waveform is drawn on a phosphor screen; a second trace is yours. Up and down arrows choose a knob (amplitude, frequency, phase or second harmonic) and left and right turn it, accelerating when held. When your trace agrees with the target closely enough for a second it counts. Dragging horizontally on the screen also turns the selected knob, and later levels add a harmonic.',
+ reset(K){level=0;wins=0;sel=0;newT(K)},
+ key(K,e,fresh){
+  if(fresh&&(e.code==='ArrowUp'||e.code==='KeyW')){sel=(sel+3)%(level>=2?4:3);return true}if(fresh&&(e.code==='ArrowDown'||e.code==='KeyS')){sel=(sel+1)%(level>=2?4:3);return true}
+  if(/^Arrow|^Key[WASD]$|^Space$/.test(e.code))return true;
+ },
+ down(K,x,y){drag={x,v:me[prm()[sel]]};return false},up(){drag=null},
+ step(K,dt){
+  const d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);rep=d?rep+dt:0;const k=prm()[sel],[lo,hi]=lim[sel];
+  if(d)me[k]=K.clamp(me[k]+d*dt*(hi-lo)*(.12+Math.min(.5,rep*.3)),lo,hi);
+  const p=K.pointer;if(p.held&&p.inside&&drag){me[k]=K.clamp(drag.v+(p.x-drag.x)/K.w*(hi-lo)*1.4,lo,hi)}
+  let s=0,n=200;for(let i=0;i<n;i++){const x=i/n,dv=wave(tg,x)-wave(me,x);s+=dv*dv}err=Math.sqrt(s/n);
+  if(!solved){if(err<tolr){holdT+=dt;if(holdT>1){wins++;level++;solved=.001;K.note('IN AGREEMENT / RMS '+err.toFixed(3)+' / THE SIGNAL MOVES')}}else holdT=Math.max(0,holdT-dt*2)}else{solved+=dt;if(solved>1.8)newT(K)}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K),mid=(g.y0+g.y1)/2,A=(g.y1-g.y0)/2*.9;c.fillStyle='#020805';c.fillRect(0,0,w,h);
+  c.fillStyle='#041208';c.fillRect(g.x0,g.y0,g.x1-g.x0,g.y1-g.y0);c.strokeStyle='#0d2a18';for(let i=0;i<=10;i++){const x=g.x0+(g.x1-g.x0)*i/10;c.beginPath();c.moveTo(x+.5,g.y0);c.lineTo(x+.5,g.y1);c.stroke()}for(let i=0;i<=8;i++){const y=g.y0+(g.y1-g.y0)*i/8;c.beginPath();c.moveTo(g.x0,y+.5);c.lineTo(g.x1,y+.5);c.stroke()}
+  const trace=(P,col,wd,glow)=>{c.strokeStyle=col;c.lineWidth=wd;c.globalAlpha=glow;c.beginPath();for(let i=0;i<=300;i++){const x=i/300,y=mid-wave(P,x)*A;i?c.lineTo(g.x0+x*(g.x1-g.x0),y):c.moveTo(g.x0,y)}c.stroke();c.globalAlpha=1;c.lineWidth=1};
+  trace(tg,'#7cf3c8',6,.15);trace(tg,'#7cf3c8',2,1);trace(me,'#f4d84e',6,.12);trace(me,'#f4d84e',1.6,1);
+  c.strokeStyle='#7cf3c8';c.strokeRect(g.x0-.5,g.y0-.5,g.x1-g.x0+1,g.y1-g.y0+1);
+  const nk=level>=2?4:3,kx=g.x0,ky=g.y1+28;c.font='9px monospace';
+  for(let i=0;i<nk;i++){const on=i===sel,key=prm()[i],[lo,hi]=lim[i],v=(me[key]-lo)/(hi-lo),x=kx+i*((g.x1-g.x0)/nk);c.fillStyle=on?'#faffdb':'#7f97a5';c.fillText(PN[i]+' '+me[key].toFixed(2)+(on?' ◄':''),x,ky);c.fillStyle='#ffffff22';c.fillRect(x,ky+6,(g.x1-g.x0)/nk-20,5);c.fillStyle=on?'#f4d84e':'#4f6b80';c.fillRect(x,ky+6,((g.x1-g.x0)/nk-20)*v,5);const tv=(tg[key]-lo)/(hi-lo);c.fillStyle='#7cf3c866';c.fillRect(x+((g.x1-g.x0)/nk-20)*tv-1,ky+3,2,11)}
+  c.fillStyle='#ffffff22';c.fillRect(g.x0,g.y0-16,200,4);c.fillStyle=err<tolr?'#f4d84e':'#7cf3c8';c.fillRect(g.x0,g.y0-16,200*Math.max(0,1-err/.5),4);c.fillStyle='#9fc4d6';c.fillText('ERROR '+err.toFixed(3)+' / TOLERANCE '+tolr.toFixed(3)+' / HOLD '+holdT.toFixed(1)+'s',g.x0+210,g.y0-12);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(g.x0-5,g.y0-5,g.x1-g.x0+10,g.y1-g.y0+10);c.lineWidth=1;c.globalAlpha=1}
+  if(p.inside&&p.held){c.fillStyle='#faffdb';c.fillText('TURNING '+PN[sel],p.x+12,p.y-8)}
+ },
+ readout:K=>['ERROR '+err.toFixed(3),'MATCHED '+K.pad(wins)+' / LEVEL '+K.pad(level+1)]
+});
+})();
+</script></body></html>

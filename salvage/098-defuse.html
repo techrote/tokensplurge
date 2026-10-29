@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0a0608"><title>S098 — DEFUSE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A bad idea left on a table at the end of the run. The manual is on the right. Read it carefully.
+const COLS=['CYAN','AMBER','ROSE','VIOLET','WHITE','BLACK'],HEX=['#28e3f4','#f4d84e','#ed4e8c','#8d78ff','#e9fbff','#1a1f28'];
+let wires=[],serial='',odd=false,sel=0,timeLeft=90,defused=0,boomed=0,state='run',stT=0,answer=0,rule='',level=0,cutSet=new Set(),streak=0;
+const cnt=c=>wires.filter(w=>w===c).length,last=()=>wires[wires.length-1];
+const RULES={4:[['NO ROSE WIRE','CUT THE 2ND WIRE',()=>cnt(2)===0,1],['LAST WIRE IS AMBER AND THE SERIAL ENDS ODD','CUT THE LAST WIRE',()=>last()===1&&odd,3],['EXACTLY ONE CYAN WIRE','CUT THE 1ST WIRE',()=>cnt(0)===1,0],['OTHERWISE','CUT THE LAST WIRE',()=>true,3]],
+ 5:[['LAST WIRE IS BLACK AND THE SERIAL ENDS ODD','CUT THE 4TH WIRE',()=>last()===5&&odd,3],['EXACTLY ONE AMBER AND MORE THAN ONE CYAN','CUT THE 1ST WIRE',()=>cnt(1)===1&&cnt(0)>1,0],['NO BLACK WIRE','CUT THE 2ND WIRE',()=>cnt(5)===0,1],['OTHERWISE','CUT THE 1ST WIRE',()=>true,0]],
+ 6:[['NO AMBER WIRE AND THE SERIAL ENDS ODD','CUT THE 3RD WIRE',()=>cnt(1)===0&&odd,2],['EXACTLY ONE AMBER AND MORE THAN ONE WHITE','CUT THE 4TH WIRE',()=>cnt(1)===1&&cnt(4)>1,3],['NO ROSE WIRE','CUT THE LAST WIRE',()=>cnt(2)===0,5],['OTHERWISE','CUT THE 4TH WIRE',()=>true,3]]};
+function newBomb(K){const n=level<2?4:level<5?5:6;wires=Array.from({length:n},()=>Math.floor(K.rand()*6));serial=Array.from({length:5},(_,i)=>i===4||K.rand()<.5?String(Math.floor(K.rand()*10)):String.fromCharCode(65+Math.floor(K.rand()*26))).join('');odd=+serial[4]%2===1;
+ const rs=RULES[n];for(let i=0;i<rs.length;i++)if(rs[i][2]()){answer=rs[i][3];rule=rs[i][0];break}
+ sel=0;timeLeft=Math.max(30,90-level*6);state='run';cutSet=new Set()}
+function cut(K,i){if(state!=='run'||cutSet.has(i))return;cutSet.add(i);if(i===answer){defused++;streak++;state='ok';stT=0;K.note('DEFUSED / '+K.pad(defused)+' / RULE: '+rule)}else{boomed++;streak=0;state='boom';stT=0;K.note('WRONG WIRE / THE ANSWER WAS '+(answer+1))}}
+const geo=K=>{const n=wires.length,x0=K.w*.08,x1=K.w*.55,y0=K.h*.3,gap=Math.min(46,(K.h*.4)/n);return{n,x0,x1,y0,gap}};
+Salvage({id:'S098',title:'DEFUSE',parent:'041 INTERMITTENT PICTURE',bg:'#0a0608',
+ help:'<kbd>↑</kbd><kbd>↓</kbd> CHOOSE A WIRE &nbsp;<kbd>SPACE</kbd> CUT IT<br>FIND THE FIRST RULE IN THE MANUAL THAT APPLIES AND OBEY IT / CLICK A WIRE TO CUT IT',
+ aria:'A bomb-defusal puzzle. A panel shows four, five or six coloured wires, a serial number and a countdown. A manual on the right lists rules for that wire count in priority order; the first rule that applies decides which wire to cut. Up and down arrows choose a wire and Space cuts it; clicking a wire cuts it too. Cutting the wrong wire or running out of time ends the attempt. More wires and less time follow each success.',
+ reset(K){level=0;defused=boomed=streak=0;newBomb(K)},
+ resize(){},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(state==='run')cut(K,sel);else if(stT>.8){if(state==='ok')level++;newBomb(K)}}return true}
+  if(fresh&&(e.code==='ArrowUp'||e.code==='KeyW')){sel=(sel+wires.length-1)%wires.length;return true}if(fresh&&(e.code==='ArrowDown'||e.code==='KeyS')){sel=(sel+1)%wires.length;return true}
+  if(/^Arrow|^Key[AD]$/.test(e.code))return true;
+ },
+ down(K,x,y){const g=geo(K);for(let i=0;i<g.n;i++){const wy=g.y0+i*g.gap;if(x>=g.x0&&x<=g.x1&&Math.abs(y-wy)<g.gap*.45){sel=i;if(state==='run')cut(K,i);else if(stT>.8){if(state==='ok')level++;newBomb(K)}return true}}return false},
+ step(K,dt){if(state==='run'){timeLeft-=dt;if(timeLeft<=0){timeLeft=0;boomed++;streak=0;state='boom';stT=0;K.note('TIME / IT WENT OFF')}}else stT+=dt},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#0a0608';c.fillRect(0,0,w,h);
+  c.fillStyle='#161218';c.fillRect(g.x0-30,g.y0-90,g.x1-g.x0+60,g.n*g.gap+130);c.strokeStyle='#2a2430';c.strokeRect(g.x0-29.5,g.y0-89.5,g.x1-g.x0+59,g.n*g.gap+129);
+  c.fillStyle='#000';c.fillRect(g.x0,g.y0-72,130,36);c.fillStyle=timeLeft<15?'#ed4e8c':'#f4d84e';c.font='bold 24px monospace';c.fillText(String(Math.floor(timeLeft/60)).padStart(2,'0')+':'+String(Math.floor(timeLeft%60)).padStart(2,'0')+'.'+String(Math.floor((timeLeft%1)*10)),g.x0+8,g.y0-46);
+  c.fillStyle='#000';c.fillRect(g.x0+150,g.y0-72,150,36);c.fillStyle='#9fc4d6';c.font='bold 18px monospace';c.fillText('SN '+serial,g.x0+158,g.y0-48);
+  const hv=p.inside?(()=>{for(let i=0;i<g.n;i++){if(p.x>=g.x0&&p.x<=g.x1&&Math.abs(p.y-(g.y0+i*g.gap))<g.gap*.45)return i}return -1})():-1;
+  for(let i=0;i<g.n;i++){const y=g.y0+i*g.gap,cutd=cutSet.has(i),on=i===sel;c.fillStyle='#000';c.beginPath();c.arc(g.x0,y,6,0,6.3);c.arc(g.x1,y,6,0,6.3);c.fill();
+   c.strokeStyle=HEX[wires[i]];c.lineWidth=on||i===hv?7:5;if(cutd){c.beginPath();c.moveTo(g.x0,y);c.lineTo((g.x0+g.x1)/2-18,y+10);c.stroke();c.beginPath();c.moveTo(g.x1,y);c.lineTo((g.x0+g.x1)/2+18,y-10);c.stroke()}else{c.beginPath();c.moveTo(g.x0,y);c.bezierCurveTo((g.x0+g.x1)/2,y+Math.sin(i*2+1)*8,(g.x0+g.x1)/2,y-Math.sin(i*2+1)*8,g.x1,y);c.stroke()}
+   c.lineWidth=1;c.fillStyle=on?'#faffdb':'#7f97a5';c.font='9px monospace';c.fillText((on?'▶ ':'  ')+K.pad(i+1,1)+' '+COLS[wires[i]],g.x0-92+0,y+3)}
+  const rx=w*.6,ry=g.y0-72;c.fillStyle='#e9fbff';c.font='11px monospace';c.fillText('MANUAL / '+wires.length+' WIRES',rx,ry);c.fillStyle='#9fc4d6';c.font='9px monospace';c.fillText('SERIAL ENDS '+(odd?'ODD':'EVEN')+' / USE THE FIRST RULE THAT APPLIES',rx,ry+16);
+  RULES[wires.length].forEach((r,i)=>{const y=ry+40+i*44;c.fillStyle='#e9fbff';c.fillText((i+1)+'. IF '+r[0],rx,y);c.fillStyle='#f4d84e';c.fillText('   → '+r[1],rx,y+14)});
+  if(state!=='run'){c.fillStyle=state==='ok'?'#10f4cf':'#ed4e8c';c.globalAlpha=Math.max(0,.3-stT*.2);c.fillRect(0,0,w,h);c.globalAlpha=1;c.fillStyle='#0a0608dd';c.fillRect(w/2-170,h*.82,340,50);c.fillStyle=state==='ok'?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText(state==='ok'?'DEFUSED / SPACE FOR THE NEXT':'IT WENT OFF / SPACE TO TRY AGAIN',w/2,h*.82+30);c.textAlign='left'}
+ },
+ readout:K=>['TIME '+timeLeft.toFixed(0)+'s / '+wires.length+' WIRES','DEFUSED '+K.pad(defused)+' / BOOMS '+K.pad(boomed)+' / STREAK '+K.pad(streak)]
+});
+})();
+</script></body></html>

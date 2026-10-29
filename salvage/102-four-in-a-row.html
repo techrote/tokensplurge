@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S102 — FOUR IN A ROW</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Drop a disc, make four in a line before the board's other tenant does. The opponent gets cleverer each time you beat it.
+const C=7,R=6;
+let b=null,turn=1,col=3,win=null,wins=0,losses=0,draws=0,depth=3,anim=null,thinking=0,cell=60,ox=0,oy=0,winCells=[],lastMove=-1;
+const id=(r,c)=>r*C+c;
+function drop(bd,c,p){for(let r=R-1;r>=0;r--)if(!bd[id(r,c)]){bd[id(r,c)]=p;return r}return -1}
+function winner(bd){const D=[[0,1],[1,0],[1,1],[1,-1]];for(let r=0;r<R;r++)for(let c=0;c<C;c++){const p=bd[id(r,c)];if(!p)continue;for(const [dr,dc] of D){let k=1;const cells=[[r,c]];while(k<4){const rr=r+dr*k,cc=c+dc*k;if(rr<0||rr>=R||cc<0||cc>=C||bd[id(rr,cc)]!==p)break;cells.push([rr,cc]);k++}if(k===4)return{p,cells}}}return null}
+function score(bd,p){let s=0;const D=[[0,1],[1,0],[1,1],[1,-1]];for(let r=0;r<R;r++)if(bd[id(r,3)]===p)s+=3;for(let r=0;r<R;r++)for(let c=0;c<C;c++)for(const [dr,dc] of D){const er=r+dr*3,ec=c+dc*3;if(er<0||er>=R||ec<0||ec>=C)continue;let a=0,o=0;for(let k=0;k<4;k++){const v=bd[id(r+dr*k,c+dc*k)];if(v===p)a++;else if(v)o++}if(!o){s+=[0,1,5,25][a]||0}else if(!a){s-=[0,1,5,25][o]||0}}return s}
+function mm(bd,d,al,be,p,me){const w=winner(bd);if(w)return w.p===me?100000+d:-100000-d;if(d===0||bd.every(v=>v))return score(bd,me);const order=[3,2,4,1,5,0,6];let best=p===me?-1e9:1e9;
+ for(const c of order){if(bd[id(0,c)])continue;const nb=bd.slice();drop(nb,c,p);const v=mm(nb,d-1,al,be,3-p,me);if(p===me){best=Math.max(best,v);al=Math.max(al,v)}else{best=Math.min(best,v);be=Math.min(be,v)}if(al>=be)break}return best}
+function aiMove(){let bestC=3,bv=-1e9;for(const c of [3,2,4,1,5,0,6]){if(b[id(0,c)])continue;const nb=b.slice();drop(nb,c,2);const v=mm(nb,depth-1,-1e9,1e9,1,2)+Math.random()*.5;if(v>bv){bv=v;bestC=c}}return bestC}
+function play(K,c,p){if(win||anim)return false;const r=drop(b,c,p);if(r<0)return false;anim={c,r,p,y:0};lastMove=c;return true}
+function after(K){const w=winner(b);if(w){win=w.p;winCells=w.cells;if(w.p===1){wins++;depth=Math.min(7,depth+1);K.note('YOU WIN / THE OPPONENT SEARCHES '+depth+' MOVES DEEP NOW')}else{losses++;K.note('THE BOARD WINS')}}else if(b.every(v=>v)){win=3;draws++;K.note('DRAW')}else{turn=turn===1?2:1;if(turn===2)thinking=.35}}
+function init(K){b=new Array(C*R).fill(0);turn=1;win=null;anim=null;winCells=[];thinking=0;cell=Math.min(K.w*.8/C,K.h*.7/R,84);ox=(K.w-cell*C)/2;oy=(K.h-cell*R)/2+14}
+Salvage({id:'S102',title:'FOUR IN A ROW',parent:'040 THE BACKLIGHT STILL WORKS',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A COLUMN &nbsp;<kbd>SPACE</kbd> DROP A DISC<br>FOUR IN A LINE WINS / HOVER A COLUMN TO PREVIEW, CLICK TO DROP',
+ aria:'A connect-four game against a computer opponent. Left and right arrows choose a column and Space drops a cyan disc; the opponent drops a rose disc. The first to line up four discs horizontally, vertically or diagonally wins. The opponent looks further ahead each time you beat it. Hovering over a column previews the drop and clicking drops a disc there.',
+ reset(K){wins=losses=draws=0;depth=3;init(K)},
+ resize(K){cell=Math.min(K.w*.8/C,K.h*.7/R,84);ox=(K.w-cell*C)/2;oy=(K.h-cell*R)/2+14},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'||e.code==='ArrowDown'||e.code==='KeyS'){if(fresh){if(win)init(K);else if(turn===1)play(K,col,1)}return true}
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){col=Math.max(0,col-1);return true}if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){col=Math.min(C-1,col+1);return true}
+  if(e.code==='ArrowUp'||e.code==='KeyW')return true;
+ },
+ down(K,x,y){if(win){init(K);return true}const c=Math.floor((x-ox)/cell);if(c<0||c>=C)return false;col=c;if(turn===1)play(K,c,1);return true},
+ step(K,dt){
+  if(anim){anim.y+=dt*(900+anim.y*3);const ty=anim.r*cell;if(anim.y>=ty){b[id(anim.r,anim.c)]=anim.p;anim=null;after(K)}}
+  else if(!win&&turn===2){thinking-=dt;if(thinking<=0){const c=aiMove();play(K,c,2)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.fillStyle='#0c1c34';c.fillRect(ox-10,oy-10,cell*C+20,cell*R+20);
+  const hc=p.inside?Math.floor((p.x-ox)/cell):-1;
+  for(let r=0;r<R;r++)for(let q=0;q<C;q++){const v=b[id(r,q)],x=ox+(q+.5)*cell,y=oy+(r+.5)*cell,win2=winCells.some(([a,bb])=>a===r&&bb===q);c.fillStyle=v===1?'#28e3f4':v===2?'#ed4e8c':'#05070e';c.beginPath();c.arc(x,y,cell*.4,0,TAU);c.fill();if(win2){c.strokeStyle='#faffdb';c.lineWidth=3;c.stroke();c.lineWidth=1}if(v){c.fillStyle='#ffffff44';c.beginPath();c.arc(x-cell*.1,y-cell*.1,cell*.12,0,TAU);c.fill()}}
+  if(anim){c.fillStyle=anim.p===1?'#28e3f4':'#ed4e8c';c.beginPath();c.arc(ox+(anim.c+.5)*cell,oy+cell*.5+anim.y,cell*.4,0,TAU);c.fill()}
+  const sc=hc>=0&&hc<C?hc:col;if(!win&&turn===1&&!anim){c.globalAlpha=.55;c.fillStyle='#28e3f4';c.beginPath();c.arc(ox+(sc+.5)*cell,oy-cell*.45,cell*.36,0,TAU);c.fill();c.globalAlpha=1;c.strokeStyle='#faffdb';c.strokeRect(ox+sc*cell+2,oy-8,cell-4,cell*R+16)}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('OPPONENT SEARCHES '+depth+' MOVES AHEAD / '+(win?'':turn===1?'YOUR MOVE':'THINKING…'),ox,oy+cell*R+30);
+  if(win){c.fillStyle='#05070ecc';c.fillRect(w/2-160,h*.04,320,40);c.fillStyle=win===1?'#10f4cf':win===2?'#ed4e8c':'#f4d84e';c.textAlign='center';c.font='12px monospace';c.fillText((win===1?'YOU WIN':win===2?'THE BOARD WINS':'DRAW')+' / SPACE FOR ANOTHER',w/2,h*.04+25);c.textAlign='left'}
+ },
+ readout:K=>['WON '+K.pad(wins)+' / LOST '+K.pad(losses)+' / DRAWN '+K.pad(draws),'DEPTH '+depth+' / '+(win?'OVER':turn===1?'YOUR MOVE':'THINKING')]
+});
+})();
+</script></body></html>

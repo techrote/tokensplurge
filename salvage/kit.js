@@ -8,6 +8,7 @@ window.Salvage=art=>{
  document.body.insertAdjacentHTML('beforeend','<canvas id="surface" role="img"></canvas><header><div><div class="name">'+art.id+' / '+art.title+'</div><div class="subtitle">SALVAGE / PARENT '+art.parent+'</div></div><div class="readout"><span id="meter"></span><br><span id="clock"></span></div></header><footer><div id="help"></div><nav aria-label="Artwork controls"><button id="pause" type="button" aria-pressed="false">Pause</button><button id="reset" type="button">Reseed ↗</button><button id="export" type="button">Collect ↓</button></nav></footer><div id="live" role="status" aria-live="polite"></div>');
  const canvas=document.getElementById('surface'),ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
  canvas.setAttribute('aria-label',art.aria);
+ try{const sk='salvage-seen',sv=JSON.parse(localStorage.getItem(sk)||'{}');sv[art.id]=(sv[art.id]||0)+1;localStorage.setItem(sk,JSON.stringify(sv))}catch(e){}
  const $=id=>document.getElementById(id),reduced=matchMedia('(prefers-reduced-motion: reduce)'),seedBuffer=new Uint32Array(1);
  let state=1,frame=0,last=0,readout=-1,pointerId=null,moved=0;
  const K={canvas,ctx,w:1,h:1,dpr:1,time:0,seed:1,paused:reduced.matches,keys:new Set(),notes:[],TAU:Math.PI*2,
