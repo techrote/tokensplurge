@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S110 — NIM</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Piles of tokens, take any number from one pile, and whoever takes the last token wins. You move first and the position is winnable.
+let piles=[],sel=0,take=1,turn=1,over=0,wins=0,losses=0,level=0,mistake=.45,thinking=0,fx=[],cell=22,last='',lastMove=null;
+const xor=a=>a.reduce((x,y)=>x^y,0);
+function gen(K){const n=Math.min(6,3+Math.floor(level/2)),mx=Math.min(11,7+level);let p;do{p=Array.from({length:n},()=>1+Math.floor(K.rand()*mx))}while(xor(p)===0||p.reduce((a,b)=>a+b,0)<n+4);piles=p;sel=0;take=1;turn=1;over=0;fx=[];last='';lastMove=null;mistake=Math.max(.04,.45-level*.07)}
+function aiMove(K){let mv=null;if(K.rand()>mistake){const ns=xor(piles);if(ns!==0){for(let i=0;i<piles.length;i++){const t=piles[i]^ns;if(t<piles[i]){mv=[i,piles[i]-t];break}}}}
+ if(!mv){const nz=piles.map((v,i)=>v>0?i:-1).filter(i=>i>=0);const i=nz[Math.floor(K.rand()*nz.length)];mv=[i,1+Math.floor(K.rand()*piles[i])]}return mv}
+function makeMove(K,i,n,who){if(over||piles[i]<n||n<1)return false;for(let k=0;k<n;k++)fx.push({x:i,y:piles[i]-1-k,t:0,who});piles[i]-=n;lastMove=[i,n,who];last=(who===1?'YOU':'THE BOARD')+' TOOK '+n+' FROM PILE '+(i+1);
+ if(piles.every(v=>v===0)){over=1;if(who===1){wins++;level++;K.note('YOU TOOK THE LAST TOKEN / THE BOARD GETS SHARPER')}else{losses++;K.note('THE BOARD TOOK THE LAST TOKEN')}}else{turn=who===1?2:1;if(turn===2)thinking=.9;else{sel=piles.findIndex(v=>v>0);take=1}}return true}
+const geo=K=>{const n=piles.length,pw=Math.min(90,K.w/(n+1)),x0=(K.w-pw*n)/2,base=K.h*.72;return{n,pw,x0,base,ch:Math.min(26,(K.h*.5)/12)}};
+Salvage({id:'S110',title:'NIM',parent:'011 CRITICAL PATH',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A PILE &nbsp;<kbd>↑</kbd><kbd>↓</kbd> HOW MANY &nbsp;<kbd>SPACE</kbd> TAKE THEM<br>WHOEVER TAKES THE LAST TOKEN WINS / CLICK A TOKEN TO TAKE IT AND EVERYTHING ABOVE IT',
+ aria:'The game of Nim. Several piles of tokens; on your turn take any number of tokens from one pile. Left and right arrows choose a pile, up and down choose how many to take and Space takes them. Whoever takes the final token wins. The starting positions can always be won by the first player with perfect play. Clicking a token takes it and every token above it in that pile. The opponent plays perfectly more often each time you win.',
+ reset(K){level=0;wins=losses=0;gen(K)},
+ key(K,e,fresh){
+  if(over){if((e.code==='Space'||e.code==='Enter')&&fresh)gen(K);return /^Arrow|^Space$/.test(e.code)||undefined}
+  if(e.code==='Space'||e.code==='Enter'){if(fresh&&turn===1)makeMove(K,sel,take,1);return true}
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){let i=sel;do{i=(i+piles.length-1)%piles.length}while(!piles[i]&&i!==sel);sel=i;take=Math.min(take,piles[sel])||1;return true}
+  if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){let i=sel;do{i=(i+1)%piles.length}while(!piles[i]&&i!==sel);sel=i;take=Math.min(take,piles[sel])||1;return true}
+  if(fresh&&(e.code==='ArrowUp'||e.code==='KeyW')){take=Math.min(piles[sel],take+1);return true}if(fresh&&(e.code==='ArrowDown'||e.code==='KeyS')){take=Math.max(1,take-1);return true}
+ },
+ down(K,x,y){if(over){gen(K);return true}const g=geo(K);for(let i=0;i<g.n;i++){const px=g.x0+i*g.pw;if(x>=px&&x<=px+g.pw){const k=Math.floor((g.base-y)/g.ch);if(k>=0&&k<piles[i]){sel=i;take=piles[i]-k;if(turn===1)makeMove(K,i,take,1);return true}}}return false},
+ step(K,dt){for(const f of fx)f.t+=dt;fx=fx.filter(f=>f.t<.5);if(!over&&turn===2){thinking-=dt;if(thinking<=0){const m=aiMove(K);makeMove(K,m[0],m[1],2)}}},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.strokeStyle='#17283a';c.beginPath();c.moveTo(g.x0-20,g.base+.5);c.lineTo(g.x0+g.n*g.pw+20,g.base+.5);c.stroke();
+  let hk=null;if(p.inside)for(let i=0;i<g.n;i++){const px=g.x0+i*g.pw;if(p.x>=px&&p.x<=px+g.pw){const k=Math.floor((g.base-p.y)/g.ch);if(k>=0&&k<piles[i])hk=[i,piles[i]-k]}}
+  for(let i=0;i<g.n;i++){const px=g.x0+i*g.pw,on=i===sel&&turn===1&&!over;
+   for(let k=0;k<piles[i];k++){const marked=on&&k>=piles[i]-take||(hk&&hk[0]===i&&k>=piles[i]-hk[1]);c.fillStyle=marked?'#ed4e8c':K.DAMAGE[(i+k)%6];c.globalAlpha=marked?1:.85;c.fillRect(px+8,g.base-(k+1)*g.ch+1,g.pw-16,g.ch-3);c.globalAlpha=1;c.fillStyle='#05070e88';c.fillRect(px+8,g.base-(k+1)*g.ch+1,g.pw-16,2)}
+   c.fillStyle=on?'#faffdb':'#7f97a5';c.font='9px monospace';c.textAlign='center';c.fillText((on?'▶ ':'')+'PILE '+(i+1)+' / '+piles[i],px+g.pw/2,g.base+20);c.textAlign='left'}
+  for(const f of fx){const px=g.x0+f.x*g.pw;c.globalAlpha=1-f.t/.5;c.fillStyle=f.who===1?'#28e3f4':'#ed4e8c';c.fillRect(px+8,g.base-(f.y+1)*g.ch-f.t*60,g.pw-16,g.ch-3);c.globalAlpha=1}
+  c.font='10px monospace';c.textAlign='center';c.fillStyle='#faffdb';c.fillText(over?(piles.every(v=>v===0)&&lastMove&&lastMove[2]===1?'YOU WON — SPACE FOR ANOTHER':'THE BOARD WON — SPACE FOR ANOTHER'):turn===1?'YOUR MOVE: TAKE '+take+' FROM PILE '+(sel+1):'THE BOARD IS THINKING…',w/2,h*.14);c.fillStyle='#9fc4d6';c.font='9px monospace';c.fillText(last+(piles.length?' / NIM-SUM '+xor(piles):''),w/2,h*.14+18);c.textAlign='left';
+  if(p.inside&&hk){c.fillStyle='#faffdb';c.fillText('TAKE '+hk[1],p.x+12,p.y-8)}
+ },
+ readout:K=>['TOKENS '+K.pad(piles.reduce((a,b)=>a+b,0),2),'WON '+K.pad(wins)+' / LOST '+K.pad(losses)+' / MISTAKE '+(mistake*100).toFixed(0)+'%']
+});
+})();
+</script></body></html>

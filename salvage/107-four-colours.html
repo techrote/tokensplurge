@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S107 — FOUR COLOURS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A window of leaded glass. No two pieces that touch may be the same colour, and four colours are always enough.
+const CELL=6,CO=['#10f4cf','#ed4e8c','#f4d84e','#8d78ff'];
+let cols=0,rows=0,own=null,seeds=[],colr=[],adj=[],cx=[],sel=0,wins=0,level=0,solved=0,moves=0,ox=0,oy=0,sw=0,conflicts=0,hv=-1;
+function gen(K){
+ const M=Math.min(44,22+level*4);cols=Math.floor(K.w*.9/CELL);rows=Math.floor(K.h*.74/CELL);ox=(K.w-cols*CELL)/2;oy=(K.h-rows*CELL)/2+8;seeds=[];
+ for(let i=0;i<M;i++){let best=null,bd=-1;for(let t=0;t<14;t++){const p=[K.rand()*cols,K.rand()*rows];let d=1e9;for(const q of seeds)d=Math.min(d,Math.hypot(q[0]-p[0],q[1]-p[1]));if(d>bd){bd=d;best=p}}seeds.push(best)}
+ own=new Int16Array(cols*rows);for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){let b=0,bd=1e9;for(let i=0;i<M;i++){const dx=seeds[i][0]-c-.5,dy=seeds[i][1]-r-.5,d=dx*dx+dy*dy;if(d<bd){bd=d;b=i}}own[r*cols+c]=b}
+ const S=Array.from({length:M},()=>new Set());for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const a=own[r*cols+c];if(c<cols-1){const b=own[r*cols+c+1];if(a!==b){S[a].add(b);S[b].add(a)}}if(r<rows-1){const b=own[(r+1)*cols+c];if(a!==b){S[a].add(b);S[b].add(a)}}}
+ adj=S.map(s=>[...s]);cx=seeds.map(s=>[ox+s[0]*CELL,oy+s[1]*CELL]);colr=Array.from({length:M},()=>Math.floor(K.rand()*4));sel=0;solved=0;moves=0;count()
+}
+function count(){let n=0;for(let i=0;i<adj.length;i++)for(const j of adj[i])if(j>i&&colr[i]===colr[j])n++;conflicts=n}
+function cyc(K,i,d=1){if(solved)return;colr[i]=(colr[i]+d+4)%4;moves++;count();if(!conflicts){wins++;solved=.001;K.note('NO TWO NEIGHBOURS ALIKE / '+K.pad(wins)+' / '+adj.length+' PIECES')}}
+function jump(K,dx,dy){let best=-1,bs=-1e9;const [x0,y0]=cx[sel];for(let i=0;i<cx.length;i++){if(i===sel)continue;const vx=cx[i][0]-x0,vy=cx[i][1]-y0,d=Math.hypot(vx,vy),dot=(vx*dx+vy*dy)/d;if(dot>.55){const s=dot*100-d*.2;if(s>bs){bs=s;best=i}}}if(best>=0)sel=best}
+const regionAt=(K,x,y)=>{const c=Math.floor((x-ox)/CELL),r=Math.floor((y-oy)/CELL);return r>=0&&c>=0&&r<rows&&c<cols?own[r*cols+c]:-1};
+Salvage({id:'S107',title:'FOUR COLOURS',parent:'028 PLATE GLASS AFTERLIFE',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> JUMP TO A NEIGHBOURING PIECE &nbsp;<kbd>SPACE</kbd> NEXT COLOUR &nbsp;<kbd>Q</kbd> PREVIOUS<br>REMOVE EVERY RED LEAD LINE / HOVER A PIECE TO SEE ITS NEIGHBOURS, CLICK TO RECOLOUR',
+ aria:'A map-colouring puzzle drawn as a stained-glass window. Each piece of glass has one of four colours; no two pieces that touch may share a colour. Arrow keys move the selection to a neighbouring piece, Space cycles its colour and Q cycles backwards. Lead lines between pieces of the same colour glow red. Hovering shows a piece and the pieces it touches, and clicking recolours it. Finished windows are followed by more complicated ones.',
+ reset(K){level=0;wins=0;gen(K)},
+ resize(K){gen(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)cyc(K,sel,1);return true}if(e.code==='KeyQ'){if(fresh)cyc(K,sel,-1);return true}
+  const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[e.code];if(d){if(fresh)jump(K,d[0],d[1]);return true}
+ },
+ down(K,x,y){const r=regionAt(K,x,y);if(r<0)return false;sel=r;cyc(K,r,1);return true},
+ step(K,dt){const p=K.pointer;hv=p.inside?regionAt(K,p.x,p.y):-1;if(solved){solved+=dt;if(solved>2.6){level++;gen(K)}}},
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const nb=new Set(hv>=0?adj[hv]:[]);
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){const o=own[r*cols+q],lit=o===hv||nb.has(o);c.fillStyle=CO[colr[o]];c.globalAlpha=lit?1:.78;const sh=.85+.15*Math.sin((q+r)*.2+K.time*.6+o);c.fillRect(ox+q*CELL,oy+r*CELL,CELL,CELL);c.globalAlpha=1;c.fillStyle='rgba(255,255,255,'+(.04*sh)+')';c.fillRect(ox+q*CELL,oy+r*CELL,CELL,CELL)}
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){const o=own[r*cols+q];if(q<cols-1){const b=own[r*cols+q+1];if(b!==o){c.fillStyle=colr[o]===colr[b]?'#ff2a55':'#0a0d14';c.fillRect(ox+(q+1)*CELL-(colr[o]===colr[b]?2:1.5),oy+r*CELL,colr[o]===colr[b]?4:3,CELL)}}if(r<rows-1){const b=own[(r+1)*cols+q];if(b!==o){c.fillStyle=colr[o]===colr[b]?'#ff2a55':'#0a0d14';c.fillRect(ox+q*CELL,oy+(r+1)*CELL-(colr[o]===colr[b]?2:1.5),CELL,colr[o]===colr[b]?4:3)}}}
+  const [sx,sy]=cx[sel];c.strokeStyle='#faffdb';c.lineWidth=2.5;c.beginPath();c.arc(sx,sy,9+Math.sin(K.time*5)*1.5,0,6.3);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(adj.length+' PIECES / CONFLICTS '+conflicts,ox,oy-12);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.lineWidth=3;c.strokeRect(ox-4,oy-4,cols*CELL+8,rows*CELL+8);c.lineWidth=1;c.globalAlpha=1}
+  if(p.inside&&hv>=0){c.fillStyle='#faffdb';c.fillText('PIECE '+K.pad(hv,2)+' TOUCHES '+adj[hv].length,p.x+12,p.y-8)}
+ },
+ readout:K=>['CONFLICTS '+K.pad(conflicts,2),'MOVES '+K.pad(moves)+' / WINDOWS '+K.pad(wins)+' / '+adj.length+' PIECES']
+});
+})();
+</script></body></html>
