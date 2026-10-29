@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S053 — FLOOD</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// One colour at a time, flooding out from the corner. Claim the whole surface within the move budget.
+let cols=12,rows=8,g=null,sel=1,moves=0,limit=0,wins=0,fails=0,cell=40,ox=0,oy=0,solved=0,failT=0,anim=0,region=null,level=0;
+const NC=6,id=(x,y)=>y*cols+x;
+function owned(){const r=new Set([0]),q=[[0,0]],c0=g[0];while(q.length){const [x,y]=q.pop();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=cols||ny>=rows)continue;const k=id(nx,ny);if(!r.has(k)&&g[k]===c0){r.add(k);q.push([nx,ny])}}}return r}
+function gen(K){cols=Math.min(22,12+level*2);rows=Math.min(14,8+level);cell=Math.min(K.w*.86/cols,K.h*.64/rows);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2-6;g=new Uint8Array(cols*rows);for(let n=0;n<g.length;n++)g[n]=Math.floor(K.rand()*NC);sel=(g[0]+1)%NC;moves=0;limit=Math.round((cols+rows)*NC/6.5*1.1+4);solved=failT=0;region=owned()}
+function apply(K,c){if(solved||failT)return;if(c===g[0])return;for(const k of region)g[k]=c;moves++;region=owned();anim=1;
+ if(region.size===cols*rows){wins++;solved=.001;K.note('FLOODED IN '+moves+' / PAR '+limit)}else if(moves>=limit){fails++;failT=.001;K.note('OUT OF MOVES / THE SURFACE RESETS')}}
+Salvage({id:'S053',title:'FLOOD',parent:'014 FALSE COLOUR NECROSIS',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A COLOUR &nbsp;<kbd>SPACE</kbd> FLOOD WITH IT<br>FILL THE BOARD BEFORE THE MOVES RUN OUT / HOVER A SWATCH OR CELL, CLICK TO USE IT',
+ aria:'A flood-fill puzzle. The top-left region belongs to you. Left and right arrows choose one of six colours and Space floods your region with it, absorbing neighbouring cells of that colour. Cover the whole board within the move limit. Clicking a swatch or any cell applies that colour; hovering previews how much would be gained.',
+ reset(K){level=0;wins=fails=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.86/cols,K.h*.64/rows);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2-6},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)apply(K,sel);return true}
+  if(!fresh)return /^Arrow|^Key[WASD]$/.test(e.code)||undefined;
+  if(e.code==='ArrowLeft'||e.code==='KeyA'||e.code==='ArrowUp'||e.code==='KeyW'){sel=(sel+NC-1)%NC;return true}
+  if(e.code==='ArrowRight'||e.code==='KeyD'||e.code==='ArrowDown'||e.code==='KeyS'){sel=(sel+1)%NC;return true}
+ },
+ down(K,x,y){const sw=Math.min(54,K.w/9),sx=K.w/2-NC*sw/2,sy=oy+rows*cell+30;if(y>sy&&y<sy+sw&&x>sx&&x<sx+NC*sw){const c=Math.floor((x-sx)/sw);sel=c;apply(K,c);return true}
+  const cx=Math.floor((x-ox)/cell),cy=Math.floor((y-oy)/cell);if(cx>=0&&cy>=0&&cx<cols&&cy<rows){sel=g[id(cx,cy)];apply(K,sel);return true}return false},
+ step(K,dt){anim=Math.max(0,anim-dt*5);if(solved){solved+=dt;if(solved>2.2){level++;gen(K)}}if(failT){failT+=dt;if(failT>2.2)gen(K)}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const k=id(x,y);c.fillStyle=K.DAMAGE[g[k]];c.globalAlpha=region.has(k)?1:.78;c.fillRect(ox+x*cell,oy+y*cell,cell-1,cell-1)}c.globalAlpha=1;
+  c.strokeStyle='#faffdb';c.lineWidth=2;c.beginPath();for(const k of region){const x=k%cols,y=Math.floor(k/cols);for(const [dx,dy,ax,ay,bx,by] of [[1,0,1,0,1,1],[-1,0,0,0,0,1],[0,1,0,1,1,1],[0,-1,0,0,1,0]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=cols||ny>=rows||!region.has(id(nx,ny))){c.moveTo(ox+(x+ax)*cell,oy+(y+ay)*cell);c.lineTo(ox+(x+bx)*cell,oy+(y+by)*cell)}}}c.stroke();c.lineWidth=1;
+  const sw=Math.min(54,w/9),sx=w/2-NC*sw/2,sy=oy+rows*cell+30,hv=p.inside&&p.y>sy&&p.y<sy+sw?Math.floor((p.x-sx)/sw):-1;
+  for(let i=0;i<NC;i++){c.fillStyle=K.DAMAGE[i];c.fillRect(sx+i*sw+3,sy+3,sw-6,sw-6);if(i===sel){c.strokeStyle='#faffdb';c.lineWidth=3;c.strokeRect(sx+i*sw,sy,sw,sw);c.lineWidth=1}if(i===g[0]){c.fillStyle='#05070e';c.fillText('●',sx+i*sw+sw/2-3,sy+sw/2+4)}}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('OWNED '+region.size+'/'+cols*rows,ox,oy-12);
+  if(hv>=0&&hv<NC&&hv!==g[0]){let gain=0;const seen=new Set(region),q=[...region];while(q.length){const k=q.pop(),x=k%cols,y=Math.floor(k/cols);for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=cols||ny>=rows)continue;const m=id(nx,ny);if(!seen.has(m)&&g[m]===hv){seen.add(m);q.push(m);gain++}}}c.fillStyle='#faffdb';c.fillText('+'+gain+' CELLS',p.x+12,p.y-8)}
+  c.fillStyle='#ffffff22';c.fillRect(w/2-80,sy+sw+14,160,4);c.fillStyle=limit-moves<4?'#ed4e8c':'#faffdb';c.fillRect(w/2-80,sy+sw+14,160*Math.max(0,limit-moves)/limit,4);
+  if(failT){c.fillStyle='#05070ecc';c.fillRect(ox,oy,cols*cell,rows*cell);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='14px monospace';c.fillText('OUT OF MOVES',w/2,oy+rows*cell/2);c.textAlign='left'}
+ },
+ readout:K=>['OWNED '+(region.size/(cols*rows)*100).toFixed(0)+'%','MOVES '+K.pad(moves,2)+'/'+K.pad(limit,2)+' / FLOODED '+K.pad(wins)]
+});
+})();
+</script></body></html>

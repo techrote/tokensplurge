@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S049 — CROSSING</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Seven scanlines of moving fault. Get from the bottom edge to the top.
+const LANES=7;
+let lanes=[],me={c:0,r:0,x:0,y:0},cols=13,cell=40,ox=0,oy=0,score=0,hit=0,level=0,best=0,flash=0,repeat=0;
+function layout(K){cell=Math.min(K.h*.76/(LANES+2),K.w*.9/cols,64);ox=(K.w-cell*cols)/2;oy=(K.h-cell*(LANES+2))/2+10}
+function gen(K){lanes=[];for(let i=0;i<LANES;i++){const dir=i%2?1:-1,sp=(40+K.rand()*50+level*10)*dir,n=2+Math.floor(K.rand()*2),bars=[];let x=K.rand()*cols;for(let k=0;k<n;k++){bars.push({x,w:1+Math.floor(K.rand()*3)});x+=cols/n}lanes.push({sp,bars,c:K.DAMAGE[i%6]})}me.c=Math.floor(cols/2);me.r=0;me.x=me.c;me.y=0}
+function struck(K){hit++;flash=1;K.note('STRUCK / BACK TO THE EDGE');me.c=Math.floor(cols/2);me.r=0}
+function move(K,dc,dr){if(flash>.6)return;me.c=K.clamp(me.c+dc,0,cols-1);me.r=K.clamp(me.r+dr,0,LANES+1);if(me.r===LANES+1){score++;best=Math.max(best,score);level++;K.note('CROSSED / '+K.pad(score)+' / FASTER');gen(K)}}
+const KD={ArrowUp:[0,1],KeyW:[0,1],ArrowDown:[0,-1],KeyS:[0,-1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
+Salvage({id:'S049',title:'CROSSING',parent:'003 SCANLINE AMNESIA',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> HOP ONE CELL<br>REACH THE TOP EDGE / THE POINTER SLOWS THE LANES AROUND IT, HOLD TO NEARLY STOP THEM',
+ aria:'A crossing game. Arrow keys hop a small square one cell at a time from the bottom edge across seven lanes of moving bars to the top edge. Touching a bar sends it back. Each crossing makes the lanes faster. The pointer slows the lane it is over and holding it nearly stops that lane.',
+ reset(K){layout(K);level=score=hit=best=0;flash=0;gen(K)},
+ resize(K){layout(K)},
+ key(K,e,fresh){const d=KD[e.code];if(d){if(fresh){repeat=.25;move(K,d[0],d[1])}return true}},
+ step(K,dt){
+  if(K.keys.size){repeat-=dt;if(repeat<=0){repeat=.12;for(const c of K.keys){const d=KD[c];if(d){move(K,d[0],d[1]);break}}}}
+  const p=K.pointer;flash=Math.max(0,flash-dt*2);
+  lanes.forEach((ln,i)=>{const y=oy+(LANES-i)*cell+cell/2;let f=1;if(p.inside&&Math.abs(p.y-y)<cell*.8)f=p.held?.08:.35;for(const b of ln.bars){b.x+=ln.sp/cell*dt*f;b.x=((b.x%cols)+cols)%cols}
+   if(me.r===i+1)for(const b of ln.bars){for(let k=0;k<b.w;k++){const bc=Math.floor(b.x+k)%cols;if(bc===me.c&&Math.abs(((b.x+k)%cols)-(me.c+.5))<.95){struck(K);return}}}});
+  me.x+=(me.c-me.x)*Math.min(1,dt*20);me.y+=(me.r-me.y)*Math.min(1,dt*20);
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.fillStyle='#0c2230';c.fillRect(ox,oy,cell*cols,cell);c.fillRect(ox,oy+(LANES+1)*cell,cell*cols,cell);c.fillStyle='#9fc4d6';c.font='9px monospace';c.fillText('EDGE',ox+4,oy+(LANES+1)*cell+cell*.6);c.fillText('EDGE',ox+4,oy+cell*.6);
+  lanes.forEach((ln,i)=>{const y=oy+(LANES-i)*cell,near=p.inside&&Math.abs(p.y-(y+cell/2))<cell*.8;c.fillStyle=near?'#0e1a28':'#08111c';c.fillRect(ox,y,cell*cols,cell);c.strokeStyle='#17283a';c.strokeRect(ox+.5,y+.5,cell*cols-1,cell-1);
+   for(const b of ln.bars)for(let k=0;k<b.w;k++){let bx=(b.x+k)%cols;c.fillStyle=ln.c;c.globalAlpha=.9;c.fillRect(ox+bx*cell+1,y+3,cell-2,cell-6);if(bx>cols-1)c.fillRect(ox+(bx-cols)*cell+1,y+3,cell-2,cell-6)}c.globalAlpha=1;
+   if(near){c.fillStyle='#faffdb';c.fillText(p.held?'LANE ×0.08':'LANE ×0.35',ox+cols*cell+8,y+cell*.6)}});
+  const mx=ox+me.x*cell,my=oy+(LANES+1-me.y)*cell;c.fillStyle=flash>.3?'#ed4e8c':'#faffdb';c.fillRect(mx+cell*.2,my+cell*.2,cell*.6,cell*.6);c.fillStyle='#05070e';c.fillRect(mx+cell*.5,my+cell*.35,cell*.15,cell*.15);
+  if(flash){c.globalAlpha=flash*.15;c.fillStyle='#ed4e8c';c.fillRect(0,0,w,h);c.globalAlpha=1}
+ },
+ readout:K=>['CROSSED '+K.pad(score),'STRUCK '+K.pad(hit)+' / LEVEL '+K.pad(level)]
+});
+})();
+</script></body></html>

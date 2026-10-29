@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S052 — FALLING FRAMES</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Four lanes of frames arriving on a beat nobody is playing. Meet each one at the line.
+const KEY={ArrowLeft:0,KeyA:0,ArrowDown:1,KeyS:1,ArrowUp:2,KeyW:2,ArrowRight:3,KeyD:3},LABEL=['←','↓','↑','→'],TRAVEL=1.6;
+let notes=[],now=0,beat=0,bpm=108,score=0,combo=0,best=0,hits=0,miss=0,fx=[],flashL=[0,0,0,0],scale=1,fb='',fbT=0;
+const geo=K=>{const lw=Math.min(90,K.w/7),x0=K.w/2-lw*2,top=K.h*.1,line=K.h*.8;return{lw,x0,top,line}};
+function judge(K,lane){
+ let best2=null,bd=.16;for(const n of notes)if(n.lane===lane&&!n.done){const d=Math.abs(n.t-now);if(d<bd){bd=d;best2=n}}
+ flashL[lane]=1;
+ if(!best2){combo=0;fb='EARLY';fbT=.6;return}
+ best2.done=true;if(bd<.05){score+=100+combo*5;fb='PERFECT'}else{score+=50+combo*2;fb='GOOD'}fbT=.6;combo++;best=Math.max(best,combo);hits++;
+ const g=geo(K);for(let i=0;i<10;i++){const a=K.rand()*K.TAU,v=60+K.rand()*140;fx.push({x:g.x0+lane*g.lw+g.lw/2,y:g.line,vx:Math.cos(a)*v,vy:Math.sin(a)*v-60,t:0,c:K.DAMAGE[lane%6]})}
+}
+Salvage({id:'S052',title:'FALLING FRAMES',parent:'026 THE LAST GOOD FRAME',
+ help:'<kbd>←</kbd><kbd>↓</kbd><kbd>↑</kbd><kbd>→</kbd> HIT EACH FRAME AS IT CROSSES THE LINE<br>HOLD THE POINTER FOR SLOW MOTION / CLICK A LANE TO PLAY IT',
+ aria:'A rhythm game with four lanes. Frames fall toward a line; press the matching arrow key as each crosses it. Timing is rated perfect, good or missed, and consecutive hits build a combo. Holding the pointer slows time, and clicking a lane presses it.',
+ reset(K){notes=[];now=0;beat=0;bpm=108;score=combo=best=hits=miss=0;fx=[];flashL=[0,0,0,0];fb=''},
+ key(K,e,fresh){const l=KEY[e.code];if(l!==undefined){if(fresh)judge(K,l);return true}},
+ down(K,x,y){const g=geo(K),l=Math.floor((x-g.x0)/g.lw);if(l>=0&&l<4){judge(K,l);return true}return false},
+ step(K,dt){
+  const p=K.pointer;scale=p.inside&&p.held?.7:1;const d=dt*scale;now+=d;bpm=108+Math.min(40,now*.25);
+  beat+=d;const bl=60/bpm;while(beat>=bl){beat-=bl;if(K.rand()<.7){const l=Math.floor(K.rand()*4);notes.push({lane:l,t:now+TRAVEL,done:false});if(K.rand()<.18){const l2=(l+1+Math.floor(K.rand()*3))%4;notes.push({lane:l2,t:now+TRAVEL,done:false})}}}
+  for(let i=notes.length-1;i>=0;i--){const n=notes[i];if(!n.done&&now-n.t>.16){miss++;combo=0;fb='MISS';fbT=.6;n.done=true}if(now-n.t>.5)notes.splice(i,1)}
+  for(let i=0;i<4;i++)flashL[i]=Math.max(0,flashL[i]-dt*5);fbT=Math.max(0,fbT-dt);
+  for(let i=fx.length-1;i>=0;i--){const q=fx[i];q.t+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=300*dt;if(q.t>.8)fx.splice(i,1)}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const hv=p.inside?Math.floor((p.x-g.x0)/g.lw):-1;
+  for(let i=0;i<4;i++){const x=g.x0+i*g.lw;c.fillStyle=K.DAMAGE[i%6]+(i===hv?'22':'10');c.fillRect(x,g.top,g.lw-2,g.line-g.top+40);c.fillStyle=K.DAMAGE[i%6];c.globalAlpha=.3+flashL[i]*.7;c.fillRect(x,g.line-3,g.lw-2,6);c.globalAlpha=1;c.font='bold 16px monospace';c.textAlign='center';c.fillStyle=K.DAMAGE[i%6];c.globalAlpha=.4+flashL[i]*.6;c.fillText(LABEL[i],x+g.lw/2,g.line+30);c.globalAlpha=1}
+  for(const n of notes){if(n.done)continue;const y=g.line-(n.t-now)/TRAVEL*(g.line-g.top);if(y<g.top-20)continue;const x=g.x0+n.lane*g.lw;const gr=c.createLinearGradient(x,0,x+g.lw,0);K.SPECTRUM.forEach((s,k)=>gr.addColorStop(k/5,s));c.fillStyle=gr;c.fillRect(x+6,y-12,g.lw-14,24);c.strokeStyle='#faffdb';c.strokeRect(x+6.5,y-11.5,g.lw-15,23)}
+  for(const q of fx){c.globalAlpha=1-q.t/.8;c.fillStyle=q.c;c.fillRect(q.x-2,q.y-2,4,4)}c.globalAlpha=1;
+  c.textAlign='center';c.font='13px monospace';c.fillStyle='#faffdb';if(fbT>0){c.globalAlpha=fbT/.6;c.fillText(fb,w/2,g.line-g.top>0?g.top+34:60);c.globalAlpha=1}
+  if(combo>1){c.font='10px monospace';c.fillText('COMBO ×'+combo,w/2,g.top+54)}c.textAlign='left';
+  if(p.inside){c.globalAlpha=.5;c.font='9px monospace';c.fillText(p.held?'SLOW 0.7×':'CLICK A LANE',p.x+12,p.y-8);c.globalAlpha=1}
+ },
+ readout:K=>['SCORE '+K.pad(score,6),'COMBO '+K.pad(combo,2)+' / BEST '+K.pad(best,2)+' / MISS '+K.pad(miss,2)]
+});
+})();
+</script></body></html>

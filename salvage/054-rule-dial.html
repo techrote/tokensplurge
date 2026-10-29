@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S054 — RULE DIAL</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A one-dimensional world, one row per tick, and a dial with 256 rules on it. Most are boring. Collect the ones that are not.
+const CELL=5;
+let cols=0,rows=0,row=null,rule=30,hist=null,hc=null,hd=null,acc=0,found=new Set(),aliveT=0,density=0,hold=0,changed=0,flicker=0,lastAdd='';
+function init(K){cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);hist=document.createElement('canvas');hist.width=cols;hist.height=rows;hc=hist.getContext('2d');hc.fillStyle='#05070e';hc.fillRect(0,0,cols,rows);hd=hc.createImageData(cols,1);seed(K,false)}
+function seed(K,rand){row=new Uint8Array(cols);if(rand)for(let i=0;i<cols;i++)row[i]=K.rand()<.5?1:0;else row[Math.floor(cols/2)]=1;aliveT=0}
+function tick(K){
+ const n=new Uint8Array(cols);let ch=0,d=0;for(let i=0;i<cols;i++){const l=row[(i+cols-1)%cols],c=row[i],r=row[(i+1)%cols],v=(rule>>(l*4+c*2+r))&1;n[i]=v;d+=v;ch+=v!==row[i]}
+ row=n;density=d/cols;changed=ch/cols;
+ hc.drawImage(hist,0,-1);const D=hd.data;for(let i=0;i<cols;i++){const o=i*4,v=row[i];D[o]=v?(40+i*3)%256*0+K.clamp(120+Math.sin(i*.05+rule*.1)*120,0,255):5;D[o+1]=v?200:7;D[o+2]=v?(180+Math.cos(i*.05)*60):14;D[o+3]=255}hc.putImageData(hd,0,rows-1);
+}
+Salvage({id:'S054',title:'RULE DIAL',parent:'012 RECOVERING THE RECOVERY',
+ help:'<kbd>←</kbd><kbd>→</kbd> TURN THE DIAL &nbsp;<kbd>↑</kbd><kbd>↓</kbd> JUMP BY 16 &nbsp;<kbd>SPACE</kbd> RESEED<br>RULES THAT STAY BUSY GET COLLECTED / THE POINTER WRITES CELLS INTO THE LIVE ROW, HOLD FOR NOISE',
+ aria:'A one-dimensional cellular automaton drawn as a scrolling history. Left and right arrows turn a dial through the 256 possible rules, up and down jump by sixteen, and Space reseeds the world with random cells. A rule that keeps producing varied activity for several seconds is added to a collection. The pointer writes cells into the live row at its horizontal position; holding it writes noise.',
+ reset(K){init(K);rule=Math.floor(K.rand()*256);found=new Set();hold=0},
+ resize(K){init(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh)seed(K,true);return true}
+  if(/^Arrow|^Key[WASD]$/.test(e.code)){const d={ArrowLeft:-1,KeyA:-1,ArrowRight:1,KeyD:1,ArrowUp:16,KeyW:16,ArrowDown:-16,KeyS:-16}[e.code];if(fresh){rule=((rule+d)%256+256)%256;aliveT=0;flicker=1}return true}
+ },
+ step(K,dt){
+  if(K.keys.has('ArrowRight')||K.keys.has('KeyD')||K.keys.has('ArrowLeft')||K.keys.has('KeyA')){hold+=dt;if(hold>.4){const d=K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:-1;if(Math.floor((hold-.4)*12)!==Math.floor((hold-.4-dt)*12)){rule=((rule+d)%256+256)%256;aliveT=0;flicker=1}}}else hold=0;
+  flicker=Math.max(0,flicker-dt*3);
+  const p=K.pointer;if(p.inside){const i=K.clamp(Math.floor(p.x/CELL),0,cols-1);if(p.held){for(let k=-6;k<=6;k++)row[(i+k+cols)%cols]=K.rand()<.5?1:0}else row[i]=1}
+  acc+=dt;while(acc>.035){acc-=.035;tick(K)}
+  if(density>.12&&density<.65&&changed>.1)aliveT+=dt;else aliveT=Math.max(0,aliveT-dt*2);
+  if(aliveT>6&&!found.has(rule)){found.add(rule);lastAdd='RULE '+rule;K.note('COLLECTED / RULE '+rule+' / '+found.size+' OF 256')}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.imageSmoothingEnabled=false;c.drawImage(hist,0,0,cols*CELL,rows*CELL);c.imageSmoothingEnabled=true;
+  c.fillStyle='#05070ecc';c.fillRect(w/2-150,h-130,300,70);c.strokeStyle='#17283a';c.strokeRect(w/2-150.5,h-130.5,300,70);
+  c.fillStyle=found.has(rule)?'#f4d84e':'#faffdb';c.font='bold 22px monospace';c.textAlign='center';c.fillText('RULE '+K.pad(rule,3),w/2,h-104);
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(rule.toString(2).padStart(8,'0')+' / DENSITY '+(density*100).toFixed(0)+'% / ACTIVITY '+(changed*100).toFixed(0)+'%',w/2,h-86);
+  c.fillStyle='#ffffff22';c.fillRect(w/2-100,h-76,200,4);c.fillStyle=found.has(rule)?'#f4d84e':'#10f4cf';c.fillRect(w/2-100,h-76,200*Math.min(1,found.has(rule)?1:aliveT/6),4);c.textAlign='left';
+  c.fillStyle='#9fc4d6';c.fillText('COLLECTED: '+(found.size?[...found].sort((a,b)=>a-b).slice(-12).join(' '):'none yet'),22,h*.12);
+  if(p.inside){c.strokeStyle='#faffdb';c.globalAlpha=.6;c.beginPath();c.moveTo(p.x,h-CELL*2);c.lineTo(p.x,h-CELL*14);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'NOISE':'WRITE',p.x+8,h-CELL*14)}
+ },
+ readout:K=>['RULE '+K.pad(rule,3),'COLLECTED '+K.pad(found.size,3)+' / 256']
+});
+})();
+</script></body></html>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S048 — PINBALL</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A table that was only ever shown in the dark. Nudge, but not too much.
+const BR=7,FL=72;
+let T={x0:0,x1:0,y0:0,yb:0,cx:0},ball=null,bumpers=[],flips=[],segs=[],score=0,balls=3,best=0,tilt=0,tiltLock=0,flash=[],over=0,lastPX=0;
+function layout(K){
+ const W=Math.min(K.w*.55,480),cx=K.w/2;T={x0:cx-W/2,x1:cx+W/2,y0:K.h*.1,yb:K.h*.92,cx};
+ const py=T.yb-70,lx=cx-W*.2,rx=cx+W*.2;
+ flips=[{px:lx,py,rest:.45,act:-.45,a:.45,w:0,sign:1,key:'L'},{px:rx,py,rest:Math.PI-.45,act:Math.PI+.45,a:Math.PI-.45,w:0,sign:-1,key:'R'}];
+ bumpers=[{x:cx-W*.2,y:T.y0+K.h*.22,r:22,f:0},{x:cx+W*.2,y:T.y0+K.h*.22,r:22,f:0},{x:cx,y:T.y0+K.h*.34,r:22,f:0},{x:cx-W*.3,y:T.y0+K.h*.46,r:14,f:0},{x:cx+W*.3,y:T.y0+K.h*.46,r:14,f:0}];
+ segs=[[T.x0,T.yb-190,lx-4,py-6],[T.x1,T.yb-190,rx+4,py-6]];
+}
+function serve(K){ball={x:T.cx+(K.rand()-.5)*60,y:T.y0+30,vx:(K.rand()-.5)*120,vy:60}}
+function seg(b,ax,ay,bx,by,r,vfun){
+ const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy,t=Math.max(0,Math.min(1,((b.x-ax)*dx+(b.y-ay)*dy)/l2)),cx=ax+dx*t,cy=ay+dy*t,ex=b.x-cx,ey=b.y-cy,d=Math.hypot(ex,ey);
+ if(d<r&&d>0){const nx=ex/d,ny=ey/d;b.x=cx+nx*r;b.y=cy+ny*r;const [fx,fy]=vfun?vfun(cx,cy):[0,0],vn=(b.vx-fx)*nx+(b.vy-fy)*ny;if(vn<0){b.vx-=1.6*vn*nx;b.vy-=1.6*vn*ny;return true}}
+ return false;
+}
+Salvage({id:'S048',title:'PINBALL',parent:'033 WHITEOUT MEMORY',
+ help:'<kbd>←</kbd><kbd>→</kbd> FLIPPERS &nbsp;<kbd>SPACE</kbd> SERVE A BALL<br>THE POINTER NUDGES THE BALL SIDEWAYS — TOO MUCH IS A TILT',
+ aria:'A pinball table. Left and right arrows work the two flippers and Space serves a ball. Bumpers score points; there are three balls. Moving the pointer sideways nudges the ball, but nudging too much causes a tilt that disables the flippers for a few seconds.',
+ reset(K){layout(K);score=0;balls=3;best=0;tilt=0;tiltLock=0;over=0;ball=null;flash=[]},
+ resize(K){layout(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh){if(over){over=0;balls=3;score=0}if(!ball&&balls>0)serve(K)}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const l=K.keys.has('ArrowLeft')||K.keys.has('KeyA')||K.keys.has('ArrowDown'),r=K.keys.has('ArrowRight')||K.keys.has('KeyD')||K.keys.has('ArrowDown');tiltLock=Math.max(0,tiltLock-dt);tilt=Math.max(0,tilt-dt*.25);
+  for(const f of flips){const want=((f.key==='L'?l:r)&&!tiltLock)?f.act:f.rest,diff=want-f.a,step=Math.sign(diff)*Math.min(Math.abs(diff),20*dt);f.w=dt>0?step/dt:0;f.a+=step}
+  for(const b of bumpers)b.f=Math.max(0,b.f-dt*4);
+  if(!ball)return;
+  const p=K.pointer;if(p.inside){const nx=K.clamp(p.vx,-1500,1500)*.5;if(Math.abs(nx)>200){ball.vx+=nx*dt*.7;tilt+=Math.abs(nx)*dt*.0016*(p.held?2:1)}}
+  if(tilt>=1&&!tiltLock){tiltLock=3;tilt=0;K.note('TILT / FLIPPERS DEAD FOR 3s')}
+  const n=4;for(let s=0;s<n;s++){const d=dt/n;ball.vy+=700*d;ball.x+=ball.vx*d;ball.y+=ball.vy*d;const sp=Math.hypot(ball.vx,ball.vy);if(sp>950){ball.vx*=950/sp;ball.vy*=950/sp}
+   if(ball.x<T.x0+BR){ball.x=T.x0+BR;ball.vx=Math.abs(ball.vx)*.7}if(ball.x>T.x1-BR){ball.x=T.x1-BR;ball.vx=-Math.abs(ball.vx)*.7}if(ball.y<T.y0+BR){ball.y=T.y0+BR;ball.vy=Math.abs(ball.vy)*.7}
+   for(const b of bumpers){const dx=ball.x-b.x,dy=ball.y-b.y,dd=Math.hypot(dx,dy);if(dd<b.r+BR&&dd>0){const nx=dx/dd,ny=dy/dd;ball.x=b.x+nx*(b.r+BR);ball.y=b.y+ny*(b.r+BR);const vn=ball.vx*nx+ball.vy*ny;if(vn<0){ball.vx-=2*vn*nx;ball.vy-=2*vn*ny}ball.vx+=nx*140;ball.vy+=ny*140;b.f=1;score+=b.r>18?100:250;}}
+   for(const sg of segs)seg(ball,sg[0],sg[1],sg[2],sg[3],BR+2);
+   for(const f of flips){const ex=f.px+Math.cos(f.a)*FL,ey=f.py+Math.sin(f.a)*FL;seg(ball,f.px,f.py,ex,ey,BR+6,(cx,cy)=>[-f.w*(cy-f.py),f.w*(cx-f.px)])}
+  }
+  if(ball.y>T.yb+20){ball=null;balls--;best=Math.max(best,score);if(balls<=0){over=1;K.note('GAME OVER / '+score+' / SPACE FOR ANOTHER')}else K.note('BALL LOST / '+balls+' LEFT / SPACE TO SERVE')}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#2a3d5e';c.lineWidth=2;c.strokeRect(T.x0,T.y0,T.x1-T.x0,T.yb-T.y0);c.lineWidth=1;
+  c.strokeStyle='#9fc4d6';c.lineWidth=3;for(const s of segs){c.beginPath();c.moveTo(s[0],s[1]);c.lineTo(s[2],s[3]);c.stroke()}c.lineWidth=1;
+  for(const b of bumpers){c.fillStyle=b.f?'#faffdb':K.DAMAGE[3];c.globalAlpha=.4+b.f*.6;c.beginPath();c.arc(b.x,b.y,b.r,0,TAU);c.fill();c.globalAlpha=1;c.strokeStyle='#faffdb';c.beginPath();c.arc(b.x,b.y,b.r+3+b.f*4,0,TAU);c.stroke()}
+  for(const f of flips){c.strokeStyle=tiltLock?'#ed4e8c':'#faffdb';c.lineWidth=9;c.lineCap='round';c.beginPath();c.moveTo(f.px,f.py);c.lineTo(f.px+Math.cos(f.a)*FL,f.py+Math.sin(f.a)*FL);c.stroke();c.lineCap='butt';c.lineWidth=1}
+  if(ball){c.fillStyle='#e9fbff';c.beginPath();c.arc(ball.x,ball.y,BR,0,TAU);c.fill()}else if(!over&&balls>0){c.fillStyle='#faffdb';c.font='10px monospace';c.textAlign='center';c.fillText('SPACE TO SERVE',T.cx,T.y0+60);c.textAlign='left'}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('TILT',T.x0,T.y0-10);c.fillStyle='#ffffff22';c.fillRect(T.x0+28,T.y0-17,80,5);c.fillStyle=tilt>.7?'#ed4e8c':'#faffdb';c.fillRect(T.x0+28,T.y0-17,80*Math.min(1,tilt),5);
+  c.fillStyle='#faffdb';c.fillText('●'.repeat(Math.max(0,balls)),T.x1-50,T.y0-10);
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,10,0,TAU);c.stroke();c.globalAlpha=1;c.fillText('NUDGE',p.x+14,p.y-6)}
+ },
+ readout:K=>['SCORE '+K.pad(score,6),'BALLS '+balls+' / BEST '+K.pad(best,6)]
+});
+})();
+</script></body></html>

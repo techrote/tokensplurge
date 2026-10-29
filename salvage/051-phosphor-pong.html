@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#020504"><title>S051 — PHOSPHOR PONG</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The opponent is an old tube. Its tracking gets worse the longer it has been on.
+const PH=90,PW=10;
+let me={y:0,v:0},ai={y:0,tx:0},ball={x:0,y:0,vx:0,vy:0,trail:[]},sc=[0,0],rally=0,best=0,jam=1,jammed=false,serveT=0,wear=0,lastHit=0;
+function serve(K,dir){ball={x:K.w/2,y:K.h/2,vx:dir*300,vy:(K.rand()-.5)*220,trail:[]};rally=0;serveT=.8}
+Salvage({id:'S051',title:'PHOSPHOR PONG',parent:'020 PHOSPHOR BLOOM',bg:'#020504',
+ help:'<kbd>↑</kbd><kbd>↓</kbd> MOVE YOUR PADDLE &nbsp;FIRST TO SEVEN<br>THE OPPONENT WEARS OUT / THE POINTER JAMS IT WHILE HELD (LIMITED) AND JITTERS THE BALL',
+ aria:'A pong game against a computer paddle on the right. Up and down arrows move your paddle on the left; first to seven wins. The opponent tracks the ball less accurately the more points are played. Holding the pointer jams the opponent paddle for as long as a limited meter lasts; moving the pointer near the ball makes it jitter.',
+ reset(K){me={y:K.h/2,v:0};ai={y:K.h/2,tx:K.h/2};sc=[0,0];best=0;jam=1;wear=0;serve(K,1)},
+ key(K,e,fresh){if(/^Arrow|^Key[WASD]$|^Space$/.test(e.code))return true},
+ step(K,dt){
+  const d=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);me.v+=d*3200*dt;me.v*=Math.exp(-dt*10);me.y=K.clamp(me.y+me.v*dt,PH/2+K.h*.08,K.h*.92-PH/2);
+  const p=K.pointer;jammed=p.inside&&p.held&&jam>0;if(jammed)jam=Math.max(0,jam-dt*.25);else jam=Math.min(1,jam+dt*.1);
+  if(serveT>0){serveT-=dt;return}
+  ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
+  if(p.inside&&Math.hypot(ball.x-p.x,ball.y-p.y)<120){ball.vy+=(K.rand()-.5)*900*dt}
+  const top=K.h*.08,bot=K.h*.92;if(ball.y<top){ball.y=top;ball.vy=Math.abs(ball.vy)}if(ball.y>bot){ball.y=bot;ball.vy=-Math.abs(ball.vy)}
+  ball.trail.push([ball.x,ball.y]);if(ball.trail.length>18)ball.trail.shift();
+  const lx=K.w*.06,rx=K.w*.94;
+  if(ball.vx<0&&ball.x<lx+PW&&ball.x>lx-4&&Math.abs(ball.y-me.y)<PH/2+6){ball.x=lx+PW;const rel=(ball.y-me.y)/(PH/2);ball.vx=Math.min(760,-ball.vx*1.06);ball.vy=rel*320+me.v*.25;rally++;best=Math.max(best,rally);lastHit=K.time}
+  if(ball.vx>0&&ball.x>rx-PW&&ball.x<rx+4&&Math.abs(ball.y-ai.y)<PH/2+6){ball.x=rx-PW;const rel=(ball.y-ai.y)/(PH/2);ball.vx=-Math.min(760,ball.vx*1.04);ball.vy=rel*320;rally++;best=Math.max(best,rally)}
+  if(!jammed){const err=(K.rand()-.5)*wear*.9,want=(ball.vx>0?ball.y:K.h/2)+err*50;ai.tx=want;const sp=Math.max(120,380-wear*30);ai.y+=K.clamp(ai.tx-ai.y,-sp*dt,sp*dt)}
+  ai.y=K.clamp(ai.y,PH/2+K.h*.08,K.h*.92-PH/2);
+  if(ball.x<-10){sc[1]++;wear+=.4;K.note('POINT TO THE TUBE '+sc[0]+'–'+sc[1]);if(sc[1]>=7){K.note('THE TUBE WINS / NEW SET');sc=[0,0];wear=0}serve(K,-1)}
+  if(ball.x>K.w+10){sc[0]++;wear+=.7;K.note('POINT TO YOU '+sc[0]+'–'+sc[1]);if(sc[0]>=7){K.note('YOU WIN / THE TUBE RESETS');sc=[0,0];wear=0}serve(K,1)}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#020504';c.fillRect(0,0,w,h);
+  c.strokeStyle='#0d1a16';c.setLineDash([6,10]);c.beginPath();c.moveTo(w/2,h*.08);c.lineTo(w/2,h*.92);c.stroke();c.setLineDash([]);c.strokeStyle='#17302a';c.beginPath();c.moveTo(0,h*.08);c.lineTo(w,h*.08);c.moveTo(0,h*.92);c.lineTo(w,h*.92);c.stroke();
+  ball.trail.forEach(([x,y],k)=>{c.globalAlpha=k/18*.5;c.fillStyle='#7cf3c8';c.beginPath();c.arc(x,y,5*(k/18),0,TAU);c.fill()});c.globalAlpha=1;
+  c.fillStyle='#d8fff0';c.beginPath();c.arc(ball.x,ball.y,6,0,TAU);c.fill();
+  c.fillStyle='#7cf3c8';c.fillRect(w*.06,me.y-PH/2,PW,PH);c.fillStyle=jammed?'#ed4e8c':'#f4d84e';c.fillRect(w*.94-PW,ai.y-PH/2+(Math.random()-.5)*(wear*1.5+(jammed?0:0)),PW,PH);
+  c.font='bold 38px monospace';c.textAlign='center';c.fillStyle='#17302a';c.fillText(sc[0],w*.4,h*.2);c.fillText(sc[1],w*.6,h*.2);c.font='9px monospace';c.fillStyle='#7cf3c8';c.fillText('RALLY '+rally,w/2,h*.92+18);c.textAlign='left';
+  c.fillStyle='#ffffff22';c.fillRect(w*.94-60,h*.92+10,60,4);c.fillStyle=jam>.2?'#ed4e8c':'#7f4a5a';c.fillRect(w*.94-60,h*.92+10,60*jam,4);c.fillStyle='#9fc4d6';c.fillText('JAM',w*.94-84,h*.92+15);
+  if(p.inside){c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,p.held?24:12,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?(jam>0?'JAMMING':'NO CHARGE'):'JITTER',p.x+16,p.y-8)}
+ },
+ readout:K=>['YOU '+sc[0]+' – TUBE '+sc[1],'RALLY '+K.pad(rally,2)+' / BEST '+K.pad(best,2)+' / WEAR '+wear.toFixed(1)]
+});
+})();
+</script></body></html>
