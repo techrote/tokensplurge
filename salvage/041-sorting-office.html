@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S041 — SORTING OFFICE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Everything that arrives here is returned to someone. Route it by colour.
+const COL=['#28e3f4','#f4d84e','#ed4e8c'],NAME=['CYAN','AMBER','ROSE'];
+let items=[],sel=1,spawn=0,right=0,wrong=0,streak=0,best=0,slow=0,slowCool=0,lastKey=-1;
+const geo=K=>{const cx=K.w/2,top=K.h*.14,dec=K.h*.5,binY=K.h*.78,sp=Math.min(K.w*.28,260);return{cx,top,dec,binY,sp,bx:[cx-sp,cx,cx+sp]}};
+Salvage({id:'S041',title:'SORTING OFFICE',parent:'006 DEAD LETTER OFFICE',
+ help:'<kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> SET THE SWITCH: LEFT / MIDDLE / RIGHT BIN &nbsp;<kbd>SPACE</kbd> HALT THE BELT<br>SEND EACH LETTER TO ITS COLOUR / THE POINTER SLOWS LETTERS NEAR IT',
+ aria:'Coloured letters fall down a chute toward a switch. Left, Down and Right set which of three bins the switch sends letters to: left, middle or right. Each bin has a colour; routing a letter to its matching colour scores, otherwise it counts as misdelivered. Space halts the belt briefly. The pointer slows letters near it.',
+ reset(K){items=[];sel=1;spawn=0;right=wrong=streak=0;slow=0;slowCool=0;best=0},
+ key(K,e,fresh){
+  const m={ArrowLeft:0,KeyA:0,ArrowDown:1,KeyS:1,ArrowRight:2,KeyD:2}[e.code];
+  if(m!==undefined){sel=m;return true}
+  if(e.code==='Space'){if(fresh&&slowCool<=0){slow=2;slowCool=8}return true}
+  if(e.code==='ArrowUp'||e.code==='KeyW')return true;
+ },
+ down(K,x,y){const g=geo(K);if(y>g.dec-40){sel=x<g.cx-g.sp/2?0:x>g.cx+g.sp/2?2:1;return true}return false},
+ step(K,dt){
+  const g=geo(K),p=K.pointer;slow=Math.max(0,slow-dt);slowCool=Math.max(0,slowCool-dt);
+  spawn-=dt;if(spawn<=0){spawn=Math.max(.55,1.5-K.time*.008);items.push({x:g.cx,y:g.top,c:Math.floor(K.rand()*3),route:null,t:0,ch:String.fromCharCode(65+Math.floor(K.rand()*26)),addr:Math.floor(K.rand()*65535)})}
+  const base=(150+Math.min(150,K.time*1.2))*(slow>0?.15:1);
+  for(let i=items.length-1;i>=0;i--){
+   const it=items[i];let sp=base;if(p.inside&&Math.hypot(it.x-p.x,it.y-p.y)<120)sp*=p.held?.1:.35;
+   if(it.route===null){it.y+=sp*dt;if(it.y>=g.dec)it.route=sel}
+   else{it.t=Math.min(1,it.t+dt*sp/160);const tx=g.bx[it.route];it.x=K.lerp(g.cx,tx,it.t);it.y=g.dec+(g.binY-g.dec)*it.t;
+    if(it.t>=1){if(it.c===it.route){right++;streak++;best=Math.max(best,streak);if(streak%10===0)K.note('STREAK '+streak+' / NOTHING IS BEING RETURNED')}else{wrong++;streak=0;K.live('Misdelivered')}items.splice(i,1)}}
+  }
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';c.lineWidth=2;c.beginPath();c.moveTo(g.cx-16,g.top-20);c.lineTo(g.cx-16,g.dec);c.moveTo(g.cx+16,g.top-20);c.lineTo(g.cx+16,g.dec);c.stroke();
+  for(let i=0;i<3;i++){c.strokeStyle=i===sel?'#faffdb':'#17283a';c.lineWidth=i===sel?3:1.5;c.beginPath();c.moveTo(g.cx,g.dec);c.quadraticCurveTo(g.cx,(g.dec+g.binY)/2,g.bx[i],g.binY-4);c.stroke()}c.lineWidth=1;
+  c.fillStyle='#faffdb';c.beginPath();c.moveTo(g.cx,g.dec-10);c.lineTo(g.cx+(sel-1)*18,g.dec+4);c.lineTo(g.cx+(sel-1)*18+(sel===1?10:0),g.dec+4);c.closePath();c.stroke();
+  for(let i=0;i<3;i++){c.fillStyle=COL[i]+'22';c.fillRect(g.bx[i]-46,g.binY,92,h*.12);c.strokeStyle=COL[i];c.strokeRect(g.bx[i]-46+.5,g.binY+.5,91,h*.12-1);c.fillStyle=COL[i];c.font='bold 11px monospace';c.textAlign='center';c.fillText(NAME[i],g.bx[i],g.binY+h*.07)}
+  for(const it of items){c.fillStyle=COL[it.c];c.fillRect(it.x-12,it.y-12,24,24);c.fillStyle='#05070e';c.font='bold 14px monospace';c.textAlign='center';c.fillText(it.ch,it.x,it.y+5);
+   if(p.inside&&Math.hypot(it.x-p.x,it.y-p.y)<120){c.fillStyle='#faffdb';c.font='8px monospace';c.textAlign='left';c.fillText('0x'+it.addr.toString(16).toUpperCase().padStart(4,'0'),it.x+16,it.y+3)}}
+  c.textAlign='left';c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(slow>0?'BELT HALTED':slowCool>0?'HALT RECHARGING '+Math.ceil(slowCool)+'s':'HALT READY',w/2-40,h-52);
+  if(p.inside){c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,120,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'NEARLY STOPPED':'SLOWED',p.x+84,p.y-84)}
+ },
+ readout:K=>['DELIVERED '+K.pad(right),'WRONG '+K.pad(wrong)+' / STREAK '+K.pad(streak,2)+' / BEST '+K.pad(best,2)]
+});
+})();
+</script></body></html>

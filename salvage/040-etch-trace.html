@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0d10"><title>S040 — ETCH TRACE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// One continuous line. Trace the faint word. Shaking the screen clears it and also gives you a different word.
+const CELL=6,WORDS=['SIGNAL','LINEAGE','LAST','VOID','RECALL','GLASS','INK','FAULT','041'];
+let cols=0,rows=0,mask=null,mcv=null,hit=null,tcount=1,line=null,lc=null,pen={x:0,y:0},word='',words=0,cover=0,stray=0,holdT=0,lastPen={x:0,y:0};
+function build(K){
+ cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);mcv=document.createElement('canvas');mcv.width=cols;mcv.height=rows;const c=mcv.getContext('2d');
+ c.fillStyle='#fff';c.font='bold '+Math.min(rows*.45,cols*1.5/word.length)+'px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(word,cols/2,rows/2);
+ const d=c.getImageData(0,0,cols,rows).data;mask=new Uint8Array(cols*rows);tcount=0;for(let n=0;n<mask.length;n++){mask[n]=d[n*4+3]>110?1:0;tcount+=mask[n]}tcount=Math.max(1,tcount);hit=new Uint8Array(cols*rows);
+ line=document.createElement('canvas');line.width=Math.round(K.w*K.dpr);line.height=Math.round(K.h*K.dpr);lc=line.getContext('2d');lc.setTransform(K.dpr,0,0,K.dpr,0,0);lc.lineCap='round';lc.lineJoin='round';
+ pen={x:K.w*.2,y:K.h*.5};lastPen={...pen};cover=0;stray=0;holdT=0;
+}
+function mark(x,y,r){const ci=Math.floor(x/CELL),cj=Math.floor(y/CELL),rc=Math.ceil(r/CELL);for(let j=cj-rc;j<=cj+rc;j++)for(let i=ci-rc;i<=ci+rc;i++){if(i<0||j<0||i>=cols||j>=rows)continue;if(Math.hypot((i+.5)*CELL-x,(j+.5)*CELL-y)<=r){const n=j*cols+i;if(mask[n])hit[n]=1}}}
+function unmark(x,y,r){const ci=Math.floor(x/CELL),cj=Math.floor(y/CELL),rc=Math.ceil(r/CELL);for(let j=cj-rc;j<=cj+rc;j++)for(let i=ci-rc;i<=ci+rc;i++){if(i<0||j<0||i>=cols||j>=rows)continue;if(Math.hypot((i+.5)*CELL-x,(j+.5)*CELL-y)<=r)hit[j*cols+i]=0}}
+Salvage({id:'S040',title:'ETCH TRACE',parent:'034 INK MIGRATION',bg:'#0b0d10',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> DRAW ONE LINE &nbsp;<kbd>SPACE</kbd> SHAKE TO CLEAR<br>TRACE THE FAINT WORD / THE POINTER SMUDGES THE LINE, HOLD TO SMUDGE WIDELY',
+ aria:'An etch-a-sketch. Arrow keys move a stylus that draws a single continuous line. The goal is to trace a faint outlined word; the coverage is shown. Space shakes the screen, clearing the line and choosing a new word. The pointer smudges the line wherever it passes; holding it smudges a wider area.',
+ reset(K){word=WORDS[Math.floor(K.rand()*WORDS.length)];words=0;build(K)},
+ resize(K){build(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh){word=WORDS[Math.floor(K.rand()*WORDS.length)];build(K);K.note('SHAKEN / NEW WORD')}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  if(dx||dy){const m=Math.hypot(dx,dy),sp=230*dt;lastPen={...pen};pen.x=K.clamp(pen.x+dx/m*sp,0,K.w);pen.y=K.clamp(pen.y+dy/m*sp,0,K.h);
+   lc.strokeStyle='#d8e4ea';lc.lineWidth=2.2;lc.beginPath();lc.moveTo(lastPen.x,lastPen.y);lc.lineTo(pen.x,pen.y);lc.stroke();
+   const n=Math.max(1,Math.ceil(sp/3));for(let k=0;k<=n;k++)mark(K.lerp(lastPen.x,pen.x,k/n),K.lerp(lastPen.y,pen.y,k/n),7);
+   const ci=Math.floor(pen.x/CELL),cj=Math.floor(pen.y/CELL);if(!mask[cj*cols+ci])stray+=dt}
+  const p=K.pointer;if(p.inside&&p.speed>.08){const r=p.held?46:24;lc.save();lc.globalCompositeOperation='destination-out';lc.beginPath();lc.arc(p.x,p.y,r,0,K.TAU);lc.fill();lc.restore();unmark(p.x,p.y,r)}
+  let h=0;for(let n=0;n<mask.length;n++)h+=hit[n]&mask[n];cover=h/tcount;
+  if(cover>=.85){holdT+=dt;if(holdT>1.2){words++;K.note('TRACED / '+word);word=WORDS[Math.floor(K.rand()*WORDS.length)];build(K)}}else holdT=0;
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#0b0d10';c.fillRect(0,0,w,h);
+  c.fillStyle='#161b20';c.fillRect(w*.04,h*.12,w*.92,h*.78);c.strokeStyle='#2a3238';c.lineWidth=6;c.strokeRect(w*.04,h*.12,w*.92,h*.78);c.lineWidth=1;
+  c.globalAlpha=.2;c.imageSmoothingEnabled=false;c.drawImage(mcv,0,0,cols*CELL,rows*CELL);c.imageSmoothingEnabled=true;c.globalAlpha=1;
+  c.save();c.globalCompositeOperation='lighter';c.globalAlpha=.9;c.drawImage(line,0,0,w,h);c.restore();
+  c.strokeStyle='#faffdb';c.beginPath();c.arc(pen.x,pen.y,5,0,TAU);c.moveTo(pen.x-10,pen.y);c.lineTo(pen.x+10,pen.y);c.moveTo(pen.x,pen.y-10);c.lineTo(pen.x,pen.y+10);c.stroke();
+  c.font='9px monospace';c.fillStyle='#9fb0b8';c.textAlign='center';c.fillText('TRACE “'+word+'” / '+(cover*100).toFixed(0)+'% / 85% TO KEEP IT',w/2,h*.12-10);c.textAlign='left';
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,p.held?46:24,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'SMUDGE+':'SMUDGE',p.x+(p.held?50:28),p.y)}
+ },
+ readout:K=>['TRACED '+(cover*100).toFixed(1)+'%','WORDS '+K.pad(words)+' / STRAY '+K.pad(stray,3)+'s']
+});
+})();
+</script></body></html>

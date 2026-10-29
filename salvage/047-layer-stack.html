@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0806"><title>S047 — LAYER STACK</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Lay each stratum on the one below. What overhangs is shaved away.
+const EARTH=['#c98a4b','#6f5640','#4f7f8a','#d9c9a0','#8d78ff','#d9604b','#4e8f61'],LH=22;
+let layers=[],cur,dir=1,spd=240,cam=0,camT=0,height=0,best=0,perfect=0,streak=0,over=0,fall=[],sway=0;
+const base=K=>Math.min(K.w*.34,300);
+function start(K){const bw=base(K);layers=[{x:K.w/2-bw/2,w:bw,c:0}];height=0;streak=0;spd=240;cam=0;camT=0;over=0;fall=[];next(K)}
+function next(K){const top=layers[layers.length-1];cur={x:dir>0?-top.w:K.w,w:top.w,c:(layers.length)%EARTH.length};}
+const yOf=(K,i)=>K.h*.8-(i)*LH+cam;
+Salvage({id:'S047',title:'LAYER STACK',parent:'023 STRATIGRAPHIC SLIP',bg:'#0b0806',
+ help:'<kbd>SPACE</kbd> LAY THE LAYER<br>PERFECT FITS KEEP THE WIDTH / THE POINTER EASES THE SLIDE, HOLD TO SLOW IT MORE',
+ aria:'A stacking game. A coloured layer slides back and forth above a tower; pressing Space drops it. Whatever overhangs the layer below is cut away, so the tower narrows with mistakes and a perfect fit keeps its width. The game ends when nothing overlaps. The pointer slows the sliding layer, and holding it slows it further.',
+ reset(K){best=0;perfect=0;dir=1;start(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='ArrowDown'||e.code==='Enter'){if(fresh){if(over){dir=1;start(K)}else drop(K)}return true}
+  if(/^Arrow|^Key[WASD]$/.test(e.code))return true;
+ },
+ down(K){return false},
+ step(K,dt){
+  const p=K.pointer;
+  if(!over){const f=p.inside?(p.held?.4:.7):1;cur.x+=dir*spd*f*dt;const top=layers[layers.length-1];if(cur.x+cur.w>K.w+40){dir=-1}if(cur.x<-40){dir=1}}
+  camT=Math.max(0,(layers.length-14))*LH;cam+=(camT-cam)*Math.min(1,dt*4);
+  for(let i=fall.length-1;i>=0;i--){const f=fall[i];f.vy+=900*dt;f.y+=f.vy*dt;f.x+=f.vx*dt;f.t+=dt;if(f.t>1.5)fall.splice(i,1)}
+  sway=Math.sin(K.time*.8)*(p.inside?(p.x/K.w-.5)*10:0);
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#0b0806';c.fillRect(0,0,w,h);
+  const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#14100c');bg.addColorStop(1,'#050302');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  c.strokeStyle='#2a221a';c.beginPath();c.moveTo(0,K.h*.8+LH+cam+.5);c.lineTo(w,K.h*.8+LH+cam+.5);c.stroke();
+  layers.forEach((l,i)=>{const y=yOf(K,i),off=sway*(i/Math.max(8,layers.length))*2;c.fillStyle=EARTH[l.c];c.fillRect(l.x+off,y,l.w,LH-1);c.fillStyle='#00000033';for(let q=0;q<5;q++)c.fillRect(l.x+off+K.hash(i*7+q)*(l.w-4),y+K.hash(i+q*3)*(LH-3),2,1);c.strokeStyle='#ffffff18';c.strokeRect(l.x+off+.5,y+.5,l.w-1,LH-2)});
+  for(const f of fall){c.globalAlpha=Math.max(0,1-f.t/1.5);c.fillStyle=EARTH[f.c];c.fillRect(f.x,f.y,f.w,LH-1)}c.globalAlpha=1;
+  if(!over){const y=yOf(K,layers.length);c.fillStyle=EARTH[cur.c];c.fillRect(cur.x,y-6,cur.w,LH-1);c.strokeStyle='#faffdb';c.strokeRect(cur.x+.5,y-5.5,cur.w-1,LH-2);const top=layers[layers.length-1];c.globalAlpha=.25;c.setLineDash([3,4]);c.beginPath();c.moveTo(top.x,y);c.lineTo(top.x,y+LH);c.moveTo(top.x+top.w,y);c.lineTo(top.x+top.w,y+LH);c.stroke();c.setLineDash([]);c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle='#d9c9a0';c.textAlign='left';c.fillText('LAYER '+K.pad(layers.length)+' / ~'+(layers.length*120)+' YEARS',22,h-52);
+  if(over){c.fillStyle='#0b0806cc';c.fillRect(0,h*.4,w,70);c.fillStyle='#faffdb';c.textAlign='center';c.font='14px monospace';c.fillText('NOTHING OVERLAPS',w/2,h*.4+30);c.font='9px monospace';c.fillText('SPACE TO LAY A NEW BASE',w/2,h*.4+50);c.textAlign='left'}
+  if(p.inside){c.fillStyle='#faffdb';c.fillText(p.held?'EASING MORE':'EASING',p.x+12,p.y-8)}
+ },
+ readout:K=>['LAYERS '+K.pad(layers.length-1),'BEST '+K.pad(best)+' / PERFECT '+K.pad(perfect)+' / STREAK '+K.pad(streak,2)]
+});
+function drop(K){
+ const top=layers[layers.length-1],l=Math.max(cur.x,top.x),r=Math.min(cur.x+cur.w,top.x+top.w),ow=r-l;
+ if(ow<=1){over=1;best=Math.max(best,layers.length-1);K.note('NOTHING OVERLAPS / '+(layers.length-1)+' LAYERS');fall.push({x:cur.x,y:K.h*.8-layers.length*LH+cam-6,w:cur.w,vx:0,vy:0,t:0,c:cur.c});return}
+ const perf=Math.abs(cur.x-top.x)<5;
+ if(perf){layers.push({x:top.x,w:top.w,c:cur.c});perfect++;streak++;if(streak%5===0)K.note('PERFECT x'+streak)}
+ else{streak=0;layers.push({x:l,w:ow,c:cur.c});const y=K.h*.8-layers.length*LH+cam;if(cur.x<top.x)fall.push({x:cur.x,y,w:top.x-cur.x,vx:-40,vy:0,t:0,c:cur.c});else fall.push({x:top.x+top.w,y,w:cur.x+cur.w-top.x-top.w,vx:40,vy:0,t:0,c:cur.c})}
+ spd=Math.min(520,spd+6);best=Math.max(best,layers.length-1);cur={x:dir>0?-layers[layers.length-1].w:K.w,w:layers[layers.length-1].w,c:layers.length%EARTH.length};
+}
+})();
+</script></body></html>

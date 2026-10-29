@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S045 — HARMONOGRAPH</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Two pendulums. Only simple ratios close the figure. Find the one the lineage left behind.
+const TARGETS=[[3,2],[5,4],[1,1],[2,1],[4,3],[5,3],[3,1]];
+let fx=1.7,fy=2.6,tgt=TARGETS[0],found=0,lockT=0,hx=0,hy=0,err=1,capT=0;
+const phase=(K)=>{const p=K.pointer;return p.inside?[p.y/K.h*K.TAU,p.x/K.w*K.TAU]:[0,Math.PI/2]};
+Salvage({id:'S045',title:'HARMONOGRAPH',parent:'019 MOIRE APPARITION',
+ help:'<kbd>←</kbd><kbd>→</kbd> TUNE PENDULUM X &nbsp;<kbd>↑</kbd><kbd>↓</kbd> TUNE PENDULUM Y<br>MAKE THEIR RATIO MATCH THE TARGET / THE POINTER ROTATES THE FIGURE',
+ aria:'A harmonograph drawing a Lissajous curve from two pendulum frequencies. Left and right arrows tune the horizontal pendulum and up and down tune the vertical one. The target is a frequency ratio such as 3 to 2; when the ratio matches, the curve stops rotating and closes into a still figure that is captured. The pointer position shifts the pendulum phases and so turns the figure.',
+ reset(K){fx=1+K.rand()*4;fy=1+K.rand()*4;tgt=TARGETS[Math.floor(K.rand()*TARGETS.length)];found=0;lockT=0;capT=0},
+ key(K,e,fresh){if(/^Arrow|^Key[WASD]$|^Space$/.test(e.code))return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0)-(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);
+  hx=dx?hx+dt:0;hy=dy?hy+dt:0;if(!capT){fx=K.clamp(fx+dx*dt*(.18+Math.min(1.2,hx*.6)),.5,7);fy=K.clamp(fy+dy*dt*(.18+Math.min(1.2,hy*.6)),.5,7)}
+  err=Math.abs(fx/fy-tgt[0]/tgt[1])/(tgt[0]/tgt[1]);
+  if(err<.004&&!capT){lockT+=dt;if(lockT>1.2){found++;capT=.001;K.note('FIGURE CLOSED / '+tgt[0]+':'+tgt[1])}}else if(!capT)lockT=Math.max(0,lockT-dt*2);
+  if(capT){capT+=dt;if(capT>3){tgt=TARGETS[Math.floor(K.rand()*TARGETS.length)];fx=1+K.rand()*4;fy=1+K.rand()*4;capT=0;lockT=0}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,cx=w/2,cy=h/2+6,A=Math.min(w,h)*.36,[px,py]=phase(K),N=1400,span=14,T=K.time;
+  c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';c.beginPath();for(let k=0;k<=240;k++){const t=k/240*TAU*tgt[1]*tgt[0];const x=cx+Math.sin(tgt[0]*t/tgt[0]+Math.PI/2)*0;}c.stroke();
+  // Target figure, faint.
+  c.globalAlpha=.25;c.strokeStyle='#8d78ff';c.setLineDash([3,5]);c.beginPath();for(let k=0;k<=480;k++){const t=k/480*TAU;const x=cx+Math.sin(tgt[0]*t+Math.PI/2)*A,y=cy+Math.sin(tgt[1]*t)*A;k?c.lineTo(x,y):c.moveTo(x,y)}c.stroke();c.setLineDash([]);c.globalAlpha=1;
+  for(let k=0;k<N;k++){const t=T-span+k/N*span,fade=Math.exp(-(T-t)*.1),a=k/N;const x=cx+Math.sin(fx*t+px+Math.PI/2)*A*fade,y=cy+Math.sin(fy*t+py)*A*fade;if(k){c.globalAlpha=a*.9;c.strokeStyle=K.DAMAGE[(Math.floor(a*6)+Math.floor(T))%6];c.beginPath();c.moveTo(cx+Math.sin(fx*(t-span/N)+px+Math.PI/2)*A*Math.exp(-(T-t+span/N)*.1),cy+Math.sin(fy*(t-span/N)+py)*A*Math.exp(-(T-t+span/N)*.1));c.lineTo(x,y);c.stroke()}}
+  c.globalAlpha=1;
+  c.font='11px monospace';c.textAlign='center';c.fillStyle='#faffdb';c.fillText('TARGET '+tgt[0]+':'+tgt[1]+' / YOURS '+(fx/fy).toFixed(3)+' (TARGET '+(tgt[0]/tgt[1]).toFixed(3)+')',cx,h*.12);
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('fx '+fx.toFixed(3)+' / fy '+fy.toFixed(3),cx,h-60);
+  c.fillStyle='#ffffff22';c.fillRect(cx-60,h-52,120,4);c.fillStyle=err<.004?'#f4d84e':'#faffdb';c.fillRect(cx-60,h-52,120*Math.max(0,1-Math.min(1,err*12)),4);c.textAlign='left';
+  if(capT){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.strokeRect(cx-A-10,cy-A-10,A*2+20,A*2+20);c.globalAlpha=1}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,10,0,TAU);c.stroke();c.globalAlpha=1;c.fillText('PHASE '+(py).toFixed(2)+' / '+(px).toFixed(2),p.x+14,p.y-8)}
+ },
+ readout:K=>['ERROR '+(err*100).toFixed(2)+'%','CLOSED '+K.pad(found)+' / '+tgt[0]+':'+tgt[1]]
+});
+})();
+</script></body></html>

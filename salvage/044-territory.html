@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S044 — TERRITORY</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The surface belongs to whichever seed is nearest. Place yours before theirs drift in.
+const CELL=10,MAXMINE=8,MAXRIV=12;
+let cols=0,rows=0,mine=[],riv=[],cur={x:0,y:0,vx:0,vy:0},share=.5,heldT=0,placed=0,rivT=0,owner=null,mineN=0,rivN=0;
+function claim(K,list,x,y,sx,sy){let best=-1,bd=1e18;for(let i=0;i<list.length;i++){const d=(list[i].x-x)**2+(list[i].y-y)**2;if(d<bd){bd=d;best=i}}return bd}
+function compute(K,extra){
+ owner=owner&&owner.length===cols*rows?owner:new Uint8Array(cols*rows);mineN=rivN=0;
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const x=(i+.5)*CELL,y=(j+.5)*CELL;let dm=1e18,dr=1e18;for(const s of mine){const d=(s.x-x)**2+(s.y-y)**2;if(d<dm)dm=d}if(extra){const d=(extra.x-x)**2+(extra.y-y)**2;if(d<dm)dm=d}for(const s of riv){const d=(s.x-x)**2+(s.y-y)**2;if(d<dr)dr=d}const o=dm<dr?1:2;if(!extra)owner[j*cols+i]=o;if(o===1)mineN++;else rivN++}
+ return mineN/Math.max(1,mineN+rivN);
+}
+function addRival(K){if(riv.length>=MAXRIV)riv.shift();riv.push({x:K.rand()*K.w,y:K.rand()*K.h,vx:(K.rand()-.5)*14,vy:(K.rand()-.5)*14})}
+function place(K,x,y){if(mine.length>=MAXMINE)mine.shift();mine.push({x,y,t:0});placed++;share=compute(K)}
+Salvage({id:'S044',title:'TERRITORY',parent:'031 SHEAR CRYSTALLIZATION',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE CURSOR &nbsp;<kbd>SPACE</kbd> PLANT A SEED (EIGHT AT MOST)<br>HOLD MORE THAN HALF THE SURFACE / HOVER PREVIEWS A SEED, CLICK PLANTS IT',
+ aria:'A surface divided into territories by which seed is nearest, like a Voronoi diagram. Cyan seeds are yours, magenta seeds belong to rivals and keep appearing and drifting. Arrow keys move a cursor and Space plants one of up to eight seeds; the oldest is removed beyond that. The goal is to hold more than half the area. The pointer previews how much a seed would gain and clicking plants it.',
+ reset(K){cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);owner=null;mine=[];riv=[];for(let k=0;k<4;k++)addRival(K);cur={x:K.w/2,y:K.h/2,vx:0,vy:0};heldT=placed=0;rivT=0;share=compute(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh)place(K,cur.x,cur.y);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){place(K,x,y);return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  cur.vx+=dx*1500*dt;cur.vy+=dy*1500*dt;const f=Math.exp(-dt*6);cur.vx*=f;cur.vy*=f;cur.x=K.clamp(cur.x+cur.vx*dt,0,K.w);cur.y=K.clamp(cur.y+cur.vy*dt,0,K.h);
+  for(const s of riv){s.x+=s.vx*dt;s.y+=s.vy*dt;if(s.x<0||s.x>K.w)s.vx*=-1;if(s.y<0||s.y>K.h)s.vy*=-1;
+   // Rivals lean toward whoever is closest to taking their ground.
+   let nd=1e18,nx=0,ny=0;for(const m of mine){const d=Math.hypot(m.x-s.x,m.y-s.y);if(d<nd){nd=d;nx=m.x;ny=m.y}}if(nd<1e17){s.vx+=(nx-s.x)/nd*3*dt;s.vy+=(ny-s.y)/nd*3*dt}}
+  for(const s of mine)s.t+=dt;
+  rivT+=dt;if(rivT>6){rivT=0;addRival(K);K.live('A rival appeared')}
+  share=compute(K);if(share>.5)heldT+=dt;
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const o=owner[j*cols+i];c.fillStyle=o===1?'#0f3a44':'#3a0f2a';c.fillRect(i*CELL,j*CELL,CELL,CELL);
+   if(i<cols-1&&owner[j*cols+i+1]!==o){c.fillStyle='#e9fbff55';c.fillRect((i+1)*CELL-1,j*CELL,2,CELL)}if(j<rows-1&&owner[(j+1)*cols+i]!==o){c.fillStyle='#e9fbff55';c.fillRect(i*CELL,(j+1)*CELL-1,CELL,2)}}
+  for(const s of riv){c.fillStyle='#ed4e8c';c.beginPath();c.arc(s.x,s.y,6,0,TAU);c.fill();c.strokeStyle='#ed4e8c';c.globalAlpha=.4;c.beginPath();c.arc(s.x,s.y,10+Math.sin(K.time*3+s.x)*2,0,TAU);c.stroke();c.globalAlpha=1}
+  for(const s of mine){c.fillStyle='#28e3f4';c.beginPath();c.arc(s.x,s.y,6,0,TAU);c.fill();c.strokeStyle='#28e3f4';c.globalAlpha=Math.max(0,.8-s.t);c.beginPath();c.arc(s.x,s.y,6+s.t*40,0,TAU);c.stroke();c.globalAlpha=1}
+  c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.moveTo(cur.x-10,cur.y);c.lineTo(cur.x+10,cur.y);c.moveTo(cur.x,cur.y-10);c.lineTo(cur.x,cur.y+10);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#faffdb';
+  if(p.inside){const gain=compute(K,{x:p.x,y:p.y})-share;c.strokeStyle='#faffdb';c.globalAlpha=.6;c.beginPath();c.arc(p.x,p.y,8,0,TAU);c.stroke();c.globalAlpha=1;c.fillText('PLANT: '+(gain>=0?'+':'')+(gain*100).toFixed(1)+'%',p.x+14,p.y-8)}
+  c.fillStyle='#ffffff22';c.fillRect(w/2-100,h-62,200,5);c.fillStyle='#28e3f4';c.fillRect(w/2-100,h-62,200*share,5);c.fillStyle='#ed4e8c';c.fillRect(w/2-100+200*share,h-62,200*(1-share),5);c.fillStyle='#faffdb';c.fillRect(w/2-1,h-66,2,13);
+ },
+ readout:K=>['MINE '+(share*100).toFixed(1)+'%','HELD '+K.pad(heldT,4)+'s / SEEDS '+mine.length+'/'+MAXMINE]
+});
+})();
+</script></body></html>

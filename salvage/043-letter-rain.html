@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#030906"><title>S043 — LETTER RAIN</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The titles of the lineage, falling. Type one before it reaches the floor.
+const TITLES=['SIGNAL','AFTERIMAGE','SCANLINE','ADDRESS','BITPLANE','LETTERS','LAMINATE','DRAINAGE','VOID','POST IMAGE','DEPENDENCY','RECURSION','THERMAL','COLONY','VERTICES','INVERSION','PRECISION','CLOCKS','MOIRE','PHOSPHOR','CONTOURS','GEOLOGY','STRATA','LARVAE','SCARS','GLASS','WIRES','CRYSTAL','POLARIZERS','NEGATIVE','INK','COLUMNS','ROWS','WEAVE','UNRAVELLING','BLIND SPOT','BACKLIGHT','RECALL'];
+let words=[],buf='',lock=null,spawn=0,score=0,typed=0,missed=0,streak=0,best=0,parts=[],flash=0;
+Salvage({id:'S043',title:'LETTER RAIN',parent:'006 DEAD LETTER OFFICE',bg:'#030906',letters:true,
+ help:'TYPE THE FALLING TITLES &nbsp;<kbd>BACKSPACE</kbd> CANCEL<br>THE POINTER HOLDS WORDS IN PLACE / HOLD TO BLOW THEM OFF COURSE',
+ aria:'Titles of earlier works fall from the top of the screen as words. Type the letters of a word to clear it; the word you have started is locked in and highlighted. Backspace cancels it. Words that reach the bottom count as missed. The pointer freezes words beneath it, and holding it pushes them sideways.',
+ reset(K){words=[];buf='';lock=null;spawn=0;score=typed=missed=streak=0;parts=[];flash=0},
+ key(K,e,fresh){
+  if(!fresh)return /^Backspace$|^Key[A-Z]$|^Space$/.test(e.code)||undefined;
+  if(e.code==='Backspace'){buf='';lock=null;return true}
+  let ch=e.code==='Space'?' ':(e.key&&e.key.length===1&&/[a-z]/i.test(e.key)?e.key.toUpperCase():(/^Key[A-Z]$/.test(e.code)?e.code.slice(3):null));if(!ch)return;
+  if(lock){const need=lock.t[buf.length];if(ch===need){buf+=ch;typed++;if(buf.length===lock.t.length){score+=lock.t.length*10+streak*5;streak++;best=Math.max(best,streak);for(let i=0;i<lock.t.length;i++)parts.push({x:lock.x+i*14,y:lock.y,vx:(K.rand()-.5)*200,vy:-60-K.rand()*140,t:0,ch:lock.t[i],c:K.DAMAGE[i%6]});words.splice(words.indexOf(lock),1);lock=null;buf=''}}else if(ch!==' '||need!==' '){streak=0;flash=1}}
+  else{const c=words.filter(w=>w.t[0]===ch).sort((a,b)=>b.y-a.y)[0];if(c){lock=c;buf=ch;typed++;if(c.t.length===1){words.splice(words.indexOf(c),1);lock=null;buf='';score+=10}}else{streak=0;flash=1}}
+  return true;
+ },
+ step(K,dt){
+  const p=K.pointer;spawn-=dt;
+  if(spawn<=0){spawn=Math.max(.9,2.6-K.time*.012);const t=TITLES[Math.floor(K.rand()*TITLES.length)];words.push({t,x:K.rand()*(K.w-t.length*14-60)+30,y:K.h*.1,sp:26+K.rand()*20+Math.min(40,K.time*.2)})}
+  flash=Math.max(0,flash-dt*4);
+  for(let i=words.length-1;i>=0;i--){
+   const w=words[i];let sp=w.sp;if(p.inside&&p.y>w.y-26&&p.y<w.y+14&&p.x>w.x-20&&p.x<w.x+w.t.length*14+20){sp=0;if(p.held)w.x=K.clamp(w.x+p.vx*dt*.4,10,K.w-w.t.length*14-10)}
+   w.y+=sp*dt;if(w.y>K.h-70){missed++;streak=0;if(w===lock){lock=null;buf=''}words.splice(i,1);K.live('A title was lost')}
+  }
+  for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.t+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=300*dt;if(q.t>1)parts.splice(i,1)}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#030906';c.fillRect(0,0,w,h);
+  c.strokeStyle='#ed4e8c';c.globalAlpha=.4;c.setLineDash([4,6]);c.beginPath();c.moveTo(0,h-70);c.lineTo(w,h-70);c.stroke();c.setLineDash([]);c.globalAlpha=1;
+  c.font='bold 18px monospace';c.textAlign='left';
+  for(const wd of words){
+   const frozen=p.inside&&p.y>wd.y-26&&p.y<wd.y+14&&p.x>wd.x-20&&p.x<wd.x+wd.t.length*14+20;
+   for(let i=0;i<wd.t.length;i++){const done=wd===lock&&i<buf.length;c.fillStyle=done?'#f4d84e':wd===lock?'#e9fff6':frozen?'#b7f6ff':'#7cf3c8';c.globalAlpha=wd===lock||frozen?1:.8;c.fillText(wd.t[i],wd.x+i*14,wd.y)}
+   if(wd===lock){c.strokeStyle='#faffdb';c.globalAlpha=.6;c.strokeRect(wd.x-6,wd.y-18,wd.t.length*14+10,26)}
+  }
+  c.globalAlpha=1;for(const q of parts){c.globalAlpha=1-q.t;c.fillStyle=q.c;c.fillText(q.ch,q.x,q.y)}c.globalAlpha=1;
+  c.font='14px monospace';c.textAlign='center';c.fillStyle=flash?'#ed4e8c':'#faffdb';c.fillText(buf?buf+'▌':'▌',w/2,h-30);c.textAlign='left';
+  if(p.inside){c.globalAlpha=.5;c.fillStyle='#faffdb';c.font='9px monospace';c.fillText(p.held?'PUSHING':'HOLDING',p.x+12,p.y-8);c.globalAlpha=1}
+ },
+ readout:K=>['SCORE '+K.pad(score,5),'LOST '+K.pad(missed,2)+' / STREAK '+K.pad(streak,2)+' / BEST '+K.pad(best,2)]
+});
+})();
+</script></body></html>

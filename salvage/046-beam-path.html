@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04070c"><title>S046 — BEAM PATH</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The backlight is a single beam. Somebody has turned every mirror the wrong way.
+let cols=9,rows=6,m=null,src=0,targets=[],cur={r:0,c:0},wins=0,turns=0,solved=0,cell=40,ox=0,oy=0,level=0,lit=new Set();
+const idx=(r,c)=>r*cols+c;
+function trace(){const path=[],seen=new Set();let r=src,c=-1,dr=0,dc=1;for(let k=0;k<400;k++){r+=dr;c+=dc;if(r<0||c<0||r>=rows||c>=cols)break;path.push([r,c]);const mm=m[idx(r,c)];if(mm===1){[dr,dc]=[-dc,-dr]}else if(mm===2){[dr,dc]=[dc,dr]}const key=idx(r,c)+':'+dr+':'+dc;if(seen.has(key))break;seen.add(key)}return path}
+function gen(K){
+ cols=Math.min(14,9+level);rows=Math.min(9,6+Math.floor(level/2));cell=Math.min(K.w*.86/cols,K.h*.74/rows);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8;
+ for(let tries=0;tries<200;tries++){
+  m=new Uint8Array(cols*rows);src=Math.floor(K.rand()*rows);const n=Math.round(cols*rows*.22);for(let k=0;k<n;k++)m[Math.floor(K.rand()*m.length)]=1+Math.floor(K.rand()*2);
+  const path=trace(),cellsOnPath=[],seen=new Set();for(const [r,c] of path){const i=idx(r,c);if(!seen.has(i)){seen.add(i);cellsOnPath.push(i)}}
+  const mirrored=cellsOnPath.filter(i=>m[i]);if(cellsOnPath.length>=Math.max(8,cols+2)&&mirrored.length>=4){
+   const pool=cellsOnPath.slice().sort(()=>K.rand()-.5);targets=pool.slice(0,3);
+   // Scramble: flip a share of the mirrors that matter plus some that do not.
+   for(const i of mirrored)if(K.rand()<.7)m[i]=3-m[i];for(let k=0;k<6;k++)m[Math.floor(K.rand()*m.length)]=1+Math.floor(K.rand()*2);
+   if(!targets.every(t=>trace().some(([r,c])=>idx(r,c)===t)))break;
+  }
+ }
+ cur={r:Math.floor(rows/2),c:Math.floor(cols/2)};solved=0;turns=0;refresh();
+}
+function refresh(){lit=new Set(trace().map(([r,c])=>idx(r,c)))}
+function rot(K,r,c){if(solved)return;const i=idx(r,c);m[i]=m[i]===0?1:m[i]===1?2:0;turns++;refresh();if(targets.every(t=>lit.has(t))){wins++;solved=.001;K.note('BEAM REACHES EVERYTHING / '+K.pad(wins))}}
+const at=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);return r>=0&&c>=0&&r<rows&&c<cols?[r,c]:null};
+Salvage({id:'S046',title:'BEAM PATH',parent:'040 THE BACKLIGHT STILL WORKS',bg:'#04070c',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> CYCLE A CELL: / \\ EMPTY<br>LIGHT EVERY TARGET / HOVER AND CLICK WORK TOO',
+ aria:'A grid with a light beam entering from the left and reflecting off diagonal mirrors. Arrow keys move a cursor and Space cycles the cell between a forward mirror, a back mirror and empty. The goal is to steer the beam through every ringed target. The pointer highlights the cell under it and clicking cycles it.',
+ reset(K){level=0;wins=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.86/cols,K.h*.74/rows);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)rot(K,cur.r,cur.c);return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];
+  if(d){if(fresh){cur.r=K.clamp(cur.r+d[0],0,rows-1);cur.c=K.clamp(cur.c+d[1],0,cols-1)}return true}
+ },
+ down(K,x,y){const a=at(K,x,y);if(!a)return false;cur={r:a[0],c:a[1]};rot(K,a[0],a[1]);return true},
+ step(K,dt){if(solved){solved+=dt;if(solved>2.2){level++;gen(K)}}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#04070c';c.fillRect(0,0,w,h);
+  c.strokeStyle='#0f2030';for(let r=0;r<=rows;r++){c.beginPath();c.moveTo(ox,oy+r*cell+.5);c.lineTo(ox+cols*cell,oy+r*cell+.5);c.stroke()}for(let q=0;q<=cols;q++){c.beginPath();c.moveTo(ox+q*cell+.5,oy);c.lineTo(ox+q*cell+.5,oy+rows*cell);c.stroke()}
+  const path=trace(),pts=[[ox-cell*.6,oy+(src+.5)*cell],[ox,oy+(src+.5)*cell]];let last=[0,1],pr=src,pc=-1,dr=0,dc=1;
+  // Rebuild beam polyline through the same walk, using mirror corners.
+  const poly=[[ox-cell*.6,oy+(src+.5)*cell]];let r=src,q=-1;dr=0;dc=1;const seen=new Set();for(let k=0;k<400;k++){r+=dr;q+=dc;if(r<0||q<0||r>=rows||q>=cols){poly.push([q<0?ox:q>=cols?ox+cols*cell:ox+(q+.5)*cell,r<0?oy:r>=rows?oy+rows*cell:oy+(r+.5)*cell]);break}const mm=m[idx(r,q)];if(mm){poly.push([ox+(q+.5)*cell,oy+(r+.5)*cell]);if(mm===1){[dr,dc]=[-dc,-dr]}else{[dr,dc]=[dc,dr]}}const key=idx(r,q)+':'+dr+':'+dc;if(seen.has(key))break;seen.add(key)}
+  c.strokeStyle='#28e3f4';c.lineWidth=3;c.globalAlpha=.9;c.beginPath();poly.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.lineWidth=1;c.globalAlpha=.25;c.lineWidth=9;c.beginPath();poly.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.lineWidth=1;c.globalAlpha=1;
+  for(let rr=0;rr<rows;rr++)for(let cc=0;cc<cols;cc++){const mm=m[idx(rr,cc)];if(!mm)continue;const x=ox+cc*cell,y=oy+rr*cell,on=lit.has(idx(rr,cc));c.strokeStyle=on?'#faffdb':'#9fc4d6';c.lineWidth=3;c.beginPath();if(mm===1){c.moveTo(x+cell*.2,y+cell*.8);c.lineTo(x+cell*.8,y+cell*.2)}else{c.moveTo(x+cell*.2,y+cell*.2);c.lineTo(x+cell*.8,y+cell*.8)}c.stroke();c.lineWidth=1}
+  for(const t of targets){const x=ox+(t%cols+.5)*cell,y=oy+(Math.floor(t/cols)+.5)*cell,on=lit.has(t);c.strokeStyle=on?'#f4d84e':'#ed4e8c';c.lineWidth=2;c.beginPath();c.arc(x,y,cell*.3+(on?Math.sin(K.time*6)*2:0),0,TAU);c.stroke();c.fillStyle=c.strokeStyle;c.globalAlpha=on?.6:.2;c.beginPath();c.arc(x,y,cell*.14,0,TAU);c.fill();c.globalAlpha=1;c.lineWidth=1}
+  c.fillStyle='#f4d84e';c.font='9px monospace';c.fillText('SRC',ox-cell*.6-18,oy+(src+.5)*cell+3);
+  const hv=p.inside?at(K,p.x,p.y):null;if(hv){c.strokeStyle='#ed4e8c';c.strokeRect(ox+hv[1]*cell+2,oy+hv[0]*cell+2,cell-4,cell-4)}
+  const cx=ox+cur.c*cell,cy=oy+cur.r*cell,b=3+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx+b,cy+b,cell-b*2,cell-b*2);c.lineWidth=1;
+  c.fillStyle='#9fc4d6';c.fillText(cols+'×'+rows+' / TARGETS '+targets.filter(t=>lit.has(t)).length+'/'+targets.length,ox,oy-12);
+ },
+ readout:K=>['LIT '+targets.filter(t=>lit.has(t)).length+'/'+targets.length,'TURNS '+K.pad(turns)+' / CLEARED '+K.pad(wins)]
+});
+})();
+</script></body></html>
