@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06070a"><title>S077 — SAFE CRACKER</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// There is something in here that was never recovered. The tumblers only give way in one direction at a time.
+let n=0,combo=[],dirs=[],step=0,lastDir=1,lastN=0,wins=0,slips=0,tens=0,click=0,dragA=null,shake=0,open=0,len=3,acc=0,vel=0;
+const M=100;
+function newCombo(K){len=Math.min(5,3+Math.floor(wins/2));combo=Array.from({length:len},()=>Math.floor(K.rand()*M));dirs=Array.from({length:len},(_,i)=>i%2?-1:1);step=0;n=Math.floor(K.rand()*M);acc=n;vel=0;open=0;lastDir=1}
+function setTumbler(K){
+ if(open)return;const t=combo[step],d=Math.abs(((Math.round(n)-t+M*1.5)%M)-M/2);const dist=Math.min(Math.abs(Math.round(n)-t),M-Math.abs(Math.round(n)-t));
+ if(dist<=1&&lastDir===dirs[step]){step++;click=1;K.note('TUMBLER '+step+' SET');if(step>=len){open=1;wins++;K.note('OPEN / '+K.pad(wins)+' / THERE WAS NOTHING INSIDE BUT THE NEXT SAFE');setTimeout(()=>{if(open)newCombo(K)},3000)}}
+ else{step=0;slips++;shake=.5;K.note(dist<=1?'WRONG WAY ROUND / TUMBLERS RESET':'SLIPPED / TUMBLERS RESET')}
+}
+Salvage({id:'S077',title:'SAFE CRACKER',parent:'009 AN INTERIOR FOR NOTHING',bg:'#06070a',
+ help:'<kbd>←</kbd><kbd>→</kbd> TURN THE DIAL (HOLD TO SPEED UP) &nbsp;<kbd>SPACE</kbd> SET A TUMBLER<br>THE NEEDLE TREMBLES NEAR THE NUMBER / DRAG AROUND THE DIAL WITH THE POINTER TO TURN IT',
+ aria:'A safe-cracking game. Left and right arrows turn a dial numbered zero to ninety-nine and Space sets the current tumbler. A tension meter and trembling needle show how close the dial is to the correct number for the current tumbler, which must also be approached while turning in a specified direction that alternates. A wrong setting resets the tumblers. Dragging around the dial with the pointer also turns it.',
+ reset(K){wins=slips=0;newCombo(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)setTumbler(K);return true}
+  if(/^Arrow|^Key[WASD]$/.test(e.code))return true;
+ },
+ down(K,x,y){const R=Math.min(K.w,K.h)*.3,cx=K.w/2,cy=K.h/2+6;if(Math.hypot(x-cx,y-cy)<R*1.1){dragA=Math.atan2(y-cy,x-cx);return false}dragA=null;return false},
+ up(){dragA=null},
+ step(K,dt){
+  const d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  if(!open){
+   if(d){acc+=d*dt*(10+Math.min(60,vel));vel+=dt*40;lastDir=d}else vel=Math.max(0,vel-dt*120);
+   const p=K.pointer;if(p.held&&p.inside&&dragA!==null){const R=Math.min(K.w,K.h)*.3,a=Math.atan2(p.y-(K.h/2+6),p.x-K.w/2);let da=K.wrap(a-dragA);acc+=da/(Math.PI*2)*M;if(Math.abs(da)>.002)lastDir=da>0?1:-1;dragA=a}
+   acc=((acc%M)+M)%M;n=acc}
+  const t=combo[step],dist=Math.min(Math.abs(n-t),M-Math.abs(n-t));tens=Math.max(0,1-dist/12);shake=Math.max(0,shake-dt);click=Math.max(0,click-dt*3);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,cx=w/2,cy=h/2+6,R=Math.min(w,h)*.3;c.fillStyle='#06070a';c.fillRect(0,0,w,h);
+  const g=c.createRadialGradient(cx,cy,R*.2,cx,cy,R*1.35);g.addColorStop(0,'#1c2230');g.addColorStop(1,'#0a0d14');c.fillStyle=g;c.beginPath();c.arc(cx,cy,R*1.3,0,TAU);c.fill();c.strokeStyle='#2a3d5e';c.lineWidth=3;c.beginPath();c.arc(cx,cy,R*1.3,0,TAU);c.stroke();c.lineWidth=1;
+  const off=shake?Math.sin(K.time*70)*3:0;c.save();c.translate(cx+off,cy);c.rotate(-n/M*TAU);
+  c.fillStyle='#10161f';c.beginPath();c.arc(0,0,R,0,TAU);c.fill();c.strokeStyle='#9fc4d6';c.beginPath();c.arc(0,0,R,0,TAU);c.stroke();
+  for(let i=0;i<M;i++){const a=i/M*TAU-Math.PI/2,l=i%10===0?16:i%5===0?10:6;c.strokeStyle=i%10===0?'#e9fbff':'#7f97a5';c.beginPath();c.moveTo(Math.cos(a)*R,Math.sin(a)*R);c.lineTo(Math.cos(a)*(R-l),Math.sin(a)*(R-l));c.stroke();if(i%10===0){c.fillStyle='#e9fbff';c.font='bold 11px monospace';c.textAlign='center';c.fillText(i,Math.cos(a)*(R-30),Math.sin(a)*(R-30)+4)}}
+  c.restore();c.textAlign='left';
+  c.fillStyle='#ed4e8c';c.beginPath();c.moveTo(cx,cy-R-6);c.lineTo(cx-8,cy-R-22);c.lineTo(cx+8,cy-R-22);c.closePath();c.fill();
+  c.fillStyle='#f4d84e';c.font='bold 30px monospace';c.textAlign='center';c.fillText(K.pad(Math.round(n)%M,2),cx,cy+10);c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText((lastDir>0?'TURNING →':'TURNING ←'),cx,cy+30);
+  c.fillText('TUMBLER '+(Math.min(step+1,len))+' OF '+len+' — TURN '+(dirs[Math.min(step,len-1)]>0?'RIGHT →':'LEFT ←'),cx,cy+R*1.3+24);
+  for(let i=0;i<len;i++){c.fillStyle=i<step||open?'#10f4cf':'#2a3d5e';c.fillRect(cx-len*13+i*26,cy+R*1.3+36,20,6)}
+  c.textAlign='left';
+  const tx=cx+R*1.3+40,ty=cy-R;c.fillStyle='#9fc4d6';c.fillText('TENSION',tx,ty-8);c.fillStyle='#ffffff22';c.fillRect(tx,ty,10,R*2);c.fillStyle=tens>.85?'#f4d84e':'#10f4cf';c.fillRect(tx,ty+R*2*(1-tens),10,R*2*tens);
+  if(click){c.fillStyle='#faffdb';c.globalAlpha=click;c.fillText('CLICK',cx-14,cy-R-34);c.globalAlpha=1}
+  if(open){c.fillStyle='#06070acc';c.fillRect(cx-100,cy-24,200,48);c.fillStyle='#10f4cf';c.textAlign='center';c.font='14px monospace';c.fillText('OPEN',cx,cy+6);c.textAlign='left'}
+  if(p.inside&&p.held){c.globalAlpha=.6;c.fillStyle='#faffdb';c.font='9px monospace';c.fillText('DIALLING',p.x+12,p.y-8);c.globalAlpha=1}
+ },
+ readout:K=>['TUMBLER '+Math.min(step+1,len)+'/'+len,'OPENED '+K.pad(wins)+' / SLIPS '+K.pad(slips)+' / TENSION '+(tens*100).toFixed(0)+'%']
+});
+})();
+</script></body></html>

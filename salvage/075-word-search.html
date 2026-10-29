@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S075 — WORD SEARCH</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The vocabulary of the lineage, hidden in noise. Mark the first and last letter of each word.
+const VOC=['SIGNAL','GLASS','VOID','CRYSTAL','MOIRE','FOSSIL','LARVA','DECAY','PIXEL','FRAME','SCARS','WIRES','TUBES','NOISE','CODEC','BLIND','SPOT','LOSSY','FAULT','SHEAR','STRATA','INK','PHOSPHOR'],DIRS=[[1,0],[0,1],[1,1],[-1,0],[0,-1],[-1,-1],[1,-1],[-1,1]];
+let N=12,L=null,words=[],found=new Set(),lines=[],cur={r:0,c:0},start=null,cell=40,ox=0,oy=0,solved=0,wins=0,drag=null,hint='';
+const at=(r,c)=>L[r*N+c];
+function gen(K){
+ N=Math.min(16,11+wins);cell=Math.min(K.w*.55/N,K.h*.76/N,46);ox=K.w*.12;oy=(K.h-cell*N)/2+8;L=new Array(N*N).fill('');words=[];found=new Set();lines=[];start=null;solved=0;hint='';
+ const pool=VOC.slice().sort(()=>K.rand()-.5);
+ for(const w of pool){if(words.length>=Math.min(8,5+wins))break;if(w.length>N)continue;
+  for(let t=0;t<60;t++){const d=DIRS[Math.floor(K.rand()*8)],r0=Math.floor(K.rand()*N),c0=Math.floor(K.rand()*N),r1=r0+d[1]*(w.length-1),c1=c0+d[0]*(w.length-1);if(r1<0||c1<0||r1>=N||c1>=N)continue;
+   let ok=true;for(let i=0;i<w.length;i++){const ch=L[(r0+d[1]*i)*N+c0+d[0]*i];if(ch&&ch!==w[i]){ok=false;break}}if(!ok)continue;
+   for(let i=0;i<w.length;i++)L[(r0+d[1]*i)*N+c0+d[0]*i]=w[i];words.push({w,r0,c0,r1,c1});break}}
+ for(let i=0;i<L.length;i++)if(!L[i])L[i]=String.fromCharCode(65+Math.floor(K.rand()*26));
+ cur={r:Math.floor(N/2),c:Math.floor(N/2)};
+}
+function select(K,a,b){
+ const dr=b.r-a.r,dc=b.c-a.c;if(!(dr===0||dc===0||Math.abs(dr)===Math.abs(dc))||(dr===0&&dc===0)){K.note('NOT A STRAIGHT LINE');return}
+ const n=Math.max(Math.abs(dr),Math.abs(dc))+1,sr=Math.sign(dr),sc=Math.sign(dc);let s='';for(let i=0;i<n;i++)s+=at(a.r+sr*i,a.c+sc*i);
+ const m=words.find(w=>!found.has(w.w)&&(w.w===s||w.w===s.split('').reverse().join('')));
+ if(m){found.add(m.w);lines.push({a,b,col:K.DAMAGE[found.size%6]});K.note('FOUND / '+m.w);if(found.size===words.length){wins++;solved=.001;K.note('ALL WORDS RECOVERED / '+K.pad(wins))}}else K.note('“'+s+'” IS NOT ON THE LIST')
+}
+const cellAt=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);return r>=0&&c>=0&&r<N&&c<N?{r,c}:null};
+Salvage({id:'S075',title:'WORD SEARCH',parent:'006 DEAD LETTER OFFICE',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> MARK THE FIRST LETTER, THEN THE LAST<br>FIND EVERY WORD ON THE LIST / DRAG ACROSS THE GRID WITH THE POINTER',
+ aria:'A word search. A grid of letters hides words from the list at the right in all eight directions. Arrow keys move a cursor and Space marks the first letter of a word and then its last. You can also drag across the grid with the pointer. Found words are struck from the list and underlined in the grid. Finishing a puzzle starts a larger one.',
+ reset(K){wins=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.55/N,K.h*.76/N,46);ox=K.w*.12;oy=(K.h-cell*N)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh&&!solved){if(!start)start={...cur};else{select(K,start,cur);start=null}}return true}
+  if(e.code==='Escape')return;if(e.code==='Backspace'){start=null;return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];if(d){if(fresh){cur.r=K.clamp(cur.r+d[0],0,N-1);cur.c=K.clamp(cur.c+d[1],0,N-1)}return true}
+ },
+ down(K,x,y){const a=cellAt(K,x,y);if(!a)return false;drag=a;cur={...a};return false},
+ up(K){const p=K.pointer,b=cellAt(K,p.x,p.y);if(drag&&b&&(b.r!==drag.r||b.c!==drag.c)&&!solved)select(K,drag,b);drag=null},
+ step(K,dt){if(solved){solved+=dt;if(solved>2.6)gen(K)}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const hv=p.inside?cellAt(K,p.x,p.y):null;
+  for(let r=0;r<N;r++)for(let q=0;q<N;q++){const x=ox+q*cell,y=oy+r*cell,hot=(hv&&(hv.r===r||hv.c===q));c.fillStyle=hot?'#0f1b2a':'#08111c';c.fillRect(x,y,cell-1,cell-1);c.fillStyle='#c8d6e0';c.font='bold '+Math.round(cell*.5)+'px monospace';c.textAlign='center';c.fillText(at(r,q),x+cell/2,y+cell*.68)}c.textAlign='left';
+  for(const l of lines){c.strokeStyle=l.col;c.globalAlpha=.8;c.lineWidth=cell*.55;c.lineCap='round';c.beginPath();c.moveTo(ox+(l.a.c+.5)*cell,oy+(l.a.r+.5)*cell);c.lineTo(ox+(l.b.c+.5)*cell,oy+(l.b.r+.5)*cell);c.stroke();c.lineCap='butt';c.lineWidth=1;c.globalAlpha=1}
+  if(start){c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(ox+start.c*cell+2,oy+start.r*cell+2,cell-5,cell-5);c.lineWidth=1;c.globalAlpha=.4;c.beginPath();c.moveTo(ox+(start.c+.5)*cell,oy+(start.r+.5)*cell);c.lineTo(ox+(cur.c+.5)*cell,oy+(cur.r+.5)*cell);c.stroke();c.globalAlpha=1}
+  if(drag&&hv){c.strokeStyle='#f4d84e';c.globalAlpha=.6;c.lineWidth=cell*.4;c.lineCap='round';c.beginPath();c.moveTo(ox+(drag.c+.5)*cell,oy+(drag.r+.5)*cell);c.lineTo(ox+(hv.c+.5)*cell,oy+(hv.r+.5)*cell);c.stroke();c.lineCap='butt';c.lineWidth=1;c.globalAlpha=1}
+  const cx=ox+cur.c*cell,cy=oy+cur.r*cell,b=2+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx+b,cy+b,cell-b*2,cell-b*2);c.lineWidth=1;
+  const lx=ox+N*cell+40;c.font='11px monospace';c.fillStyle='#9fc4d6';c.fillText('LIST',lx,oy+8);words.forEach((wd,i)=>{const f=found.has(wd.w);c.fillStyle=f?'#4f6b80':'#e9fbff';c.fillText(wd.w,lx,oy+32+i*20);if(f){c.fillRect(lx,oy+28+i*20,wd.w.length*6.6,1)}});
+ },
+ readout:K=>['FOUND '+K.pad(found.size)+'/'+K.pad(words.length),'PUZZLES '+K.pad(wins)+' / '+N+'×'+N]
+});
+})();
+</script></body></html>

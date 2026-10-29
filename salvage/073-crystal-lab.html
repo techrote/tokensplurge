@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S073 — CRYSTAL LAB</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Plant seeds in a cooling plate. Each grain grows in its own direction until it meets another. End with exactly the number of grains asked for.
+const CELL=6,SPEED=75;
+let cols=0,rows=0,own=null,seeds=[],cur={x:0,y:0,vx:0,vy:0},target=5,wins=0,fails=0,filled=0,doneT=0,ghostAng=0,free=0,level=0;
+function init(K){cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);own=new Int8Array(cols*rows).fill(-1);seeds=[];target=Math.min(14,4+level);doneT=0;free=cols*rows;filled=0;cur={x:K.w/2,y:K.h/2,vx:0,vy:0};ghostAng=K.rand()*Math.PI}
+function plant(K,x,y){if(doneT||seeds.length>=24)return;const c=Math.floor(x/CELL),r=Math.floor(y/CELL);if(c<0||r<0||c>=cols||r>=rows||own[r*cols+c]>=0){K.note('THAT GROUND IS ALREADY A GRAIN');return}
+ seeds.push({x,y,t0:K.time,ang:ghostAng,hue:Math.floor(K.rand()*6)});ghostAng=K.rand()*Math.PI}
+function grow(K){
+ let still=0;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const i=r*cols+c;if(own[i]>=0)continue;const x=(c+.5)*CELL,y=(r+.5)*CELL;let best=-1,bt=1e9;
+  for(let s=0;s<seeds.length;s++){const sd=seeds[s],dx=x-sd.x,dy=y-sd.y,ca=Math.cos(sd.ang),sa=Math.sin(sd.ang),u=dx*ca+dy*sa,v=(-dx*sa+dy*ca)*1.7,dist=Math.hypot(u,v),arrive=sd.t0+dist/SPEED;if(arrive<=K.time&&arrive<bt){bt=arrive;best=s}}
+  if(best>=0){own[i]=best;filled++}else still++}
+ free=still;
+}
+Salvage({id:'S073',title:'CRYSTAL LAB',parent:'031 SHEAR CRYSTALLIZATION',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> PLANT A SEED<br>FILL THE PLATE WITH EXACTLY THE REQUESTED NUMBER OF GRAINS / HOVER SHOWS THE GRAIN, CLICK PLANTS',
+ aria:'A crystal-growth puzzle. Arrow keys move a cursor over a cooling plate and Space plants a seed that grows into an elongated grain at its own angle until it meets another grain. Grains cannot be planted on ground that is already a crystal. When the plate is full, the number of grains must equal the target. The pointer shows the next grain and its angle, and clicking plants it.',
+ reset(K){level=0;wins=fails=0;init(K)},
+ resize(K){init(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh)plant(K,cur.x,cur.y);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){plant(K,x,y);return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  cur.vx+=dx*1500*dt;cur.vy+=dy*1500*dt;const f=Math.exp(-dt*6);cur.vx*=f;cur.vy*=f;cur.x=K.clamp(cur.x+cur.vx*dt,0,K.w);cur.y=K.clamp(cur.y+cur.vy*dt,0,K.h);
+  if(seeds.length&&free>0)grow(K);
+  if(seeds.length&&free===0&&!doneT){doneT=.001;if(seeds.length===target){wins++;level++;K.note('EXACTLY '+target+' GRAINS / PLATE ACCEPTED')}else{fails++;K.note(seeds.length+' GRAINS / '+target+' REQUESTED / PLATE REJECTED')}}
+  if(doneT){doneT+=dt;if(doneT>2.6)init(K)}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){const i=r*cols+q,o=own[i];if(o<0){c.fillStyle='#0a1220';c.fillRect(q*CELL,r*CELL,CELL-1,CELL-1);continue}
+   const sd=seeds[o],ca=Math.cos(sd.ang),sa=Math.sin(sd.ang),u=((q+.5)*CELL*ca+(r+.5)*CELL*sa),stripe=(u/9)%1<.28;c.fillStyle=K.DAMAGE[sd.hue];c.globalAlpha=stripe?.55:.9;c.fillRect(q*CELL,r*CELL,CELL,CELL)}
+  c.globalAlpha=1;c.fillStyle='#e9fbff';for(let r=0;r<rows-1;r++)for(let q=0;q<cols-1;q++){const o=own[r*cols+q];if(o>=0&&(own[r*cols+q+1]!==o&&own[r*cols+q+1]>=0||own[(r+1)*cols+q]!==o&&own[(r+1)*cols+q]>=0))c.fillRect(q*CELL+CELL-1,r*CELL+CELL-1,2,2)}
+  for(const s of seeds){c.fillStyle='#05070e';c.beginPath();c.arc(s.x,s.y,4,0,TAU);c.fill();c.strokeStyle='#faffdb';c.stroke()}
+  const gx=p.inside?p.x:cur.x,gy=p.inside?p.y:cur.y;c.strokeStyle='#faffdb';c.globalAlpha=.8;c.beginPath();c.ellipse(gx,gy,42,42/1.7,ghostAng,0,TAU);c.stroke();c.beginPath();c.moveTo(gx-Math.cos(ghostAng)*50,gy-Math.sin(ghostAng)*50);c.lineTo(gx+Math.cos(ghostAng)*50,gy+Math.sin(ghostAng)*50);c.stroke();c.globalAlpha=1;
+  c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.moveTo(cur.x-9,cur.y);c.lineTo(cur.x+9,cur.y);c.moveTo(cur.x,cur.y-9);c.lineTo(cur.x,cur.y+9);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#f4d84e';c.fillText('GRAINS '+seeds.length+' / REQUESTED '+target+(free===0&&seeds.length?'':' / FREE '+Math.round(free/(cols*rows)*100)+'%'),22,h*.12);
+  if(doneT){c.fillStyle='#05070ecc';c.fillRect(w/2-140,h*.45,280,44);c.fillStyle=seeds.length===target?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText(seeds.length===target?'ACCEPTED':'REJECTED: '+seeds.length+' ≠ '+target,w/2,h*.45+27);c.textAlign='left'}
+ },
+ readout:K=>['GRAINS '+K.pad(seeds.length,2)+' / '+K.pad(target,2),'ACCEPTED '+K.pad(wins)+' / REJECTED '+K.pad(fails)]
+});
+})();
+</script></body></html>

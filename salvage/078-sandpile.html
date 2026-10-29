@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S078 — SANDPILE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Four grains on a cell and it gives one to each neighbour. Drop sand where you like; what falls off the edge is gone.
+const CELL=5,COL=['#05070e','#1d6fe0','#28e3f4','#f4d84e','#ed4e8c'];
+let N=100,g=null,ic=null,id=null,drop={x:0,y:0,vx:0,vy:0},stored=0,lost=0,target=3000,rounds=0,topples=0,ox=0,oy=0,q=[],inq=null,pal=[];
+const idx=(x,y)=>y*N+x;
+function init(K){N=Math.floor(Math.min(K.w*.86,K.h*.8)/CELL);g=new Uint8Array(N*N);inq=new Uint8Array(N*N);q=[];ic=document.createElement('canvas');ic.width=ic.height=N;id=ic.getContext('2d').createImageData(N,N);ox=(K.w-N*CELL)/2;oy=(K.h-N*CELL)/2+8;drop={x:N/2,y:N/2,vx:0,vy:0};stored=lost=0;topples=0;pal=COL.map(s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)))}
+function add(x,y,n){x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=N||y>=N)return;const i=idx(x,y);const room=255-g[i];g[i]+=Math.min(room,n);if(g[i]>=4&&!inq[i]){inq[i]=1;q.push(i)}}
+function relax(budget){
+ while(q.length&&budget-->0){const i=q.pop();inq[i]=0;if(g[i]<4)continue;const x=i%N,y=Math.floor(i/N),k=g[i]>>2;g[i]-=k*4;topples+=k;
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=N||ny>=N){lost+=k;continue}const j=idx(nx,ny);g[j]+=k;if(g[j]>=4&&!inq[j]){inq[j]=1;q.push(j)}}
+  if(g[i]>=4&&!inq[i]){inq[i]=1;q.push(i)}}
+}
+Salvage({id:'S078',title:'SANDPILE',parent:'022 READ ONLY GEOLOGY',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE DROP POINT &nbsp;<kbd>SPACE</kbd> DROP SAND (HOLD FOR MORE)<br>STORE THE TARGET AMOUNT BEFORE IT ALL SPILLS / THE POINTER DROPS SAND TOO',
+ aria:'An abelian sandpile simulation. Arrow keys move a drop point and Space pours grains there; holding Space pours more. Any cell with four grains topples, giving one to each neighbour, producing growing fractal patterns, and grains that fall off the edge are lost. The goal is to have a target total amount of sand stored on the plate. The pointer also drops sand where it hovers, and holding it drops more.',
+ reset(K){init(K);target=3000;rounds=0},
+ resize(K){init(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh)add(drop.x,drop.y,300);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  drop.vx+=dx*220*dt;drop.vy+=dy*220*dt;const f=Math.exp(-dt*6);drop.vx*=f;drop.vy*=f;drop.x=K.clamp(drop.x+drop.vx*dt,0,N-1);drop.y=K.clamp(drop.y+drop.vy*dt,0,N-1);
+  if(K.keys.has('Space'))add(drop.x,drop.y,60);
+  const p=K.pointer;if(p.inside){const gx=(p.x-ox)/CELL,gy=(p.y-oy)/CELL;if(p.held)add(gx,gy,80);else if(p.speed>.1)add(gx,gy,6)}
+  relax(6000);let s=0;for(let i=0;i<g.length;i++)s+=g[i];stored=s;
+  if(stored>=target&&!q.length){rounds++;K.note('STORED '+stored+' / TARGET '+target+' MET / THE PLATE EMPTIES');target+=1500;g.fill(0);lost=0}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,d=id.data;
+  for(let i=0;i<g.length;i++){const v=Math.min(4,g[i]),k=pal[v],o=i*4;d[o]=k[0];d[o+1]=k[1];d[o+2]=k[2];d[o+3]=255}
+  ic.getContext('2d').putImageData(id,0,0);c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.imageSmoothingEnabled=false;c.drawImage(ic,ox,oy,N*CELL,N*CELL);c.imageSmoothingEnabled=true;
+  c.strokeStyle='#2a3d5e';c.strokeRect(ox-.5,oy-.5,N*CELL+1,N*CELL+1);
+  const dx=ox+drop.x*CELL,dy=oy+drop.y*CELL;c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.arc(dx,dy,6,0,TAU);c.moveTo(dx-10,dy);c.lineTo(dx+10,dy);c.moveTo(dx,dy-10);c.lineTo(dx,dy+10);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('STORED '+stored+' / TARGET '+target+' / SPILLED '+lost,ox,oy-12);c.fillStyle='#ffffff22';c.fillRect(ox,oy-8,200,3);c.fillStyle='#f4d84e';c.fillRect(ox,oy-8,200*Math.min(1,stored/target),3);
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,8,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'POURING':'SPRINKLING',p.x+12,p.y-8)}
+ },
+ readout:K=>['STORED '+K.pad(stored,5)+'/'+K.pad(target,5),'ROUNDS '+K.pad(rounds)+' / TOPPLES '+K.pad(topples,6)]
+});
+})();
+</script></body></html>

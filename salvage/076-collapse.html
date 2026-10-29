@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S076 — COLLAPSE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Remove connected blocks of one colour; the rest fall and slide together. Big groups are worth much more than small ones.
+const NC=5;
+let cols=14,rows=9,g=null,cur={r:0,c:0},score=0,best=0,boards=0,over=0,cell=40,ox=0,oy=0,parts=[],lastPop=0,moves=0;
+const id=(r,c)=>r*cols+c;
+function init(K){cols=Math.min(20,14);rows=9;cell=Math.min(K.w*.88/cols,K.h*.72/rows,54);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8;g=new Int8Array(cols*rows);for(let i=0;i<g.length;i++)g[i]=Math.floor(K.rand()*NC);over=0;moves=0;cur={r:rows-1,c:Math.floor(cols/2)}}
+function group(r,c){const col=g[id(r,c)];if(col<0)return[];const seen=new Set([id(r,c)]),st=[[r,c]];while(st.length){const [a,b]=st.pop();for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){const x=a+dr,y=b+dc;if(x<0||y<0||x>=rows||y>=cols)continue;const k=id(x,y);if(!seen.has(k)&&g[k]===col){seen.add(k);st.push([x,y])}}}return[...seen]}
+function settle(){
+ for(let c=0;c<cols;c++){let w=rows-1;for(let r=rows-1;r>=0;r--)if(g[id(r,c)]>=0){const v=g[id(r,c)];g[id(r,c)]=-1;g[id(w,c)]=v;w--}}
+ let wc=0;for(let c=0;c<cols;c++){let empty=true;for(let r=0;r<rows;r++)if(g[id(r,c)]>=0)empty=false;if(!empty){if(wc!==c)for(let r=0;r<rows;r++){g[id(r,wc)]=g[id(r,c)];g[id(r,c)]=-1}wc++}}
+}
+function pop(K,r,c){
+ if(over)return;const gr=group(r,c);if(gr.length<2){K.note('A LONE BLOCK CANNOT BE REMOVED');return}
+ for(const k of gr){const rr=Math.floor(k/cols),cc=k%cols;for(let q=0;q<3;q++)parts.push({x:ox+(cc+.5)*cell,y:oy+(rr+.5)*cell,vx:(K.rand()-.5)*160,vy:-K.rand()*120,t:0,c:K.DAMAGE[g[k]]});g[k]=-1}
+ const pts=(gr.length-1)*(gr.length-1);score+=pts;moves++;lastPop=gr.length;if(gr.length>=8)K.note(gr.length+' REMOVED / +'+pts);settle();
+ let any=false;for(let rr=0;rr<rows&&!any;rr++)for(let cc=0;cc<cols&&!any;cc++)if(g[id(rr,cc)]>=0&&group(rr,cc).length>1)any=true;
+ let left=0;for(let i=0;i<g.length;i++)if(g[i]>=0)left++;
+ if(left===0){score+=500;K.note('CLEARED / +500');boards++;best=Math.max(best,score);setTimeout(()=>{init(K)},1600)}
+ else if(!any){over=1;best=Math.max(best,score);boards++;K.note('NO MOVES LEFT / '+left+' REMAIN / SPACE FOR A NEW BOARD')}
+}
+Salvage({id:'S076',title:'COLLAPSE',parent:'035 VERTICAL DEATH',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> REMOVE THE GROUP UNDER THE CURSOR<br>BIGGER GROUPS SCORE QUADRATICALLY / HOVER OUTLINES THE GROUP, CLICK REMOVES IT',
+ aria:'A block-collapse puzzle. Arrow keys move a cursor over a grid of coloured blocks and Space removes the connected group of the same colour under it, if it has at least two blocks. Remaining blocks fall down and empty columns slide together. The score for a group is the square of its size minus one. When no moves remain the board ends. Hovering outlines a group and its score; clicking removes it.',
+ reset(K){score=0;best=0;boards=0;parts=[];init(K)},
+ resize(K){cell=Math.min(K.w*.88/cols,K.h*.72/rows,54);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(over){score=0;init(K)}else pop(K,cur.r,cur.c)}return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];if(d){if(fresh){cur.r=K.clamp(cur.r+d[0],0,rows-1);cur.c=K.clamp(cur.c+d[1],0,cols-1)}return true}
+ },
+ down(K,x,y){const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);if(c<0||r<0||c>=cols||r>=rows)return false;cur={r,c};if(over){score=0;init(K)}else pop(K,r,c);return true},
+ step(K,dt){for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.t+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=500*dt;if(q.t>.8)parts.splice(i,1)}},
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const hv=p.inside?(()=>{const q=Math.floor((p.x-ox)/cell),r=Math.floor((p.y-oy)/cell);return q>=0&&r>=0&&q<cols&&r<rows?[r,q]:null})():null,hg=new Set(hv&&g[id(hv[0],hv[1])]>=0?group(hv[0],hv[1]):[]),cg=new Set(g[id(cur.r,cur.c)]>=0?group(cur.r,cur.c):[]);
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){const v=g[id(r,q)],x=ox+q*cell,y=oy+r*cell;c.fillStyle='#08111c';c.fillRect(x,y,cell-1,cell-1);if(v<0)continue;const k=id(r,q),lit=hg.size>1&&hg.has(k)||cg.size>1&&cg.has(k);c.fillStyle=K.DAMAGE[v];c.globalAlpha=lit?1:.78;c.fillRect(x+2,y+2,cell-5,cell-5);c.globalAlpha=1;if(lit){c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(x+1.5,y+1.5,cell-4,cell-4);c.lineWidth=1}}
+  for(const q of parts){c.globalAlpha=1-q.t/.8;c.fillStyle=q.c;c.fillRect(q.x-2,q.y-2,4,4)}c.globalAlpha=1;
+  const cx=ox+cur.c*cell,cy=oy+cur.r*cell,b=1+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx+b,cy+b,cell-b*2,cell-b*2);c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('LAST GROUP '+lastPop,ox,oy-12);
+  if(hv&&hg.size>1){c.fillStyle='#faffdb';c.fillText(hg.size+' BLOCKS / +'+(hg.size-1)*(hg.size-1),p.x+14,p.y-8)}
+  if(over){c.fillStyle='#05070ecc';c.fillRect(w/2-150,h*.44,300,48);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='12px monospace';c.fillText('NO MOVES LEFT / SPACE FOR A NEW BOARD',w/2,h*.44+28);c.textAlign='left'}
+ },
+ readout:K=>{let l=0;for(let i=0;i<g.length;i++)if(g[i]>=0)l++;return['SCORE '+K.pad(score,5),'LEFT '+K.pad(l,3)+' / BEST '+K.pad(best,5)+' / BOARDS '+K.pad(boards)]}
+});
+})();
+</script></body></html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#030409"><title>S072 — ATTRACTOR GARDEN</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Four numbers decide an entire figure. Most settings are a smudge or a dot; a few are something worth keeping.
+const CELL=4,NW=3000,ITER=10;
+let gw=0,gh=0,D=null,ic=null,id=null,wx=null,wy=null,a=-1.4,b=1.6,c=1,d=.7,hold=0,occ=0,collected=[],cooldown=0,pal=[],specimen=0;
+for(let i=0;i<256;i++){const t=i/255;pal.push([Math.round(3+Math.pow(t,.8)*252),Math.round(4+Math.pow(t,1.2)*215+t*20),Math.round(9+Math.sin(t*2.6)*130+t*90)])}
+function init(K){gw=Math.ceil(K.w/CELL);gh=Math.ceil(K.h/CELL);D=new Float32Array(gw*gh);ic=document.createElement('canvas');ic.width=gw;ic.height=gh;id=ic.getContext('2d').createImageData(gw,gh);wx=new Float32Array(NW).map(()=>(Math.random()-.5)*2);wy=new Float32Array(NW).map(()=>(Math.random()-.5)*2)}
+const sig=()=>[a,b,c,d].map(v=>v.toFixed(2)).join(' ');
+function coverage(a1,b1,c1,d1){let x=.1,y=.1;const seen=new Set();for(let i=0;i<5000;i++){const nx=Math.sin(a1*y)+c1*Math.cos(a1*x),ny=Math.sin(b1*x)+d1*Math.cos(b1*y);x=nx;y=ny;if(i>200)seen.add(Math.floor((x+3)*5)*40+Math.floor((y+3)*5))}return seen.size}
+function rnd(K,classic){if(classic){a=-1.4;b=1.6;c=1;d=.7}else{let best=-1,bp=null;for(let t=0;t<60;t++){const q=[-2+K.rand()*4,-2+K.rand()*4,-1.6+K.rand()*3.2,-1.6+K.rand()*3.2],cv=coverage(...q);if(cv>best){best=cv;bp=q}if(cv>90&&cv<260){bp=q;break}}[a,b,c,d]=bp}D.fill(0);hold=0}
+Salvage({id:'S072',title:'ATTRACTOR GARDEN',parent:'021 TOPOGRAPHY OF A DEAD PROCESS',scanlines:false,
+ help:'<kbd>←</kbd><kbd>→</kbd> PARAMETER A &nbsp;<kbd>↑</kbd><kbd>↓</kbd> PARAMETER B &nbsp;<kbd>SPACE</kbd> NEW RANDOM FIGURE<br>HOLD A GOOD ONE STILL AND IT IS COLLECTED / THE POINTER BENDS C AND D WHILE IT HOVERS',
+ aria:'A strange attractor drawn by iterating a simple formula tens of thousands of times, accumulating density into a glowing image. Left and right arrows change one parameter and up and down change another; Space jumps to a random new figure. When a figure has a balanced, rich structure and is held steady for a few seconds, it is collected as a specimen. The pointer position bends two further parameters while hovering.',
+ reset(K){init(K);rnd(K,true);collected=[];cooldown=0;specimen=0},
+ resize(K){init(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh)rnd(K);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const da=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),db=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0)-(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);
+  const moved=da||db;a+=da*dt*.35;b+=db*dt*.35;const p=K.pointer;let cc=c,dd=d;if(p.inside){cc+=(p.x/K.w-.5)*.8;dd+=(p.y/K.h-.5)*.8}
+  for(let k=0;k<D.length;k++)D[k]*=moved||p.inside?.8:.965;
+  const sx=gw/5.4,sy=gh/5.4;let x,y;
+  for(let i=0;i<NW;i++){x=wx[i];y=wy[i];for(let s=0;s<ITER;s++){const nx=Math.sin(a*y)+cc*Math.cos(a*x),ny=Math.sin(b*x)+dd*Math.cos(b*y);x=nx;y=ny;const gx=Math.floor(gw/2+x*sx),gy=Math.floor(gh/2+y*sy);if(gx>=0&&gy>=0&&gx<gw&&gy<gh)D[gy*gw+gx]+=.35}wx[i]=x;wy[i]=y}
+  let on=0,tot=0;for(let k=0;k<D.length;k+=3){tot++;if(D[k]>.9)on++}occ=on/tot;
+  cooldown=Math.max(0,cooldown-dt);
+  if(!moved&&!p.inside&&occ>.09&&occ<.4){hold+=dt;if(hold>5&&!cooldown){specimen++;collected.push(sig());if(collected.length>8)collected.shift();K.note('SPECIMEN '+K.pad(specimen)+' / '+sig());cooldown=6;hold=0}}else hold=0;
+ },
+ draw(K,c2){
+  const {w,h,TAU,pointer:p}=K,dt=id.data;
+  for(let k=0;k<D.length;k++){const v=Math.min(255,Math.floor(Math.log(1+D[k]*1.6)*60)),q=pal[v],o=k*4;dt[o]=q[0];dt[o+1]=q[1];dt[o+2]=q[2];dt[o+3]=255}
+  ic.getContext('2d').putImageData(id,0,0);c2.imageSmoothingEnabled=true;c2.drawImage(ic,0,0,gw*CELL,gh*CELL);
+  c2.font='9px monospace';c2.fillStyle='#faffdb';c2.fillText('a '+a.toFixed(2)+'  b '+b.toFixed(2)+'  c '+c.toFixed(2)+'  d '+d.toFixed(2),22,h*.12);
+  c2.fillStyle='#ffffff22';c2.fillRect(22,h*.12+8,120,4);c2.fillStyle=occ>.09&&occ<.4?'#f4d84e':'#7f97a5';c2.fillRect(22,h*.12+8,120*Math.min(1,hold/5),4);c2.fillStyle='#9fc4d6';c2.fillText('OCCUPANCY '+(occ*100).toFixed(0)+'% / HOLD STILL FOR 5s',22,h*.12+26);
+  c2.textAlign='right';c2.fillStyle='#e9fbff';c2.fillText('SPECIMENS',w-22,86);collected.slice(-6).forEach((s,i)=>c2.fillText(s,w-22,100+i*12));c2.textAlign='left';
+  if(p.inside){c2.globalAlpha=.5;c2.strokeStyle='#faffdb';c2.beginPath();c2.arc(p.x,p.y,10,0,TAU);c2.stroke();c2.globalAlpha=1;c2.fillText('BENDING c,d',p.x+14,p.y-8)}
+ },
+ readout:K=>['OCCUPANCY '+(occ*100).toFixed(0)+'%','SPECIMENS '+K.pad(specimen)+' / HOLD '+hold.toFixed(1)+'s']
+});
+})();
+</script></body></html>
