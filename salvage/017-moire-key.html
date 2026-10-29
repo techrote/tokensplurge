@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03050b"><title>S017 — MOIRE KEY</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Two gratings. A word is hidden in the second one as a half-pitch slip, and only shows when the pair agree.
+const BASE=10,WORDS=['041','FAULT','LAST','SIGNAL','GLASS','RECALL','VOID','LOSS','006','028'];
+let th=0,pitch=BASE,ph=0,word='041',lockT=0,revealed=0,revT=0,found=0,hold={x:0,y:0},cB1=null,cB2=null,near=0;
+const mk=K=>{const c=document.createElement('canvas');c.width=Math.round(K.w*K.dpr);c.height=Math.round(K.h*K.dpr);return c};
+function pose(K){th=(K.rand()<.5?-1:1)*(.14+K.rand()*.3);pitch=BASE*(K.rand()<.5?.84+K.rand()*.06:1.1+K.rand()*.08);ph=K.rand()*BASE;word=WORDS[Math.floor(K.rand()*WORDS.length)];lockT=0;revealed=0;revT=0}
+function lines(c,pitch,off,D,col,lw){c.strokeStyle=col;c.lineWidth=lw;c.beginPath();for(let x=-D+(off%pitch)-pitch;x<D;x+=pitch){c.moveTo(x,-D);c.lineTo(x,D)}c.stroke()}
+function layer(K,c,shift,col){
+ c.setTransform(K.dpr,0,0,K.dpr,0,0);c.globalCompositeOperation='source-over';c.clearRect(0,0,K.w,K.h);
+ const D=Math.hypot(K.w,K.h)/2+20,p=K.pointer,cx=K.w/2+(p.inside?(p.x-K.w/2)*.05:0),size=Math.min(K.h*.5,K.w/(word.length*.65));
+ c.save();c.translate(cx,K.h/2);c.rotate(th);lines(c,pitch,ph+(shift?pitch/2:0),D,col,3.4);
+ c.globalCompositeOperation=shift?'destination-in':'destination-out';c.fillStyle='#000';c.font='bold '+size+'px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(word,0,0);
+ c.restore();c.globalCompositeOperation='source-over';
+}
+Salvage({id:'S017',title:'MOIRE KEY',parent:'019 MOIRE APPARITION',bg:'#03050b',
+ help:'<kbd>←</kbd><kbd>→</kbd> ROTATE THE SECOND GRATING &nbsp;<kbd>↑</kbd><kbd>↓</kbd> CHANGE ITS PITCH<br>WHEN THE TWO AGREE, A WORD SURFACES / THE POINTER SLIDES IT',
+ aria:'Two overlapping line gratings, one cyan and one magenta, forming moire fringes. Left and right arrows rotate the second grating and up and down change its pitch. When both match the first grating, a hidden word appears as a region where the lines interleave. The pointer shifts the second grating sideways.',
+ reset(K){cB1=mk(K);cB2=mk(K);pose(K);found=0;hold={x:0,y:0}},
+ resize(K){cB1=mk(K);cB2=mk(K)},
+ key(K,e,fresh){if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0)-(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);
+  hold.x=dx?hold.x+dt:0;hold.y=dy?hold.y+dt:0;
+  if(!revealed){th+=dx*dt*(.05+Math.min(.45,hold.x*.35));pitch+=dy*dt*(.5+Math.min(3,hold.y*2.4))}
+  const dth=Math.abs(th),dp=Math.abs(pitch-BASE)/BASE;near=Math.exp(-Math.pow(dth/.05,2)-Math.pow(dp/.05,2));
+  ph+=dt*(1.5+(1-near)*3);
+  if(!revealed&&near>.5){const e=1-Math.exp(-dt*3*near);th-=th*e;pitch+=(BASE-pitch)*e}
+  if(!revealed){if(dth<.012&&dp<.01)lockT+=dt;else lockT=Math.max(0,lockT-dt*2);if(lockT>.8){revealed=1;found++;th=0;pitch=BASE;K.note('ANCESTOR REVEALED / '+word)}}
+  else{revT+=dt;if(revT>3.6){K.note('THE GRATINGS SLIP APART');pose(K)}}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,D=Math.hypot(w,h)/2+20;c.fillStyle='#03050b';c.fillRect(0,0,w,h);
+  c.save();c.translate(w/2,h/2);lines(c,BASE,0,D,"#28e3f4",3.4);c.restore();
+  layer(K,cB1.getContext('2d'),false,'#ed4e8c');layer(K,cB2.getContext('2d'),true,'#ed4e8c');
+  c.drawImage(cB1,0,0,w,h);c.drawImage(cB2,0,0,w,h);
+  c.font='9px monospace';c.fillStyle='#faffdb';c.globalAlpha=.8;
+  c.fillText('Δθ '+(th>=0?'+':'')+th.toFixed(3)+' rad / Δpitch '+((pitch/BASE-1)*100>=0?'+':'')+((pitch/BASE-1)*100).toFixed(1)+'%',w/2-90,h-70);
+  c.fillStyle='#ffffff22';c.fillRect(w/2-90,h-62,180,3);c.fillStyle='#faffdb';c.fillRect(w/2-90,h-62,180*near,3);
+  if(p.inside){c.globalAlpha=.6;c.beginPath();c.arc(p.x,p.y,40,0,K.TAU);c.strokeStyle='#faffdb';c.stroke();c.globalAlpha=.9;c.fillText(revealed?word:'AGREEMENT '+(near*100).toFixed(0)+'%',p.x+46,p.y)}
+  c.globalAlpha=1;
+ },
+ readout:K=>['AGREEMENT '+(near*100).toFixed(1)+'%','REVEALED '+K.pad(found)]
+});
+})();
+</script></body></html>

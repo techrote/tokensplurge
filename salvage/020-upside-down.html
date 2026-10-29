@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06081a"><title>S020 — UPSIDE DOWN</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The floor and the ceiling are the same surface seen from either side. Gravity is whichever you last chose.
+const R=9,SP=330;let ball={x:0,y:0,vx:0,vy:0},s=1,flipCool=0,flipFx=0,got=new Set(),score=0,cam=0;
+const yf=(K,x)=>K.h*(.72+.17*(K.noise(x*.0021,4)-.5)+.05*(K.noise(x*.009,11)-.5));
+const yc=(K,x)=>K.h*(.28+.17*(K.noise(x*.0019,27)-.5)+.05*(K.noise(x*.008,2)-.5));
+const bpos=(K,i)=>{const x=i*SP+60+K.hash(i*3.1)*200,a=yc(K,x),b=yf(K,x);return[x,a+(b-a)*(.18+.64*K.hash(i*5.7))]};
+Salvage({id:'S020',title:'UPSIDE DOWN',parent:'016 INVERTED TOPOLOGY',bg:'#06081a',
+ help:'<kbd>←</kbd><kbd>→</kbd> ROLL &nbsp;<kbd>SPACE</kbd> INVERT GRAVITY<br>COLLECT THE BEACONS / THE POINTER IS A WELL, HOLD TO REPEL',
+ aria:'A ball travels through a winding tunnel with a floor and a ceiling. Left and right arrows roll it; Space inverts gravity so it falls to the ceiling instead. Collect diamond beacons along the way. The pointer attracts the ball like a gravity well; holding it repels.',
+ reset(K){ball={x:0,y:K.h*.5,vx:0,vy:0};s=1;got.clear();score=0;cam=-K.w*.35;flipCool=flipFx=0},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh&&flipCool<=0){s=-s;flipCool=.45;flipFx=1;ball.vy*=.2}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  flipCool=Math.max(0,flipCool-dt);flipFx=Math.max(0,flipFx-dt*3);
+  ball.vx+=dir*900*dt;ball.vx*=Math.exp(-dt*1.3);ball.vy+=s*1100*dt;
+  const p=K.pointer;if(p.inside){const dx=cam+p.x-ball.x,dy=p.y-ball.y,d=Math.hypot(dx,dy)+1;if(d<260){const f=(1-d/260)*900*(p.held?-1:1);ball.vx+=dx/d*f*dt;ball.vy+=dy/d*f*dt}}
+  ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
+  const f=yf(K,ball.x),c=yc(K,ball.x);
+  if(ball.y+R>f){ball.y=f-R;ball.vy=-Math.abs(ball.vy)*.3}
+  if(ball.y-R<c){ball.y=c+R;ball.vy=Math.abs(ball.vy)*.3}
+  for(let i=Math.floor((cam-100)/SP);i<=Math.floor((cam+K.w+100)/SP);i++){if(got.has(i))continue;const [bx,by]=bpos(K,i);if(Math.hypot(bx-ball.x,by-ball.y)<R+13){got.add(i);score++;if(score%5===0)K.note('BEACON '+K.pad(score))}}
+  cam+=(ball.x-K.w*.35-cam)*Math.min(1,dt*5);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#06081a';c.fillRect(0,0,w,h);
+  const fg=c.createLinearGradient(0,h*.6,0,h);fg.addColorStop(0,'#1d2d6a');fg.addColorStop(1,'#080c22');
+  c.beginPath();c.moveTo(0,h);for(let x=0;x<=w;x+=6)c.lineTo(x,yf(K,cam+x));c.lineTo(w,h);c.closePath();c.fillStyle=fg;c.fill();
+  const cg=c.createLinearGradient(0,0,0,h*.4);cg.addColorStop(0,'#1d0c2a');cg.addColorStop(1,'#5a1f66');
+  c.beginPath();c.moveTo(0,0);for(let x=0;x<=w;x+=6)c.lineTo(x,yc(K,cam+x));c.lineTo(w,0);c.closePath();c.fillStyle=cg;c.fill();
+  for(let k=1;k<=5;k++){c.globalAlpha=.3-k*.04;c.strokeStyle='#28e3f4';c.beginPath();for(let x=0;x<=w;x+=6){const y=yf(K,cam+x)+k*18;x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke();c.strokeStyle='#ed4e8c';c.beginPath();for(let x=0;x<=w;x+=6){const y=yc(K,cam+x)-k*18;x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}
+  c.globalAlpha=1;c.lineWidth=1.6;c.strokeStyle='#b7f6ff';c.beginPath();for(let x=0;x<=w;x+=6){const y=yf(K,cam+x);x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke();
+  c.strokeStyle='#f1118b';c.beginPath();for(let x=0;x<=w;x+=6){const y=yc(K,cam+x);x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke();c.lineWidth=1;
+  for(let i=Math.floor((cam-100)/SP);i<=Math.floor((cam+w+100)/SP);i++){if(got.has(i))continue;const [bx,by]=bpos(K,i),x=bx-cam,b=Math.sin(K.time*3+i)*3;c.fillStyle='#f4d84e';c.beginPath();c.moveTo(x,by-9-b);c.lineTo(x+7,by);c.lineTo(x,by+9+b);c.lineTo(x-7,by);c.closePath();c.fill()}
+  const bx=ball.x-cam;c.fillStyle='#faffdb';c.beginPath();c.arc(bx,ball.y,R,0,TAU);c.fill();c.strokeStyle='#06081a';c.beginPath();c.arc(bx,ball.y+s*2,3,0,TAU);c.stroke();
+  c.fillStyle='#faffdb';c.font='9px monospace';c.fillText('G '+(s>0?'↓':'↑')+(flipCool>0?' / SETTLING':''),bx+14,ball.y-12);
+  if(flipFx){c.globalAlpha=flipFx*.18;c.fillStyle='#fff';c.fillRect(0,0,w,h);c.globalAlpha=1}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,260,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'REPEL':'WELL',p.x+8,p.y-8)}
+ },
+ readout:K=>['BEACONS '+K.pad(score),'DIST '+K.pad(Math.max(0,ball.x/10))+'m / G '+(s>0?'↓':'↑')]
+});
+})();
+</script></body></html>

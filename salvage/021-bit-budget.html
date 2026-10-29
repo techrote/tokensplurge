@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S021 — BIT BUDGET</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Three orbits, each held in fewer bits than it needs. Positions are rounded to a grid whose cell size depends on what is left.
+const RF=[.14,.22,.31],MB=12,COL=['#b7f6ff','#f4d84e','#ed4e8c'];
+let bodies=[],sel=1,loseT=0,lost=0,restored=0,m=600;
+const GM=()=>.02*m*m*m,stepOf=b=>m*.8/Math.pow(2,b.bits);
+function spawn(K,i){const R=RF[i]*m,a=K.rand()*K.TAU,v=Math.sqrt(GM()/R);bodies[i]={x:Math.cos(a)*R,y:Math.sin(a)*R,vx:-Math.sin(a)*v,vy:Math.cos(a)*v,bits:bodies[i]?bodies[i].bits:11,trail:[],tt:0}}
+Salvage({id:'S021',title:'BIT BUDGET',parent:'017 PRECISION LOSS',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A BODY &nbsp;<kbd>SPACE</kbd> RESTORE ONE BIT<br>EVERY BODY SLOWLY LOSES BITS / THE POINTER TUGS, HOLD TO PULL HARD',
+ aria:'Three bodies orbit a central point, their positions rounded to a coarse grid that gets coarser as each body loses bits of precision. Left and right choose a body and Space restores a bit. Low precision makes orbits stall, jitter or fall apart. The pointer exerts a gravitational tug on nearby bodies.',
+ reset(K){m=Math.min(K.w,K.h);bodies=[];for(let i=0;i<3;i++)spawn(K,i);sel=1;loseT=1.7;lost=restored=0},
+ key(K,e,fresh){
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){sel=(sel+2)%3;return true}
+  if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){sel=(sel+1)%3;return true}
+  if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){if(fresh){bodies[sel].bits=Math.min(MB,bodies[sel].bits+1);restored++}return true}
+  if(/^Arrow|^Key[SD]$/.test(e.code))return true;
+ },
+ step(K,dt){
+  const p=K.pointer,cx=K.w/2,cy=K.h/2;
+  loseT-=dt;if(loseT<=0){loseT=1.7;const b=bodies[Math.floor(K.rand()*3)];b.bits=Math.max(2,b.bits-1)}
+  bodies.forEach((b,i)=>{
+   const r=Math.hypot(b.x,b.y)||1,g=GM()/(r*r*r);let ax=-g*b.x,ay=-g*b.y;
+   if(p.inside){const dx=p.x-cx-b.x,dy=p.y-cy-b.y,d=Math.hypot(dx,dy)+1;if(d<220){const f=(1-d/220)*(p.held?900:220);ax+=dx/d*f;ay+=dy/d*f}}
+   b.vx+=ax*dt;b.vy+=ay*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;
+   const q=stepOf(b);b.x=Math.round(b.x/q)*q;b.y=Math.round(b.y/q)*q;
+   b.tt+=dt;if(b.tt>.04){b.tt=0;b.trail.push([b.x,b.y]);if(b.trail.length>110)b.trail.shift()}
+   const rr=Math.hypot(b.x,b.y);if(rr<m*.04||rr>m*.55){lost++;K.note('BODY '+(i+1)+' LOST / RESPAWNED AT '+b.bits+' BITS');spawn(K,i)}
+  });
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,cx=w/2,cy=h/2;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';c.setLineDash([3,6]);RF.forEach(f=>{c.beginPath();c.arc(cx,cy,f*m,0,TAU);c.stroke()});c.setLineDash([]);
+  c.fillStyle='#faffdb';c.beginPath();c.arc(cx,cy,4,0,TAU);c.fill();
+  bodies.forEach((b,i)=>{
+   c.strokeStyle=COL[i];c.globalAlpha=.55;c.beginPath();b.trail.forEach(([x,y],k)=>k?c.lineTo(cx+x,cy+y):c.moveTo(cx+x,cy+y));c.stroke();
+   if(i===sel){const q=Math.max(3,stepOf(b));c.globalAlpha=.22;c.strokeStyle=COL[i];c.beginPath();for(let k=-5;k<=5;k++){c.moveTo(cx+b.x+k*q,cy+b.y-5*q);c.lineTo(cx+b.x+k*q,cy+b.y+5*q);c.moveTo(cx+b.x-5*q,cy+b.y+k*q);c.lineTo(cx+b.x+5*q,cy+b.y+k*q)}c.stroke()}
+   c.globalAlpha=1;c.fillStyle=COL[i];const s=4+b.bits*.25;c.fillRect(cx+b.x-s,cy+b.y-s,s*2,s*2);
+   if(i===sel){c.strokeStyle='#faffdb';c.strokeRect(cx+b.x-s-4.5,cy+b.y-s-4.5,s*2+9,s*2+9)}
+   c.font='9px monospace';c.fillStyle=COL[i];c.fillText('B'+(i+1)+' / '+b.bits+' BITS / ±'+(stepOf(b)/2).toFixed(2)+'px',cx+b.x+s+8,cy+b.y-s-4);
+  });
+  for(let i=0;i<3;i++){const b=bodies[i],y=h-58+i*10;c.fillStyle=COL[i];c.globalAlpha=.9;for(let k=0;k<MB;k++){c.globalAlpha=k<b.bits?1:.18;c.fillRect(w/2-60+k*10,y,8,6)}}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,220,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'PULLING':'TUG',p.x+8,p.y-8)}
+  c.globalAlpha=1;
+ },
+ readout:K=>{const mb=bodies.reduce((a,b)=>a+b.bits,0)/3;return['PRECISION '+(mb/MB*100).toFixed(0)+'%','LOST '+K.pad(lost)+' / RESTORED '+K.pad(restored)]}
+});
+})();
+</script></body></html>

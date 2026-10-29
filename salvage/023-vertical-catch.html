@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#030906"><title>S023 — VERTICAL CATCH</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Each column dies from the top down. Something falls from the edge of what is still alive; catch it in the right column.
+const CW=14,RH=15,CH='ABCDEF0123456789░▒▓#%/\\|:;=+*';
+let n=0,y0=[],sp=[],gl=[],drops=[],cx=0,cv=0,cool=0,pulseFx=0,spawn=0,caught=0,missed=0;
+const catchY=K=>K.h-70;
+function pulse(K){if(cool>0)return;cool=6;pulseFx=.7;const c=Math.round(cx/CW-.5);for(let k=-4;k<=4;k++){const i=c+k;if(i>=0&&i<n)y0[i]=Math.max(0,y0[i]-55*(1-Math.abs(k)/5))}}
+Salvage({id:'S023',title:'VERTICAL CATCH',parent:'035 VERTICAL DEATH',bg:'#030906',
+ help:'<kbd>←</kbd><kbd>→</kbd> MOVE THE CATCHER &nbsp;<kbd>SPACE</kbd> REVIVE PULSE<br>CATCH THE FALLING LIGHT / THE POINTER GLITCHES COLUMNS, HOLD TO KILL THEM',
+ aria:'Columns of falling green glyphs, each slowly dying from the top. Bright drops fall from the edge of each column; left and right move a catcher at the bottom, and catching a drop revives that column. Missed drops kill it faster. Space sends a revive pulse across nearby columns. The pointer glitches columns; holding it kills them.',
+ reset(K){n=Math.ceil(K.w/CW);y0=Array.from({length:n},(_,i)=>K.h*.35*K.noise(i*.2,3));sp=Array.from({length:n},(_,i)=>6+K.hash(i*7.7)*8);gl=new Array(n).fill(0);drops=[];cx=K.w/2;cv=0;cool=pulseFx=spawn=0;caught=missed=0},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh)pulse(K);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  cv+=dir*1900*dt;cv*=Math.exp(-dt*7);cx=K.clamp(cx+cv*dt,CW,K.w-CW);cool=Math.max(0,cool-dt);pulseFx=Math.max(0,pulseFx-dt*1.5);
+  const p=K.pointer,pc=p.inside?Math.floor(p.x/CW):-99;
+  for(let i=0;i<n;i++){
+   y0[i]=Math.min(K.h,y0[i]+dt*(5+K.time*.04+K.hash(i*3.3)*3));
+   gl[i]=Math.max(0,gl[i]-dt*3);
+   if(Math.abs(i-pc)<4){gl[i]=1;if(p.held)y0[i]=Math.min(K.h,y0[i]+dt*45*(1-Math.abs(i-pc)/4))}
+  }
+  spawn-=dt;if(spawn<=0){spawn=Math.max(.5,1.15-K.time*.003);const live=[];for(let i=0;i<n;i++)if(y0[i]<K.h-140)live.push(i);if(live.length){const c=live[Math.floor(K.rand()*live.length)];drops.push({c,y:y0[c],spd:140+K.rand()*60})}}
+  const cyy=catchY(K);
+  for(let k=drops.length-1;k>=0;k--){
+   const d=drops[k];d.y+=d.spd*dt;if(d.y<cyy)continue;
+   if(Math.abs((d.c+.5)*CW-cx)<CW*1.4){y0[d.c]=Math.max(0,y0[d.c]-100);for(const s of [-1,1])if(y0[d.c+s]!==undefined)y0[d.c+s]=Math.max(0,y0[d.c+s]-40);caught++;if(caught%5===0)K.note('CAUGHT '+K.pad(caught)+' / THE COLUMNS REMEMBER')}
+   else{y0[d.c]=Math.min(K.h,y0[d.c]+70);missed++}
+   drops.splice(k,1);
+  }
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,cyy=catchY(K);c.fillStyle='#030906';c.fillRect(0,0,w,h);
+  c.font='13px monospace';c.textAlign='center';
+  for(let i=0;i<n;i++){
+   const x=(i+.5)*CW,g=gl[i],jx=g?(Math.random()-.5)*6*g:0,first=Math.max(0,Math.floor(y0[i]/RH));
+   c.fillStyle=g>.3?'#ed4e8c':'#7cf3c8';
+   for(let r=0;r*RH<h;r++){
+    const y=r*RH+RH,dead=y<y0[i];let a;
+    if(dead){a=.035}else{const stream=r-Math.floor(K.time*sp[i]);a=(.3+.7*K.hash(i*131+stream*3.1))*Math.min(1,(y-y0[i])/90);if((((stream%14)+14)%14)===0){a=1;c.fillStyle='#e9fff6'}}
+    c.globalAlpha=a;c.fillText(CH[Math.floor(K.hash(i*977+(dead?r:r-Math.floor(K.time*sp[i]))*13.7)*CH.length)],x+jx,y);
+    if(!dead&&c.fillStyle==='#e9fff6')c.fillStyle=g>.3?'#ed4e8c':'#7cf3c8';
+   }
+  }
+  c.textAlign='left';c.globalAlpha=1;
+  for(const d of drops){const x=(d.c+.5)*CW;c.fillStyle='#b7f6ff';c.beginPath();c.arc(x,d.y,4,0,K.TAU);c.fill();c.globalAlpha=.4;c.fillRect(x-1,d.y-26,2,24);c.globalAlpha=1}
+  c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.moveTo(cx-CW*1.4,cyy+10);c.lineTo(cx-CW*1.4,cyy);c.lineTo(cx+CW*1.4,cyy);c.lineTo(cx+CW*1.4,cyy+10);c.stroke();c.lineWidth=1;
+  c.globalAlpha=.6;c.beginPath();c.arc(cx,cyy+22,8,-Math.PI/2,-Math.PI/2+K.TAU*(1-cool/6));c.stroke();c.globalAlpha=1;
+  if(pulseFx>0){c.globalAlpha=pulseFx*.25;c.fillStyle='#7cf3c8';c.fillRect(cx-CW*4.5,0,CW*9,h);c.globalAlpha=1}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.strokeRect(Math.floor(p.x/CW-4)*CW,p.y-40,CW*9,80);c.globalAlpha=1;c.font='9px monospace';c.fillStyle='#faffdb';c.fillText(p.held?'KILLING':'GLITCH',p.x+CW*4+6,p.y)}
+ },
+ readout:K=>{let a=0;for(let i=0;i<n;i++)if(y0[i]<K.h-110)a++;return['ALIVE '+K.pad(a)+' / '+K.pad(n),'CAUGHT '+K.pad(caught)+' / MISSED '+K.pad(missed)]}
+});
+})();
+</script></body></html>

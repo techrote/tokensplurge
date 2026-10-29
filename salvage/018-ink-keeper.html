@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05060f"><title>S018 — INK KEEPER</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Ink wants to be elsewhere. Keep a word legible long enough for it to be read.
+const MAX=5200,CELL=10,LIFE=16,INK=['#b7f6ff','#8d78ff','#10f4cf'],WORDS=['SIGNAL','LINEAGE','MEMORY','RETAIN','INK','LAST','SALVAGE','AFTERIMAGE'];
+const px=new Float32Array(MAX),py=new Float32Array(MAX),pa=new Float32Array(MAX).fill(LIFE),pc=new Uint8Array(MAX);
+let head=0,nib={x:0,y:0,vx:0,vy:0},mask=null,mcv=null,cols=0,rows=0,tcount=1,hits=null,cover=0,hitT=0,word='',holdLeg=0,words=0,phi=0;
+function add(K,x,y){px[head]=x;py[head]=y;pa[head]=0;pc[head]=Math.floor(K.rand()*3);head=(head+1)%MAX}
+function build(K){
+ cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);mcv=document.createElement('canvas');mcv.width=cols;mcv.height=rows;const c=mcv.getContext('2d');
+ c.fillStyle='#fff';c.font='bold '+Math.min(rows*.42,cols*1.5/word.length)+'px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(word,cols/2,rows/2);
+ const d=c.getImageData(0,0,cols,rows).data;mask=new Uint8Array(cols*rows);tcount=0;for(let n=0;n<mask.length;n++){mask[n]=d[n*4+3]>110?1:0;tcount+=mask[n]}tcount=Math.max(1,tcount);hits=new Uint8Array(cols*rows);
+}
+function bloom(K,n){for(let k=0;k<n;k++){const a=K.rand()*K.TAU,r=K.rand()*8;add(K,nib.x+Math.cos(a)*r,nib.y+Math.sin(a)*r)}}
+Salvage({id:'S018',title:'INK KEEPER',parent:'034 INK MIGRATION',bg:'#05060f',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE NIB &nbsp;<kbd>SPACE</kbd> LAY INK ON THE OUTLINE<br>THE POINTER PUSHES THE INK / HOLD TO STIR A VORTEX',
+ aria:'A faint outlined word on a dark field and thousands of ink particles that drift on a flow. Arrow keys move a nib and Space lays ink; the goal is to keep the ink covering the outline long enough for the word to read. The pointer pushes ink away; holding it stirs a vortex.',
+ reset(K){pa.fill(LIFE);word=WORDS[Math.floor(K.rand()*WORDS.length)];build(K);nib={x:K.w/2,y:K.h/2,vx:0,vy:0};cover=holdLeg=0;words=0;phi=K.rand()*K.TAU},
+ resize(K){build(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh)bloom(K,40);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const ax=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),ay=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  nib.vx+=ax*1100*dt;nib.vy+=ay*1100*dt;const f=Math.exp(-dt*5);nib.vx*=f;nib.vy*=f;nib.x=K.clamp(nib.x+nib.vx*dt,0,K.w);nib.y=K.clamp(nib.y+nib.vy*dt,0,K.h);
+  if(K.keys.has('Space'))bloom(K,7);
+  const p=K.pointer,gx=Math.cos(phi+K.time*.05)*16,gy=Math.sin(phi+K.time*.05)*16;
+  for(let i=0;i<MAX;i++){
+   if(pa[i]>=LIFE)continue;pa[i]+=dt;
+   const a=K.noise(px[i]*.004,py[i]*.004+K.time*.04)*K.TAU*2;let vx=Math.cos(a)*22+gx,vy=Math.sin(a)*22+gy;
+   if(p.inside){const dx=px[i]-p.x,dy=py[i]-p.y,d=Math.hypot(dx,dy)+.1;if(d<130){const q=1-d/130;if(p.held){vx+=-dy/d*q*220;vy+=dx/d*q*220}else{const s=60*(1+p.speed*3);vx+=dx/d*q*s;vy+=dy/d*q*s}}}
+   px[i]+=vx*dt;py[i]+=vy*dt;if(px[i]<0||py[i]<0||px[i]>K.w||py[i]>K.h)pa[i]=LIFE;
+  }
+  hitT-=dt;if(hitT<=0){hitT=.25;hits.fill(0);for(let i=0;i<MAX;i++)if(pa[i]<LIFE){const n=Math.floor(py[i]/CELL)*cols+Math.floor(px[i]/CELL);if(n>=0&&n<hits.length)hits[n]=1}let cv=0;for(let n=0;n<mask.length;n++)cv+=mask[n]&hits[n];cover=cv/tcount}
+  if(cover>=.6){holdLeg+=dt;if(holdLeg>1.5){words++;K.note('LEGIBLE / '+word+' / IT DOES NOT STAY SO');holdLeg=0;for(let i=0;i<MAX;i++)if(pa[i]<LIFE)pa[i]=Math.max(pa[i],LIFE-1.2);word=WORDS[Math.floor(K.rand()*WORDS.length)];build(K)}}else holdLeg=Math.max(0,holdLeg-dt);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05060f';c.fillRect(0,0,w,h);
+  c.globalAlpha=.16;c.imageSmoothingEnabled=false;c.drawImage(mcv,0,0,cols*CELL,rows*CELL);c.imageSmoothingEnabled=true;
+  for(let i=0;i<MAX;i++){if(pa[i]>=LIFE)continue;c.globalAlpha=Math.min(1,(LIFE-pa[i])/3)*.85;c.fillStyle=INK[pc[i]];c.fillRect(px[i]-1,py[i]-1,2.4,2.4)}
+  c.globalAlpha=1;c.strokeStyle='#faffdb';c.beginPath();c.moveTo(nib.x-9,nib.y);c.lineTo(nib.x+9,nib.y);c.moveTo(nib.x,nib.y-9);c.lineTo(nib.x,nib.y+9);c.stroke();c.beginPath();c.arc(nib.x,nib.y,K.keys.has('Space')?13:7,0,TAU);c.stroke();
+  c.fillStyle='#ffffff22';c.fillRect(w/2-90,h-70,180,3);c.fillStyle=cover>=.6?'#faffdb':'#8d78ff';c.fillRect(w/2-90,h-70,180*Math.min(1,cover/.6),3);c.font='9px monospace';c.fillStyle='#faffdb';c.textAlign='center';c.fillText('TRACE “'+word+'” / HOLD 60% FOR 1.5s',w/2,h-78);c.textAlign='left';
+  if(p.inside){c.globalAlpha=.4;c.beginPath();c.arc(p.x,p.y,130,0,TAU);c.stroke();c.globalAlpha=.9;c.fillText(p.held?'VORTEX':'DISPLACING',p.x+94,p.y-94)}
+  c.globalAlpha=1;
+ },
+ readout:K=>['LEGIBLE '+(cover*100).toFixed(1)+'%','WORDS '+K.pad(words)+' / '+word]
+});
+})();
+</script></body></html>

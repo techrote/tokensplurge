@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0d0a07"><title>S022 — EXCAVATION</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Brush gently. The hammer is faster and the fossil does not forgive it.
+const CELL=7,NAMES=['AMMONITE','TRILOBITE','FISH'],BONE=['#e9dcb8','#d8c48f','#c7b078'];
+let cols=0,rows=0,D=null,F=null,X=null,L3=null,fos=[],brush={x:0,y:0,vx:0,vy:0},holdT=0,warned=false,index=[],damage=0,checkT=0,nextT=0,rockPal=[];
+for(let q=0;q<8;q++)for(let n=0;n<3;n++)rockPal.push('hsl(28,'+(22+q*2)+'%,'+(9+q*3.2+n*2.4)+'%)');
+function inShape(kind,dx,dy,R){
+ if(kind===0){const r=Math.hypot(dx,dy);if(r>R||r<R*.08)return false;let u=r/(R*.2)-Math.atan2(dy,dx)/(2*Math.PI);u-=Math.floor(u);return u<.5}
+ if(kind===1){const e=(dx/(R*.62))**2+(dy/R)**2;if(e>1)return false;if(Math.abs(dx)<1.2)return true;return dy<=-R*.45||((((dy/(R*.13))%1)+1)%1<.6)}
+ const e=(dx/R)**2+(dy/(R*.34))**2;
+ if(e<1)return Math.abs(dy)<1.2||e>.78||((((dx/(R*.15))%1)+1)%1<.3&&Math.abs(dy)<R*.28);
+ return dx>R*.85&&dx<R*1.3&&Math.abs(dy)<(dx-R*.85)*.9;
+}
+function init(K){
+ cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);const N=cols*rows;D=new Float32Array(N);F=new Int8Array(N).fill(-1);X=new Uint8Array(N);L3=new Uint8Array(N);
+ for(let n=0;n<N;n++){D[n]=.6+.4*K.noise(n%cols*.2,Math.floor(n/cols)*.2);L3[n]=Math.floor(K.rand()*3)}
+ const kinds=[0,1,2].sort(()=>K.rand()-.5),R=Math.min(cols,rows)*.17,centres=[];fos=[];
+ for(const kind of kinds){let cx,cy,ok;for(let t=0;t<40;t++){cx=R*1.8+K.rand()*(cols-R*3.6);cy=R*1.6+K.rand()*(rows-R*3.2);ok=centres.every(c=>Math.hypot(c[0]-cx,c[1]-cy)>R*2.6);if(ok)break}centres.push([cx,cy]);
+  const cells=[];for(let j=Math.max(0,Math.floor(cy-R*1.3));j<Math.min(rows,cy+R*1.3);j++)for(let i=Math.max(0,Math.floor(cx-R*1.4));i<Math.min(cols,cx+R*1.4);i++)if(inShape(kind,i-cx,j-cy,R)&&F[j*cols+i]<0){F[j*cols+i]=fos.length;cells.push(j*cols+i)}
+  fos.push({kind,cells,done:false,cx,cy})}
+ brush={x:K.w/2,y:K.h/2,vx:0,vy:0};holdT=0;warned=false;damage=0;nextT=0;
+}
+function dig(x,y,r,amt,hammer){const ci=x/CELL,cj=y/CELL,rc=r/CELL;for(let j=Math.max(0,Math.floor(cj-rc));j<=Math.min(rows-1,Math.ceil(cj+rc));j++)for(let i=Math.max(0,Math.floor(ci-rc));i<=Math.min(cols-1,Math.ceil(ci+rc));i++){const d=Math.hypot(i+.5-ci,j+.5-cj);if(d<rc){const n=j*cols+i;D[n]-=amt*(1-d/rc*.5);if(hammer&&D[n]<=0&&F[n]>=0&&!X[n]){X[n]=1;damage++}}}}
+Salvage({id:'S022',title:'EXCAVATION',parent:'024 FOSSIL INDEX',bg:'#0d0a07',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE BRUSH &nbsp;<kbd>SPACE</kbd> BRUSH — HOLD TOO LONG FOR THE HAMMER<br>THE POINTER IS A RAKING LAMP / HOLD TO BLOW DUST',
+ aria:'A bed of rock hiding three fossils. Arrow keys move a brush and Space brushes the rock away; holding Space for long switches to a hammer that digs faster but damages fossils. The pointer is a lamp that lights the rock; holding it gently blows dust away. Recovered fossils are listed in an index with their condition.',
+ reset(K){init(K);index=[]},
+ resize(K){init(K)},
+ key(K,e,fresh){if(/^Arrow|^Key[WASD]$|^Space$/.test(e.code))return true},
+ step(K,dt){
+  const ax=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),ay=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  brush.vx+=ax*1300*dt;brush.vy+=ay*1300*dt;const f=Math.exp(-dt*6);brush.vx*=f;brush.vy*=f;brush.x=K.clamp(brush.x+brush.vx*dt,0,K.w);brush.y=K.clamp(brush.y+brush.vy*dt,0,K.h);
+  if(K.keys.has('Space')){holdT+=dt;if(holdT<.7)dig(brush.x,brush.y,20,dt*1.3,false);else{if(!warned){warned=true;K.note('HAMMER / THE FOSSIL WILL NOT FORGIVE THIS')}dig(brush.x,brush.y,46,dt*5,true)}}else{holdT=0;warned=false}
+  const p=K.pointer;if(p.inside&&p.held)dig(p.x,p.y,16,dt*.35,false);
+  checkT-=dt;if(checkT<=0){checkT=.3;for(const fo of fos){if(fo.done)continue;let ex=0;for(const n of fo.cells)if(D[n]<=0&&!X[n])ex++;if(ex/fo.cells.length>=.85){fo.done=true;let dm=0;for(const n of fo.cells)dm+=X[n];const pct=Math.round((1-dm/fo.cells.length)*100);index.push({name:NAMES[fo.kind],pct});K.note('RECOVERED / '+NAMES[fo.kind]+' / '+pct+'% INTACT')}}
+   if(fos.every(fo=>fo.done)){if(!nextT)nextT=K.time+3;else if(K.time>nextT){K.note('NEW STRATUM');init(K)}}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#0d0a07';c.fillRect(0,0,w,h);
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+   const n=j*cols+i;
+   if(D[n]>0)c.fillStyle=rockPal[Math.min(7,Math.floor(D[n]*8))*3+L3[n]];
+   else if(F[n]>=0)c.fillStyle=X[n]?'#2a1d16':BONE[(i+j+L3[n])%3];else c.fillStyle='#1a1510';
+   c.fillRect(i*CELL,j*CELL,CELL+.4,CELL+.4);
+   if(X[n]&&D[n]<=0){c.fillStyle='#000';c.fillRect(i*CELL+1,j*CELL+3,CELL-2,1)}
+  }
+  if(p.inside){c.globalCompositeOperation='lighter';const g=c.createRadialGradient(p.x,p.y,0,p.x,p.y,130);g.addColorStop(0,'#ffe9b855');g.addColorStop(1,'#ffe9b800');c.fillStyle=g;c.fillRect(p.x-130,p.y-130,260,260);c.globalCompositeOperation='source-over'}
+  const hammer=holdT>=.7,r=hammer?46:20;c.strokeStyle=hammer?'#ed4e8c':'#faffdb';c.lineWidth=1.4;c.beginPath();c.arc(brush.x,brush.y,r,0,TAU);c.stroke();c.lineWidth=1;
+  if(holdT>0&&!hammer){c.globalAlpha=.7;c.beginPath();c.arc(brush.x,brush.y,r+6,-Math.PI/2,-Math.PI/2+TAU*(holdT/.7));c.stroke();c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle=hammer?'#ed4e8c':'#faffdb';c.fillText(hammer?'HAMMER':'BRUSH',brush.x+r+6,brush.y-4);
+  c.textAlign='right';c.fillStyle='#e9dcb8';c.fillText('FOSSIL INDEX',w-22,86);index.slice(-6).forEach((e,k)=>c.fillText(K.pad(index.length-Math.min(6,index.length)+k+1)+' '+e.name+' '+e.pct+'%',w-22,100+k*12));c.textAlign='left';
+  if(p.inside){c.globalAlpha=.6;c.fillStyle='#ffe9b8';c.fillText(p.held?'BLOWING':'LAMP',p.x+12,p.y-12);c.globalAlpha=1}
+ },
+ readout:K=>['RECOVERED '+K.pad(index.length),'DAMAGE '+K.pad(damage)+' / '+(holdT>=.7?'HAMMER':'BRUSH')]
+});
+})();
+</script></body></html>
