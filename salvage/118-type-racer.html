@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04080a"><title>S118 — TYPE RACER</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Copy a sentence from the archive faster than the ghost does. Mistakes have to be fixed before you can go on.
+const SENT=['EVERY SURFACE REMEMBERS WHAT WAS DONE TO IT','THE BACKLIGHT STILL WORKS BUT THE PICTURE DOES NOT','NOTHING WAS DELETED IT WAS ONLY COVERED OVER','SOME LETTERS ARRIVE LONG AFTER THE READER HAS LEFT','THE LAST GOOD FRAME KEPT ITS OWN POSTMARK','ONLY INCOMPLETE IMAGES CAN BE RECALLED AT ALL','A SIGNAL CAN FAIL IN MORE WAYS THAN IT CAN SUCCEED','COHERENCE WAS NEVER THE POINT OF THE EXERCISE','EVERY PAGE IS A DESCENDANT OF THE ONE BEFORE IT','THE PHOSPHOR REMEMBERS LONGER THAN THE PICTURE','DEAD PIXELS ARE ONLY WAITING TO BE NOTICED','RETURN TO SENDER WHEN THE SENDER IS UNKNOWN'];
+let text='',pos=0,errs=0,started=0,now=0,done=0,ghost=0,gwpm=30,runs=0,wins=0,bestWpm=0,wpm=0,acc=100,typed=0,wrongNow=false,flash=0,results=[];
+function newS(K){text=SENT[Math.floor(K.rand()*SENT.length)];pos=0;errs=0;started=0;now=0;done=0;ghost=0;typed=0;wrongNow=false;wpm=0}
+Salvage({id:'S118',title:'TYPE RACER',parent:'006 DEAD LETTER OFFICE',bg:'#04080a',letters:true,
+ help:'TYPE THE SENTENCE EXACTLY &nbsp;<kbd>BACKSPACE</kbd> FIX A MISTAKE &nbsp;<kbd>ENTER</kbd> NEW SENTENCE<br>OUT-TYPE THE GHOST CAR / HOLD THE POINTER TO SLOW THE GHOST DOWN',
+ aria:'A typing race. A sentence from the archive is shown; type it exactly. Correct letters turn green and a wrong letter turns red and must be removed with Backspace before you can continue. A ghost car advances at a set speed; beat it to the end to win and the ghost gets faster. Words per minute and accuracy are shown. Holding the pointer slows the ghost. Enter starts a new sentence.',
+ reset(K){gwpm=30;runs=wins=0;bestWpm=0;results=[];newS(K)},
+ key(K,e,fresh){
+  if(!fresh)return /^Backspace$|^Enter$|^Key[A-Z]$|^Space$/.test(e.code)||undefined;
+  if(e.code==='Enter'){if(done||!started)newS(K);else newS(K);return true}
+  if(done)return true;
+  if(e.code==='Backspace'){if(wrongNow){wrongNow=false}else if(pos>0)pos--;return true}
+  const ch=e.code==='Space'?' ':(e.key&&e.key.length===1&&/[a-z]/i.test(e.key)?e.key.toUpperCase():(/^Key[A-Z]$/.test(e.code)?e.code.slice(3):null));if(!ch)return;
+  if(!started)started=now||.0001;typed++;
+  if(wrongNow){return true}
+  if(ch===text[pos]){pos++;if(pos>=text.length){done=1;const mins=(now-started)/60;wpm=text.length/5/Math.max(.05,mins);acc=Math.round(100*(typed-errs)/Math.max(1,typed));runs++;bestWpm=Math.max(bestWpm,wpm);results.push(wpm);if(ghost<text.length){wins++;gwpm=Math.min(120,gwpm+6);K.note('YOU BEAT THE GHOST / '+wpm.toFixed(0)+' WPM / GHOST NOW '+gwpm)}else K.note('THE GHOST WON / '+wpm.toFixed(0)+' WPM')}}
+  else{errs++;wrongNow=true;flash=1}
+  return true;
+ },
+ step(K,dt){now+=dt;flash=Math.max(0,flash-dt*4);if(started&&!done){const p=K.pointer;ghost+=dt*gwpm*5/60*(p.inside&&p.held?.45:1);if(ghost>=text.length){ghost=text.length;if(!done){done=2;runs++;K.note('THE GHOST FINISHED FIRST / ENTER FOR ANOTHER');wpm=0}}}
+  if(started&&!done){const mins=(now-started)/60;wpm=pos/5/Math.max(.05,mins)}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#04080a';c.fillRect(0,0,w,h);
+  const fs=Math.min(26,w/(text.length*.62+4)*1.0+4),lw=fs*.62,x0=(w-text.length*lw)/2,y0=h*.36;c.font='bold '+Math.round(fs)+'px monospace';
+  for(let i=0;i<text.length;i++){const ch=text[i];c.fillStyle=i<pos?'#10f4cf':i===pos?(wrongNow?'#ed4e8c':'#faffdb'):'#3a4b66';if(i===pos){c.fillStyle=wrongNow?'#ed4e8c55':'#faffdb22';c.fillRect(x0+i*lw-1,y0-fs,lw,fs*1.3)}c.fillStyle=i<pos?'#10f4cf':i===pos?(wrongNow?'#ed4e8c':'#faffdb'):'#4f6b80';c.fillText(ch===' '?'·':ch,x0+i*lw,y0)}
+  const ty=y0+90,tw=Math.min(w*.8,text.length*lw);c.strokeStyle='#17283a';c.beginPath();c.moveTo((w-tw)/2,ty+.5);c.lineTo((w+tw)/2,ty+.5);c.stroke();
+  const car=(f,col,lab,y)=>{const x=(w-tw)/2+tw*f;c.fillStyle=col;c.fillRect(x-14,y-8,28,16);c.fillRect(x-8,y-13,16,6);c.fillStyle='#04080a';c.fillRect(x-10,y+5,6,6);c.fillRect(x+4,y+5,6,6);c.fillStyle=col;c.font='9px monospace';c.fillText(lab,x-14,y+26)};
+  car(Math.min(1,pos/text.length),'#28e3f4','YOU',ty-14);car(Math.min(1,ghost/text.length),'#ed4e8c66','GHOST '+gwpm+' WPM',ty+26);
+  if(flash){c.fillStyle='#ed4e8c';c.globalAlpha=flash*.12;c.fillRect(0,0,w,h);c.globalAlpha=1}
+  c.font='11px monospace';c.textAlign='center';c.fillStyle='#faffdb';c.fillText((done===1?'FINISHED / ':done===2?'GHOST WON / ':'')+wpm.toFixed(0)+' WPM / ERRORS '+errs+(done===1?' / ACCURACY '+acc+'%':''),w/2,ty+80);
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(!started?'START TYPING':done?'ENTER FOR THE NEXT SENTENCE':wrongNow?'WRONG LETTER — BACKSPACE':'',w/2,ty+100);c.textAlign='left';
+  if(p.inside){c.fillStyle='#faffdb';c.font='9px monospace';c.fillText(p.held?'GHOST SLOWED':'',p.x+12,p.y-8)}
+ },
+ readout:K=>['WPM '+wpm.toFixed(0)+' / BEST '+bestWpm.toFixed(0),'RACES '+K.pad(runs)+' / WON '+K.pad(wins)+' / GHOST '+gwpm]
+});
+})();
+</script></body></html>

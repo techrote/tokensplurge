@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S119 — RING LOCK</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Concentric rings, each with one gap, each drifting at its own pace. A bead waits at the top and moves in whenever a gap lines up.
+let rings=[],sel=0,bead=0,wait=0,timeLeft=25,wins=0,fails=0,level=0,state='run',stT=0,drag=null,sx=0;
+const TAU=Math.PI*2,TOP=-Math.PI/2;
+const geo=K=>{const m=Math.min(K.w,K.h);return{cx:K.w/2,cy:K.h/2+6,Rout:m*.42,Rin:m*.08}};
+function gen(K){const n=Math.min(8,4+Math.floor(level/2));rings=Array.from({length:n},(_,i)=>({a:K.rand()*TAU,w:(K.rand()<.5?-1:1)*(.15+K.rand()*.35+level*.03),gap:.5-i*.015+Math.max(0,.25-level*.02)*0,drift:true}));for(const r of rings)r.gap=Math.max(.34,.7-level*.04);sel=n-1;bead=0;wait=0;timeLeft=Math.max(14,28-level);state='run';stT=0}
+const ringR=(K,i)=>{const g=geo(K),n=rings.length;return g.Rin+(g.Rout-g.Rin)*(i+1)/(n+.0)*1};
+Salvage({id:'S119',title:'RING LOCK',parent:'029 ORPHANED BUS',
+ help:'<kbd>↑</kbd><kbd>↓</kbd> CHOOSE A RING &nbsp;<kbd>←</kbd><kbd>→</kbd> TURN IT &nbsp;<kbd>SPACE</kbd> PAUSE ITS DRIFT<br>GET THE BEAD TO THE CENTRE BEFORE THE TIME RUNS OUT / DRAG AROUND ANY RING WITH THE POINTER TO TURN IT',
+ aria:'A ring puzzle. Several concentric rings each have a gap and slowly rotate. A bead sits at the top of the outside and moves inward whenever the gap of the next ring is lined up with it. Up and down arrows choose a ring, left and right turn it by hand and Space freezes its drift while held. Dragging around a ring with the pointer turns it. The bead must reach the centre before the timer ends. Each solved lock adds more rings and speed.',
+ reset(K){level=0;wins=fails=0;gen(K)},
+ key(K,e,fresh){
+  if(fresh&&(e.code==='ArrowUp'||e.code==='KeyW')){sel=Math.max(0,sel-1);return true}if(fresh&&(e.code==='ArrowDown'||e.code==='KeyS')){sel=Math.min(rings.length-1,sel+1);return true}
+  if(e.code==='Space'||/^Arrow|^Key[AD]$/.test(e.code))return true;
+ },
+ down(K,x,y){const g=geo(K),d=Math.hypot(x-g.cx,y-g.cy);let best=-1,bd=1e9;rings.forEach((r,i)=>{const dd=Math.abs(ringR(K,i)-d);if(dd<bd){bd=dd;best=i}});if(best>=0&&bd<(g.Rout-g.Rin)/rings.length*.8){sel=best;drag=Math.atan2(y-g.cy,x-g.cx)}return false},up(){drag=null},
+ step(K,dt){
+  if(state!=='run'){stT+=dt;if(stT>2)gen(K);return}
+  const g=geo(K),d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),hold=K.keys.has('Space'),p=K.pointer;
+  rings.forEach((r,i)=>{if(!(hold&&i===sel))r.a+=r.w*dt;if(i===sel&&d)r.a+=d*dt*2.4});
+  if(p.held&&p.inside&&drag!==null){const a=Math.atan2(p.y-g.cy,p.x-g.cx);rings[sel].a+=K.wrap(a-drag);drag=a}
+  timeLeft-=dt;
+  // The bead advances through ring `bead` when that ring's gap straddles the top.
+  if(bead<rings.length){const r=rings[rings.length-1-bead],rel=Math.abs(K.wrap(r.a-TOP));if(rel<r.gap/2){wait+=dt;if(wait>.22){bead++;wait=0}}else wait=0}
+  if(bead>=rings.length){state='ok';wins++;level++;stT=0;K.note('THROUGH / '+K.pad(wins)+' / '+Math.max(0,timeLeft).toFixed(0)+'s LEFT')}
+  else if(timeLeft<=0){state='fail';fails++;stT=0;K.note('OUT OF TIME / THE LOCK RESETS')}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K),n=rings.length;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const bg=c.createRadialGradient(g.cx,g.cy,0,g.cx,g.cy,g.Rout*1.2);bg.addColorStop(0,'#10202e');bg.addColorStop(1,'#05070e');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  const hv=p.inside?(()=>{const d=Math.hypot(p.x-g.cx,p.y-g.cy);let best=-1,bd=1e9;rings.forEach((r,i)=>{const dd=Math.abs(ringR(K,i)-d);if(dd<bd){bd=dd;best=i}});return bd<(g.Rout-g.Rin)/n*.8?best:-1})():-1;
+  for(let i=n-1;i>=0;i--){const r=rings[i],R=ringR(K,i),on=i===sel,th=(g.Rout-g.Rin)/n*.55;c.strokeStyle=i<n-bead?(on?'#faffdb':i===hv?'#ed4e8c':K.SPECTRUM[i%6]):'#2a3d5e';c.lineWidth=th;c.beginPath();c.arc(g.cx,g.cy,R,r.a+r.gap/2,r.a+TAU-r.gap/2);c.stroke();c.lineWidth=1;
+   c.strokeStyle='#ffffff33';c.beginPath();c.arc(g.cx,g.cy,R+th/2,r.a+r.gap/2,r.a+TAU-r.gap/2);c.stroke();if(on){c.fillStyle='#faffdb';c.beginPath();c.arc(g.cx+Math.cos(r.a)*R,g.cy+Math.sin(r.a)*R,3,0,TAU);c.fill()}}
+  c.fillStyle='#f4d84e';c.beginPath();c.arc(g.cx,g.cy,g.Rin*.55,0,TAU);c.fill();
+  const bR=bead>=n?0:Math.min(g.Rout*1.04,ringR(K,n-1-bead)+(g.Rout-g.Rin)/n*.85);
+  c.fillStyle='#fff';c.beginPath();c.arc(g.cx,g.cy+TOP*0+(-bR)+(bead>=n?0:0),7,0,TAU);c.fill();c.strokeStyle='#05070e';c.stroke();
+  c.strokeStyle='#faffdb55';c.setLineDash([3,5]);c.beginPath();c.moveTo(g.cx,g.cy-g.Rout*1.05);c.lineTo(g.cx,g.cy);c.stroke();c.setLineDash([]);
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('RING '+(sel+1)+' / '+n+' / BEAD AT '+Math.min(bead+1,n)+' / '+Math.max(0,timeLeft).toFixed(1)+'s',22,h*.12);c.fillStyle='#ffffff22';c.fillRect(22,h*.12+8,160,4);c.fillStyle=timeLeft<6?'#ed4e8c':'#10f4cf';c.fillRect(22,h*.12+8,160*Math.max(0,timeLeft/Math.max(14,28-level)),4);
+  if(state!=='run'){c.fillStyle='#05070ecc';c.fillRect(w/2-130,g.cy-22,260,44);c.fillStyle=state==='ok'?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText(state==='ok'?'THROUGH':'OUT OF TIME',w/2,g.cy+6);c.textAlign='left'}
+  if(p.inside&&hv>=0){c.fillStyle='#faffdb';c.fillText(p.held?'TURNING RING '+(hv+1):'DRAG RING '+(hv+1),p.x+14,p.y-8)}
+ },
+ readout:K=>['BEAD '+Math.min(bead,rings.length)+'/'+rings.length+' / '+Math.max(0,timeLeft).toFixed(0)+'s','LOCKS '+K.pad(wins)+' / FAILED '+K.pad(fails)+' / LEVEL '+K.pad(level+1)]
+});
+})();
+</script></body></html>

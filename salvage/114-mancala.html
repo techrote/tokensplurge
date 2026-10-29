@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0806"><title>S114 — MANCALA</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Sow the seeds counter-clockwise. An empty pit on your own side takes what lies across from it. Ending in your store gives another turn.
+let b=[],turn=0,sel=0,queue=[],sowing=null,over=0,wins=0,losses=0,depth=3,cell=70,msg='',thinking=0,lastStore=-1,draws=0;
+const STORE=[6,13],own=(p,i)=>p===0?i>=0&&i<=5:i>=7&&i<=12;
+function fresh(){b=[4,4,4,4,4,4,0,4,4,4,4,4,4,0]}
+function simulate(bd,p,pit){const n=bd.slice();let seeds=n[pit];n[pit]=0;let i=pit;while(seeds>0){i=(i+1)%14;if(i===STORE[1-p])continue;n[i]++;seeds--}let extra=false;
+ if(i===STORE[p])extra=true;else if(own(p,i)&&n[i]===1&&n[12-i]>0){n[STORE[p]]+=n[i]+n[12-i];n[i]=0;n[12-i]=0}
+ const e0=n.slice(0,6).every(v=>v===0),e1=n.slice(7,13).every(v=>v===0);if(e0||e1){for(let k=0;k<6;k++){n[6]+=n[k];n[k]=0;n[13]+=n[7+k];n[7+k]=0}}return{n,extra}}
+function moves(bd,p){const m=[];for(let i=p===0?0:7;i<(p===0?6:13);i++)if(bd[i]>0)m.push(i);return m}
+function overB(bd){return bd.slice(0,6).every(v=>v===0)||bd.slice(7,13).every(v=>v===0)}
+function mm(bd,d,al,be,p,me){if(d===0||overB(bd))return bd[STORE[me]]-bd[STORE[1-me]];const ms=moves(bd,p);if(!ms.length)return bd[STORE[me]]-bd[STORE[1-me]];let best=p===me?-1e9:1e9;
+ for(const mv of ms){const r=simulate(bd,p,mv),np=r.extra?p:1-p,v=mm(r.n,r.extra?d:d-1,al,be,np,me);if(p===me){best=Math.max(best,v);al=Math.max(al,v)}else{best=Math.min(best,v);be=Math.min(be,v)}if(al>=be)break}return best}
+function sow(K,pit){if(over||sowing)return false;const p=turn;if(!own(p,pit)||b[pit]===0)return false;
+ // Play the move on a copy, then replay the sowing visually seed by seed.
+ const seq=[];let seeds=b[pit],i=pit;while(seeds>0){i=(i+1)%14;if(i===STORE[1-p])continue;seq.push(i);seeds--}
+ sowing={p,pit,seq,k:0,t:0,result:simulate(b,p,pit)};b[pit]=0;lastStore=-1;return true}
+function finish(K){const r=sowing.result,p=sowing.p;b=r.n;sowing=null;
+ if(overB(b)){over=1;const a=b[6],c=b[13];if(a>c){wins++;depth=Math.min(7,depth+1);K.note('YOU WIN '+a+'–'+c+' / DEPTH '+depth)}else if(c>a){losses++;K.note('THE BOARD WINS '+c+'–'+a)}else{draws++;K.note('DRAW')}return}
+ if(r.extra){K.note(p===0?'ENDED IN YOUR STORE / GO AGAIN':'THE BOARD GOES AGAIN');if(p===1)thinking=.6}else{turn=1-p;if(turn===1)thinking=.6;else{sel=moves(b,0)[0]||0}}}
+function aiPick(){let best=null,bv=-1e9;for(const mv of moves(b,1)){const r=simulate(b,1,mv),v=mm(r.n,r.extra?depth:depth-1,-1e9,1e9,r.extra?1:0,1)+Math.random()*.2;if(v>bv){bv=v;best=mv}}return best}
+const pitPos=(K,i)=>{const w=K.w,cw=Math.min(84,w/9),x0=(w-cw*8)/2,y0=K.h*.42;if(i===6)return[x0+cw*7,y0+cw*.5,cw*.82,cw*2];if(i===13)return[x0,y0+cw*.5,cw*.82,cw*2];if(i<6)return[x0+cw*(1+i),y0+cw*1.05,cw*.82,cw*.82];return[x0+cw*(6-(i-7)),y0-cw*.15,cw*.82,cw*.82]};
+Salvage({id:'S114',title:'MANCALA',parent:'008 LIQUID MEMORY',bg:'#0c0806',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A PIT ON YOUR ROW (BOTTOM) &nbsp;<kbd>SPACE</kbd> SOW IT<br>MOST SEEDS IN YOUR STORE (RIGHT) WINS / CLICK A PIT TO SOW IT',
+ aria:'A game of Mancala (Kalah) against a computer opponent. You own the bottom row of six pits and the store on the right. Left and right arrows choose a pit and Space picks up its seeds and sows them one per pit counter-clockwise, skipping the opponent\'s store. Ending in your own store gives another turn; ending in an empty pit of yours captures the seeds opposite. When one side is empty the game ends and the player with more in their store wins. Clicking a pit sows it. The opponent searches deeper each time you win.',
+ reset(K){wins=losses=draws=0;depth=3;fresh();turn=0;over=0;sel=0;sowing=null;cell=70},
+ key(K,e,fresh2){
+  if(over){if((e.code==='Space'||e.code==='Enter')&&fresh2){fresh();turn=0;over=0;sel=0}return /^Arrow|^Space$/.test(e.code)||undefined}
+  if(e.code==='Space'||e.code==='Enter'){if(fresh2&&turn===0)if(!sow(K,sel))K.note('CHOOSE A PIT WITH SEEDS');return true}
+  if(fresh2&&(e.code==='ArrowLeft'||e.code==='KeyA')){sel=Math.max(0,sel-1);return true}if(fresh2&&(e.code==='ArrowRight'||e.code==='KeyD')){sel=Math.min(5,sel+1);return true}
+  if(/^Arrow|^Key[WSD]$/.test(e.code))return true;
+ },
+ down(K,x,y){if(over){fresh();turn=0;over=0;sel=0;return true}for(let i=0;i<6;i++){const [px,py,pw,ph]=pitPos(K,i);if(x>=px&&x<=px+pw&&y>=py&&y<=py+ph){sel=i;if(turn===0)sow(K,i);return true}}return false},
+ step(K,dt){
+  if(sowing){sowing.t+=dt;if(sowing.t>.16){sowing.t=0;if(sowing.k<sowing.seq.length){b[sowing.seq[sowing.k]]++;lastStore=sowing.seq[sowing.k];sowing.k++}else finish(K)}}
+  else if(!over&&turn===1){thinking-=dt;if(thinking<=0){const m=aiPick();if(m===null||m===undefined){turn=0}else sow(K,m)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#0c0806';c.fillRect(0,0,w,h);
+  const [bx,by,bw]=[pitPos(K,13)[0],pitPos(K,7)[1],pitPos(K,6)[0]+pitPos(K,6)[2]-pitPos(K,13)[0]];c.fillStyle='#3a2414';c.fillRect(bx-14,by-14,bw+28,pitPos(K,0)[1]+pitPos(K,0)[3]-by+28);
+  for(let i=0;i<14;i++){const [x,y,pw,ph]=pitPos(K,i),isS=i===6||i===13,mine=own(0,i),hv=p.inside&&p.x>=x&&p.x<=x+pw&&p.y>=y&&p.y<=y+ph;
+   c.fillStyle=isS?'#1b120a':'#251a10';c.fillRect(x,y,pw,ph);c.strokeStyle=i===lastStore?'#faffdb':i===sel&&turn===0&&!over&&mine?'#faffdb':hv&&mine?'#ed4e8c':'#5a3d26';c.lineWidth=i===sel&&mine?3:1.4;c.strokeRect(x+.5,y+.5,pw-1,ph-1);c.lineWidth=1;
+   const n=b[i];for(let k=0;k<Math.min(n,24);k++){const a=K.hash(i*131+k)*TAU,r=K.hash(i*17+k*3)*(Math.min(pw,ph)*.34);c.fillStyle=K.DAMAGE[(i+k)%6];c.beginPath();c.arc(x+pw/2+Math.cos(a)*r*(isS?.6:1)*(isS?.5:1)+(isS?(K.hash(k)-.5)*pw*.4:0),y+ph/2+Math.sin(a)*r*(isS?1.6:1),5,0,TAU);c.fill()}
+   c.fillStyle='#e9fbff';c.font='bold '+Math.round(pw*.26)+'px monospace';c.textAlign='center';c.fillText(n,x+pw/2,y+ph+(i>6&&i<13?-ph-6:16));c.textAlign='left'}
+  c.font='9px monospace';c.fillStyle='#d9c9a0';c.fillText('THE BOARD (TOP, SOWS ←) / DEPTH '+depth,bx,by-24);c.fillText('YOU (BOTTOM, SOWS →) / '+(over?'GAME OVER':turn===0?'YOUR MOVE':'THINKING…'),bx,pitPos(K,0)[1]+pitPos(K,0)[3]+40);
+  if(over){c.fillStyle='#0c0806cc';c.fillRect(w/2-150,h*.12,300,40);c.fillStyle=b[6]>b[13]?'#10f4cf':b[6]<b[13]?'#ed4e8c':'#f4d84e';c.textAlign='center';c.font='12px monospace';c.fillText((b[6]>b[13]?'YOU WIN':b[6]<b[13]?'THE BOARD WINS':'DRAW')+' / SPACE FOR ANOTHER',w/2,h*.12+25);c.textAlign='left'}
+ },
+ readout:K=>['STORES '+K.pad(b[6],2)+' – '+K.pad(b[13],2),'WON '+K.pad(wins)+' / LOST '+K.pad(losses)+' / DEPTH '+depth]
+});
+})();
+</script></body></html>

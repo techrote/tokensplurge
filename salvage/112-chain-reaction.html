@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S112 — CHAIN REACTION</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// One burst, placed once. Everything it touches goes off too. Pick the place that sets off the most.
+const BR=62,RISE=.55,HOLD=.9,FALL=.55;
+let dots=[],bursts=[],cur={x:0,y:0,vx:0,vy:0},fired=false,caught=0,target=6,level=0,wins=0,retries=0,total=0,done=0,best=0,score=0;
+function gen(K){total=26+level*5;target=Math.min(total-4,5+level*3);dots=Array.from({length:total},(_,i)=>{const a=K.rand()*K.TAU,v=34+K.rand()*50;return{x:K.rand()*K.w,y:K.h*.14+K.rand()*K.h*.74,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:K.DAMAGE[i%6],gone:false}});bursts=[];fired=false;caught=0;done=0;cur={x:K.w/2,y:K.h/2,vx:0,vy:0}}
+function burst(x,y,c,K){bursts.push({x,y,c,t:0});K.live('Burst')}
+function fire(K,x,y){if(fired||done)return;fired=true;burst(x,y,'#faffdb',K)}
+const rad=b=>b.t<RISE?BR*(b.t/RISE):b.t<RISE+HOLD?BR:Math.max(0,BR*(1-(b.t-RISE-HOLD)/FALL));
+Salvage({id:'S112',title:'CHAIN REACTION',parent:'013 THERMAL RUNAWAY',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE FUSE &nbsp;<kbd>SPACE</kbd> LIGHT IT (ONE SHOT PER FIELD)<br>CATCH THE TARGET NUMBER IN THE CHAIN / HOVER SHOWS WHAT WOULD BE TOUCHED, CLICK LIGHTS IT',
+ aria:'A chain-reaction puzzle. Dots drift around the screen. You get one burst: arrow keys move a fuse and Space lights it, or click with the pointer. The burst expands and holds; any dot that touches it bursts as well, and so on. You need to catch at least the target number of dots in the chain. Hovering with the pointer previews which dots are within reach of the first burst. Success moves on to a denser field; failure repeats the level.',
+ reset(K){level=0;wins=retries=0;best=0;score=0;gen(K)},
+ resize(K){},
+ key(K,e,fresh){if(e.code==='Space'||e.code==='Enter'){if(fresh)fire(K,cur.x,cur.y);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){fire(K,x,y);return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  cur.vx+=dx*1500*dt;cur.vy+=dy*1500*dt;const f=Math.exp(-dt*6);cur.vx*=f;cur.vy*=f;cur.x=K.clamp(cur.x+cur.vx*dt,0,K.w);cur.y=K.clamp(cur.y+cur.vy*dt,0,K.h);
+  for(const d of dots){if(d.gone)continue;d.x+=d.vx*dt;d.y+=d.vy*dt;if(d.x<6||d.x>K.w-6)d.vx*=-1;if(d.y<K.h*.1||d.y>K.h-6)d.vy*=-1}
+  for(const b of bursts){b.t+=dt;const r=rad(b);if(r>0)for(const d of dots){if(!d.gone&&Math.hypot(d.x-b.x,d.y-b.y)<r+5){d.gone=true;caught++;burst(d.x,d.y,d.c,K)}}}
+  bursts=bursts.filter(b=>b.t<RISE+HOLD+FALL);
+  if(fired&&!bursts.length&&!done){done=.001;if(caught>=target){wins++;level++;score+=caught*10;best=Math.max(best,caught);K.note('CAUGHT '+caught+' OF '+total+' / TARGET '+target+' MET')}else{retries++;K.note('ONLY '+caught+' OF '+target+' / THE FIELD RESETS')}}
+  if(done){done+=dt;if(done>2){if(caught>=target)gen(K);else gen(K)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const gx=p.inside?p.x:cur.x,gy=p.inside?p.y:cur.y;
+  if(!fired){c.strokeStyle='#faffdb';c.globalAlpha=.5;c.setLineDash([3,5]);c.beginPath();c.arc(gx,gy,BR,0,TAU);c.stroke();c.setLineDash([]);c.globalAlpha=1;for(const d of dots)if(Math.hypot(d.x-gx,d.y-gy)<BR+5){c.strokeStyle='#faffdb';c.beginPath();c.arc(d.x,d.y,9,0,TAU);c.stroke()}}
+  for(const d of dots){if(d.gone)continue;c.fillStyle=d.c;c.beginPath();c.arc(d.x,d.y,5,0,TAU);c.fill()}
+  for(const b of bursts){const r=rad(b);c.fillStyle=b.c;c.globalAlpha=.25;c.beginPath();c.arc(b.x,b.y,r,0,TAU);c.fill();c.globalAlpha=.9;c.strokeStyle=b.c;c.beginPath();c.arc(b.x,b.y,r,0,TAU);c.stroke();c.globalAlpha=1}
+  if(!fired){c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.moveTo(cur.x-9,cur.y);c.lineTo(cur.x+9,cur.y);c.moveTo(cur.x,cur.y-9);c.lineTo(cur.x,cur.y+9);c.stroke();c.lineWidth=1}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('CAUGHT '+caught+' / TARGET '+target+' OF '+total+(fired?'':' / ONE SHOT'),22,h*.12);c.fillStyle='#ffffff22';c.fillRect(22,h*.12+8,160,4);c.fillStyle=caught>=target?'#f4d84e':'#10f4cf';c.fillRect(22,h*.12+8,160*Math.min(1,caught/target),4);
+  if(done){c.fillStyle='#05070ecc';c.fillRect(w/2-150,h*.45,300,44);c.fillStyle=caught>=target?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText(caught>=target?'TARGET MET':'NOT ENOUGH / AGAIN',w/2,h*.45+27);c.textAlign='left'}
+  if(p.inside&&!fired){c.fillStyle='#faffdb';c.fillText('CLICK TO LIGHT',p.x+BR+8,p.y-8)}
+ },
+ readout:K=>['CAUGHT '+K.pad(caught,2)+'/'+K.pad(target,2),'LEVEL '+K.pad(level+1)+' / SCORE '+K.pad(score,5)+' / RETRIES '+K.pad(retries)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0a06"><title>S115 — GOMOKU</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Five in a row on a board of crossings. The opponent attacks and defends at the same time; it does not get tired.
+const N=13;
+let b=null,turn=1,cur={r:6,c:6},over=0,winCells=[],wins=0,losses=0,draws=0,cell=40,ox=0,oy=0,thinking=0,last=null,strength=1,moveN=0;
+const id=(r,c)=>r*N+c,inb=(r,c)=>r>=0&&c>=0&&r<N&&c<N,DIRS=[[0,1],[1,0],[1,1],[1,-1]];
+function win(r,c,p){for(const [dr,dc] of DIRS){const cells=[[r,c]];for(const s of [1,-1]){let k=1;while(inb(r+dr*k*s,c+dc*k*s)&&b[id(r+dr*k*s,c+dc*k*s)]===p){cells.push([r+dr*k*s,c+dc*k*s]);k++}}if(cells.length>=5)return cells}return null}
+function lineScore(r,c,p){let s=0;for(const [dr,dc] of DIRS){let n=1,open=0;for(const sg of [1,-1]){let k=1;while(inb(r+dr*k*sg,c+dc*k*sg)&&b[id(r+dr*k*sg,c+dc*k*sg)]===p){n++;k++}if(inb(r+dr*k*sg,c+dc*k*sg)&&b[id(r+dr*k*sg,c+dc*k*sg)]===0)open++}
+  s+=n>=5?100000:n===4?(open===2?10000:open===1?1500:0):n===3?(open===2?900:open===1?80:0):n===2?(open===2?60:open===1?8:0):1}return s}
+function aiPick(){let best=null,bv=-1;const near=(r,c)=>{for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)if(inb(r+dr,c+dc)&&b[id(r+dr,c+dc)])return true;return false};
+ for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(b[id(r,c)])continue;if(moveN>0&&!near(r,c))continue;const atk=lineScore(r,c,2),def=lineScore(r,c,1),v=atk*(1.05+strength*.05)+def*1+(7-Math.abs(r-6)-Math.abs(c-6))*.3+Math.random()*(8-strength*1.2);if(v>bv){bv=v;best=[r,c]}}
+ return best||[6,6]}
+function place(K,r,c,p){if(over||b[id(r,c)])return false;b[id(r,c)]=p;last=[r,c];moveN++;const w=win(r,c,p);if(w){over=1;winCells=w;if(p===1){wins++;strength=Math.min(6,strength+1);K.note('FIVE / YOU WIN / THE BOARD SHARPENS')}else{losses++;K.note('THE BOARD MAKES FIVE')}}else if(b.every(v=>v)){over=1;draws++;K.note('DRAW')}else{turn=3-p;if(turn===2)thinking=.35}return true}
+function init(K){b=new Uint8Array(N*N);turn=1;over=0;winCells=[];last=null;moveN=0;cell=Math.min(K.w*.86/N,K.h*.78/N,48);ox=(K.w-cell*(N-1))/2;oy=(K.h-cell*(N-1))/2+8;cur={r:6,c:6}}
+const at=(K,x,y)=>{const c=Math.round((x-ox)/cell),r=Math.round((y-oy)/cell);return inb(r,c)?{r,c}:null};
+Salvage({id:'S115',title:'GOMOKU',parent:'034 INK MIGRATION',bg:'#0c0a06',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> PLACE A STONE<br>FIVE IN A LINE WINS / HOVER A CROSSING TO PREVIEW, CLICK TO PLAY',
+ aria:'A game of Gomoku on a thirteen by thirteen board against a computer opponent. You play cyan stones and the opponent plays rose. Arrow keys move a cursor and Space places a stone. The first to make an unbroken line of five stones horizontally, vertically or diagonally wins. Hovering shows where a stone would land and clicking places it. The opponent plays more sharply each time you win.',
+ reset(K){wins=losses=draws=0;strength=1;init(K)},
+ resize(K){cell=Math.min(K.w*.86/N,K.h*.78/N,48);ox=(K.w-cell*(N-1))/2;oy=(K.h-cell*(N-1))/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(over)init(K);else if(turn===1)place(K,cur.r,cur.c,1)}return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];if(d){if(fresh){cur.r=K.clamp(cur.r+d[0],0,N-1);cur.c=K.clamp(cur.c+d[1],0,N-1)}return true}
+ },
+ down(K,x,y){if(over){init(K);return true}const a=at(K,x,y);if(!a)return false;cur=a;if(turn===1)place(K,a.r,a.c,1);return true},
+ step(K,dt){if(!over&&turn===2){thinking-=dt;if(thinking<=0){const m=aiPick();place(K,m[0],m[1],2)}}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#0c0a06';c.fillRect(0,0,w,h);c.fillStyle='#a8844a';c.fillRect(ox-cell*.7,oy-cell*.7,cell*(N-1)+cell*1.4,cell*(N-1)+cell*1.4);
+  c.strokeStyle='#4a3418';for(let i=0;i<N;i++){c.beginPath();c.moveTo(ox,oy+i*cell+.5);c.lineTo(ox+(N-1)*cell,oy+i*cell+.5);c.moveTo(ox+i*cell+.5,oy);c.lineTo(ox+i*cell+.5,oy+(N-1)*cell);c.stroke()}
+  for(const [r,q] of [[3,3],[3,9],[9,3],[9,9],[6,6]]){c.fillStyle='#4a3418';c.beginPath();c.arc(ox+q*cell,oy+r*cell,3,0,TAU);c.fill()}
+  for(let r=0;r<N;r++)for(let q=0;q<N;q++){const v=b[id(r,q)];if(!v)continue;const x=ox+q*cell,y=oy+r*cell;c.fillStyle=v===1?'#28e3f4':'#ed4e8c';c.beginPath();c.arc(x,y,cell*.42,0,TAU);c.fill();c.fillStyle='#ffffff55';c.beginPath();c.arc(x-cell*.12,y-cell*.12,cell*.12,0,TAU);c.fill();if(last&&last[0]===r&&last[1]===q){c.strokeStyle='#faffdb';c.lineWidth=2;c.beginPath();c.arc(x,y,cell*.5,0,TAU);c.stroke();c.lineWidth=1}}
+  for(const [r,q] of winCells){c.strokeStyle='#faffdb';c.lineWidth=3;c.beginPath();c.arc(ox+q*cell,oy+r*cell,cell*.46,0,TAU);c.stroke();c.lineWidth=1}
+  const hv=p.inside?at(K,p.x,p.y):null;if(hv&&!b[id(hv.r,hv.c)]&&turn===1&&!over){c.globalAlpha=.5;c.fillStyle='#28e3f4';c.beginPath();c.arc(ox+hv.c*cell,oy+hv.r*cell,cell*.4,0,TAU);c.fill();c.globalAlpha=1}
+  const cx=ox+cur.c*cell,cy=oy+cur.r*cell,bb=cell*.46+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx-bb,cy-bb,bb*2,bb*2);c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#d9c9a0';c.fillText('OPPONENT STRENGTH '+strength+' / '+(over?'GAME OVER':turn===1?'YOUR MOVE':'THINKING…'),ox-cell*.7,oy-cell*.7-10);
+  if(over){c.fillStyle='#0c0a06cc';c.fillRect(w/2-150,h*.03,300,36);c.fillStyle=winCells.length&&b[id(winCells[0][0],winCells[0][1])]===1?'#10f4cf':winCells.length?'#ed4e8c':'#f4d84e';c.textAlign='center';c.font='12px monospace';c.fillText((winCells.length?(b[id(winCells[0][0],winCells[0][1])]===1?'YOU WIN':'THE BOARD WINS'):'DRAW')+' / SPACE FOR ANOTHER',w/2,h*.03+23);c.textAlign='left'}
+ },
+ readout:K=>['WON '+K.pad(wins)+' / LOST '+K.pad(losses)+' / DRAWN '+K.pad(draws),'STRENGTH '+strength+' / MOVE '+K.pad(moveN,3)]
+});
+})();
+</script></body></html>

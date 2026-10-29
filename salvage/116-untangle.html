@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S116 — UNTANGLE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A bus diagram that someone has crumpled. It can be drawn without a single crossing. Move the nodes until it is.
+let nodes=[],edges=[],sel=0,carry=false,cross=0,wins=0,level=0,moves=0,solved=0,drag=-1,crossSet=new Set(),rep=0;
+const cr=(a,b,c,d)=>{const o=(p,q,r)=>(q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x);return o(a,b,c)*o(a,b,d)<0&&o(c,d,a)*o(c,d,b)<0};
+function gen(K){
+ const n=Math.min(24,8+level*2),pts=[];for(let i=0;i<n;i++){let best=null,bd=-1;for(let t=0;t<12;t++){const p={x:.08+K.rand()*.84,y:.12+K.rand()*.76};let d=1e9;for(const q of pts)d=Math.min(d,Math.hypot(p.x-q.x,p.y-q.y));if(d>bd){bd=d;best=p}}pts.push(best)}
+ const cand=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)cand.push([i,j,Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y)]);cand.sort((a,b)=>a[2]-b[2]);edges=[];
+ for(const [i,j] of cand){if(edges.length>=n*1.7)break;let ok=true;for(const [a,b] of edges){if(a===i||a===j||b===i||b===j)continue;if(cr(pts[i],pts[j],pts[a],pts[b])){ok=false;break}}if(ok){for(let k=0;k<n&&ok;k++){if(k===i||k===j)continue;const dx=pts[j].x-pts[i].x,dy=pts[j].y-pts[i].y,t=((pts[k].x-pts[i].x)*dx+(pts[k].y-pts[i].y)*dy)/(dx*dx+dy*dy);if(t>0&&t<1&&Math.hypot(pts[i].x+dx*t-pts[k].x,pts[i].y+dy*t-pts[k].y)<.035)ok=false}}if(ok)edges.push([i,j])}
+ // Scramble onto a circle in random order so the starting picture is a mess.
+ const order=pts.map((_,i)=>i).sort(()=>K.rand()-.5);nodes=pts.map((_,i)=>{const a=order.indexOf(i)/n*K.TAU;return{x:.5+Math.cos(a)*.38,y:.5+Math.sin(a)*.36}});
+ sel=0;carry=false;solved=0;moves=0;count()}
+function count(){let n=0;crossSet=new Set();for(let i=0;i<edges.length;i++)for(let j=i+1;j<edges.length;j++){const [a,b]=edges[i],[c,d]=edges[j];if(a===c||a===d||b===c||b===d)continue;if(cr(nodes[a],nodes[b],nodes[c],nodes[d])){n++;crossSet.add(i);crossSet.add(j)}}cross=n}
+const A=K=>({x:K.w*.1,y:K.h*.14,w:K.w*.8,h:K.h*.72});
+const px=(K,n)=>A(K).x+n.x*A(K).w,py=(K,n)=>A(K).y+n.y*A(K).h;
+function jump(K,dx,dy){let best=-1,bs=-1e9;const a=nodes[sel];for(let i=0;i<nodes.length;i++){if(i===sel)continue;const vx=nodes[i].x-a.x,vy=nodes[i].y-a.y,d=Math.hypot(vx,vy),dot=(vx*dx+vy*dy)/d;if(dot>.5){const s=dot*100-d*40;if(s>bs){bs=s;best=i}}}if(best>=0)sel=best}
+function check(K){count();if(!cross&&!solved){wins++;solved=.001;K.note('NO CROSSINGS / '+K.pad(wins)+' / '+nodes.length+' NODES IN '+moves+' MOVES')}}
+Salvage({id:'S116',title:'UNTANGLE',parent:'037 FAILURE WEAVE',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> CHOOSE A NODE &nbsp;HOLD <kbd>SPACE</kbd> + ARROWS TO MOVE IT<br>REMOVE EVERY CROSSING / DRAG NODES WITH THE POINTER, CROSSED LINKS GLOW RED',
+ aria:'A graph-untangling puzzle. A network of nodes and links starts as a tangle with many crossings, but it can always be drawn with none. Arrow keys choose a node; holding Space and pressing arrows moves the selected node. Links that cross glow red and a counter shows how many crossings remain. Dragging nodes with the pointer works too. Removing all crossings starts a bigger network.',
+ reset(K){level=0;wins=0;gen(K)},
+ resize(K){},
+ key(K,e,fresh){
+  const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[e.code];
+  if(e.code==='Space'){carry=true;return true}
+  if(d){if(K.keys.has('Space')){const n=nodes[sel];n.x=K.clamp(n.x+d[0]*.012,.02,.98);n.y=K.clamp(n.y+d[1]*.016,.02,.98);moves++;check(K)}else if(fresh)jump(K,d[0],d[1]);return true}
+ },
+ keyup(K,e){if(e.code==='Space')carry=false},
+ down(K,x,y){let best=-1,bd=24;nodes.forEach((n,i)=>{const d=Math.hypot(px(K,n)-x,py(K,n)-y);if(d<bd){bd=d;best=i}});drag=best;if(best>=0)sel=best;return false},up(K){if(drag>=0)check(K);drag=-1},
+ step(K,dt){
+  if(K.keys.size&&K.keys.has('Space')){rep-=dt;if(rep<=0){rep=.03;const n=nodes[sel],dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);if(dx||dy){n.x=K.clamp(n.x+dx*.008,.02,.98);n.y=K.clamp(n.y+dy*.011,.02,.98);count();if(!cross)check(K)}}}
+  const p=K.pointer;if(p.held&&drag>=0&&p.inside){const a=A(K);nodes[drag].x=K.clamp((p.x-a.x)/a.w,.02,.98);nodes[drag].y=K.clamp((p.y-a.y)/a.h,.02,.98);moves++;count()}
+  if(solved){solved+=dt;if(solved>2.4){level++;gen(K)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,a=A(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.strokeStyle='#0f1b2a';c.strokeRect(a.x,a.y,a.w,a.h);
+  edges.forEach(([i,j],k)=>{const bad=crossSet.has(k);c.strokeStyle=bad?'#ff2a55':solved?'#10f4cf':'#4f8dff';c.lineWidth=bad?2.6:1.8;c.beginPath();c.moveTo(px(K,nodes[i]),py(K,nodes[i]));c.lineTo(px(K,nodes[j]),py(K,nodes[j]));c.stroke()});c.lineWidth=1;
+  let hv=-1;if(p.inside){let bd=22;nodes.forEach((n,i)=>{const d=Math.hypot(px(K,n)-p.x,py(K,n)-p.y);if(d<bd){bd=d;hv=i}})}
+  nodes.forEach((n,i)=>{const x=px(K,n),y=py(K,n);c.fillStyle=i===sel?'#faffdb':i===hv?'#ed4e8c':'#e9fbff';c.beginPath();c.arc(x,y,i===sel?9:7,0,TAU);c.fill();c.strokeStyle='#05070e';c.stroke();if(i===sel&&carry){c.strokeStyle='#f4d84e';c.lineWidth=2;c.beginPath();c.arc(x,y,14,0,TAU);c.stroke();c.lineWidth=1}});
+  c.font='9px monospace';c.fillStyle=cross?'#ff2a55':'#10f4cf';c.fillText('CROSSINGS '+cross+' / '+nodes.length+' NODES / '+edges.length+' LINKS'+(carry?' / MOVING NODE':''),a.x,a.y-10);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(a.x-4,a.y-4,a.w+8,a.h+8);c.lineWidth=1;c.globalAlpha=1}
+  if(p.inside&&hv>=0){c.fillStyle='#faffdb';c.fillText('DRAG',p.x+12,p.y-8)}
+ },
+ readout:K=>['CROSSINGS '+K.pad(cross,3),'MOVES '+K.pad(moves)+' / UNTANGLED '+K.pad(wins)+' / '+nodes.length+' NODES']
+});
+})();
+</script></body></html>
