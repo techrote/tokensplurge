@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8"><meta name="theme-color" content="#05070e"><title>S034 — BEAT FREQUENCY</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Two clocks that have seceded at different rates. Press when both pass the top together.
+let PA=1.0,PB=1.5,t0=0,tm=0,score=0,streak=0,best=0,hits=0,miss=0,sparks=[],ripples=[],next=0,nextT=0,fb='',fbT=0,drift=0;
+const ph=(t,P)=>((t/P)%1+1)%1,dist=(t,P)=>{const f=ph(t,P);return Math.min(f,1-f)*P};
+function nextBeat(t){let best=-1;for(let k=0;k<4000;k++){const x=t+k*.01;if(dist(x,PA)<.05&&dist(x,PB)<.05){best=x-t;break}}return best}
+Salvage({id:'S034',title:'BEAT FREQUENCY',parent:'018 CLOCK SECESSION',
+ help:'<kbd>SPACE</kbd> WHEN BOTH DOTS CROSS THE TOP TOGETHER<br><kbd>←</kbd><kbd>→</kbd> RETUNE THE OUTER RING / HOLD THE POINTER FOR SLOW MOTION',
+ aria:'Two dots circle on concentric rings at different speeds. Pressing Space when both cross the marker at the top scores a hit, with perfect timing worth more. Left and right arrows retune the speed of the outer ring. Holding the pointer slows time. The rings slowly drift out of sync on their own.',
+ reset(K){PA=1.0;PB=1.5;tm=0;score=streak=hits=miss=0;sparks=[];ripples=[];nextT=0;drift=0;fb=''},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh){const eA=dist(tm,PA),eB=dist(tm,PB),e2=Math.max(eA,eB);let q;if(e2<.04){q='PERFECT';score+=100+streak*10;streak++;hits++}else if(e2<.09){q='GOOD';score+=40+streak*5;streak++;hits++}else{q='MISS';streak=0;miss++}fb=q+' / '+(e2*1000).toFixed(0)+'ms';fbT=1;best=Math.max(best,streak);if(q!=='MISS'){for(let i=0;i<24;i++){const a=K.rand()*K.TAU,v=60+K.rand()*180;sparks.push({x:K.w/2,y:K.h/2-Math.min(K.w,K.h)*.3,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,c:K.DAMAGE[i%6]})}}}return true}
+  if(/^Arrow|^Key[WASD]$/.test(e.code))return true;
+ },
+ step(K,dt){
+  const p=K.pointer,scale=p.inside&&p.held?.45:1,d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  PB=K.clamp(PB+d*dt*.35,.7,2.6);drift+=dt;PA+=Math.sin(K.time*.3)*dt*.004;
+  const before=tm;tm+=dt*scale;
+  for(const [P,id] of [[PA,'A'],[PB,'B']]){if(Math.floor(before/P)!==Math.floor(tm/P))ripples.push({id,t:0})}
+  fbT=Math.max(0,fbT-dt);for(let i=sparks.length-1;i>=0;i--){const s=sparks[i];s.t+=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;if(s.t>1)sparks.splice(i,1)}
+  for(let i=ripples.length-1;i>=0;i--){ripples[i].t+=dt;if(ripples[i].t>1.2)ripples.splice(i,1)}
+  nextT-=dt;if(nextT<=0){nextT=.3;next=nextBeat(tm)}else next-=dt*scale;
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,m=Math.min(w,h),cx=w/2,cy=h/2+10,rA=m*.2,rB=m*.32;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(const r of ripples){c.globalAlpha=(1-r.t/1.2)*.5;c.strokeStyle=r.id==='A'?'#28e3f4':'#ed4e8c';c.beginPath();c.arc(cx,cy,(r.id==='A'?rA:rB)+r.t*60,0,TAU);c.stroke()}c.globalAlpha=1;
+  for(const [R,P,col] of [[rA,PA,'#28e3f4'],[rB,PB,'#ed4e8c']]){c.strokeStyle='#1d2d3a';c.beginPath();c.arc(cx,cy,R,0,TAU);c.stroke();const a=ph(tm,P)*TAU-Math.PI/2;c.fillStyle=col;c.beginPath();c.arc(cx+Math.cos(a)*R,cy+Math.sin(a)*R,9,0,TAU);c.fill();
+   for(let k=1;k<10;k++){c.globalAlpha=.4-k*.04;c.beginPath();c.arc(cx+Math.cos(a-k*.07)*R,cy+Math.sin(a-k*.07)*R,7-k*.5,0,TAU);c.fill()}c.globalAlpha=1}
+  const both=Math.max(dist(tm,PA),dist(tm,PB));c.strokeStyle=both<.09?'#f4d84e':'#faffdb';c.lineWidth=2;c.beginPath();c.moveTo(cx,cy-rB-22);c.lineTo(cx,cy-rA+22);c.stroke();c.lineWidth=1;
+  if(both<.09){c.globalAlpha=1-both/.09;c.fillStyle='#f4d84e';c.beginPath();c.arc(cx,cy-rB,16,0,TAU);c.fill();c.globalAlpha=1}
+  for(const s of sparks){c.globalAlpha=1-s.t;c.fillStyle=s.c;c.fillRect(s.x-2,s.y-2,4,4)}c.globalAlpha=1;
+  c.font='11px monospace';c.textAlign='center';c.fillStyle='#faffdb';if(fbT>0){c.globalAlpha=fbT;c.fillText(fb,cx,cy+rB+34);c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('A '+PA.toFixed(3)+'s / B '+PB.toFixed(3)+'s / NEXT COINCIDENCE '+(next>=0?next.toFixed(1)+'s':'—'),cx,cy+rB+52);c.textAlign='left';
+  if(p.inside){c.globalAlpha=.6;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,20,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'SLOW':'',p.x+24,p.y)}
+ },
+ readout:K=>['SCORE '+K.pad(score,5),'STREAK '+K.pad(streak,2)+' / BEST '+K.pad(best,2)+' / MISS '+K.pad(miss,2)]
+});
+})();
+</script></body></html>

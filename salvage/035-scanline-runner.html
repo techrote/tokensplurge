@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S035 — SCANLINE RUNNER</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Run along a single scanline. Some of the obstacles are real; some are only remembered. The lamp shows which.
+const RW=16,RH=26,SP=380;
+let x=0,y=0,vy=0,dist=0,best=0,speed=330,onGround=true,dead=0,deaths=0,sx=0,spd=0;
+const gy=K=>K.h*.72,obs=(K,i)=>{const bx=i*340+200+K.hash(i*2.7)*260;return{x:bx,w:24+K.hash(i*5.1)*34,h:30+K.hash(i*9.3)*54,ghost:K.hash(i*13.7)>.5}};
+Salvage({id:'S035',title:'SCANLINE RUNNER',parent:'003 SCANLINE AMNESIA',
+ help:'<kbd>SPACE</kbd> / <kbd>↑</kbd> JUMP &nbsp;<kbd>←</kbd><kbd>→</kbd> HOLD BACK OR PUSH ON<br>FLICKERING BLOCKS ARE REAL EVEN WHEN FAINT / THE POINTER LAMP SHOWS THEM',
+ aria:'A side-scrolling runner along one horizontal line. Space or Up jumps over blocks, and left and right move the runner slightly back or forward. Some blocks are only faintly visible and flicker; they are still solid. The pointer is a lamp that shows them clearly. Hitting a block restarts the run.',
+ reset(K){x=K.w*.28;y=gy(K)-RH;vy=0;dist=0;speed=330;dead=0;onGround=true;sx=0},
+ key(K,e,fresh){if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW'){if(fresh&&onGround&&!dead){vy=-780;onGround=false}return true}if(/^Arrow|^Key[SAD]$/.test(e.code))return true},
+ step(K,dt){
+  if(dead){dead-=dt;if(dead<=0){const b=best;K.note('RUN ENDED / '+Math.floor(dist/10)+'m');x=K.w*.28;y=gy(K)-RH;vy=0;dist=0;speed=330;dead=0;best=b}return}
+  const d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  x=K.clamp(x+d*150*dt,K.w*.12,K.w*.5);speed=Math.min(640,330+dist*.02);dist+=speed*dt;best=Math.max(best,Math.floor(dist/10));
+  vy+=2300*dt;y+=vy*dt;if(y>=gy(K)-RH){y=gy(K)-RH;vy=0;onGround=true}else onGround=false;
+  if(K.keys.has('ArrowDown')||K.keys.has('KeyS'))vy+=3200*dt;
+  const wx=dist+x;for(let i=Math.floor((wx-200)/340)-1;i<=Math.floor((wx+400)/340);i++){const o=obs(K,i);if(wx+RW>o.x&&wx<o.x+o.w&&y+RH>gy(K)-o.h){dead=1.1;deaths++;break}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,G=gy(K),R=Math.max(100,Math.min(w,h)*.18);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';for(let yy=G;yy<h;yy+=6){c.globalAlpha=1-(yy-G)/(h-G);c.beginPath();c.moveTo(0,yy+.5);c.lineTo(w,yy+.5);c.stroke()}c.globalAlpha=1;
+  for(let k=0;k<30;k++){const gx=((k*97-dist*.3)%(w+100)+w+100)%(w+100)-50;c.fillStyle='#10202e';c.fillRect(gx,K.hash(k)*G*.8,40+K.hash(k*3)*80,1)}
+  c.strokeStyle='#b7f6ff';c.lineWidth=2;c.beginPath();c.moveTo(0,G);c.lineTo(w,G);c.stroke();c.lineWidth=1;
+  const wx=dist+x;
+  for(let i=Math.floor((wx-x-200)/340)-1;i<=Math.floor((wx+w)/340);i++){
+   const o=obs(K,i),sx2=o.x-dist,vis=p.inside&&Math.hypot(sx2+o.w/2-p.x,G-o.h/2-p.y)<R;
+   if(o.ghost){const fl=.1+.1*Math.sin(K.time*24+i*3),a=vis?.95:Math.max(.04,fl*(K.hash(Math.floor(K.time*8)+i)>.5?1:.3));c.globalAlpha=a;c.fillStyle='#ed4e8c';c.fillRect(sx2,G-o.h,o.w,o.h);c.strokeStyle='#faffdb';c.strokeRect(sx2+.5,G-o.h+.5,o.w-1,o.h-1)}
+   else{c.globalAlpha=1;c.fillStyle='#1b2a4a';c.fillRect(sx2,G-o.h,o.w,o.h);c.strokeStyle='#b7f6ff';c.strokeRect(sx2+.5,G-o.h+.5,o.w-1,o.h-1)}
+  }
+  c.globalAlpha=1;
+  if(dead){c.fillStyle='#ed4e8c';for(let k=0;k<12;k++){const a=k/12*TAU,r=(1.1-dead)*50;c.fillRect(x+RW/2+Math.cos(a)*r-2,y+RH/2+Math.sin(a)*r-2,4,4)}}
+  else{c.fillStyle='#faffdb';c.fillRect(x,y,RW,RH);c.fillStyle='#05070e';c.fillRect(x+RW-6,y+6,3,3)}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,R,0,TAU);c.stroke();c.globalAlpha=1;c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('LAMP',p.x+R*.72,p.y-R*.72)}
+ },
+ readout:K=>['DIST '+K.pad(dist/10,5)+'m','BEST '+K.pad(best,5)+'m / ENDED '+K.pad(deaths)]
+});
+})();
+</script></body></html>

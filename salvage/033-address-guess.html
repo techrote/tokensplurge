@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S033 — ADDRESS GUESS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A hidden address, a handful of tries, and a reader that only says how many digits are right and how many are in the right place.
+const SYM=['A','B','C','D','E','F'],MAXT=10;
+let len=4,code=[],guess=[],sel=0,rows=[],wins=0,fails=0,done=0,cands=1296;
+function newCode(K){code=Array.from({length:len},()=>Math.floor(K.rand()*6));guess=Array.from({length:len},(_,i)=>i%6);sel=0;rows=[];done=0;cands=Math.pow(6,len)}
+function score(a,b){let ex=0;const ca=new Array(6).fill(0),cb=new Array(6).fill(0);for(let i=0;i<a.length;i++){if(a[i]===b[i])ex++;else{ca[a[i]]++;cb[b[i]]++}}let mis=0;for(let k=0;k<6;k++)mis+=Math.min(ca[k],cb[k]);return[ex,mis]}
+function candidates(){let n=0,tot=Math.pow(6,len);for(let v=0;v<tot;v++){const t=[];let x=v;for(let i=0;i<len;i++){t.push(x%6);x=Math.floor(x/6)}let ok=true;for(const r of rows){const s=score(t,r.g);if(s[0]!==r.ex||s[1]!==r.mis){ok=false;break}}if(ok)n++}return n}
+function submit(K){
+ if(done)return;const s=score(guess,code);rows.push({g:guess.slice(),ex:s[0],mis:s[1]});cands=candidates();
+ if(s[0]===len){wins++;done=1;K.note('ADDRESS RESOLVED IN '+rows.length+' / THE READER FORGETS IT');setTimeout(()=>{if(done===1){if(wins%2===0&&len<5)len++;newCode(K)}},2200)}
+ else if(rows.length>=MAXT){fails++;done=2;K.note('UNDELIVERABLE / IT WAS '+code.map(i=>SYM[i]).join(''));setTimeout(()=>{if(done===2)newCode(K)},3000)}
+}
+const geo=K=>{const cs=Math.min(46,K.w/12),rh=Math.min(34,(K.h-240)/MAXT);return{cs,rh,x0:K.w/2-len*cs/2-(cs*2),y0:80}};
+Salvage({id:'S033',title:'ADDRESS GUESS',parent:'004 ADDRESS SPACE',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A DIGIT &nbsp;<kbd>↑</kbd><kbd>↓</kbd> CHANGE IT &nbsp;<kbd>SPACE</kbd> SEND<br>● RIGHT DIGIT, RIGHT PLACE ○ RIGHT DIGIT, WRONG PLACE / HOVER A ROW TO REREAD IT',
+ aria:'A code-breaking game. A hidden address of coloured letters must be guessed in ten tries. Left and right choose a position, up and down change its letter, and Space submits. Each answer shows how many letters are correct and in place and how many are correct but misplaced. Hovering a past guess highlights it. A counter shows how many addresses are still possible.',
+ reset(K){len=4;wins=fails=0;newCode(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)submit(K);return true}
+  if(!fresh)return /^Arrow|^Key[WASD]$/.test(e.code)||undefined;
+  if(e.code==='ArrowLeft'||e.code==='KeyA'){sel=(sel+len-1)%len;return true}
+  if(e.code==='ArrowRight'||e.code==='KeyD'){sel=(sel+1)%len;return true}
+  if(e.code==='ArrowUp'||e.code==='KeyW'){guess[sel]=(guess[sel]+1)%6;return true}
+  if(e.code==='ArrowDown'||e.code==='KeyS'){guess[sel]=(guess[sel]+5)%6;return true}
+ },
+ down(K,x,y){const g=geo(K),i=Math.floor((x-g.x0)/g.cs),by=g.y0+MAXT*g.rh+36;if(y>by&&y<by+g.cs&&i>=0&&i<len){if(sel===i)guess[i]=(guess[i]+1)%6;sel=i;return true}return false},
+ step(){},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.font='10px monospace';c.textAlign='left';
+  const hv=p.inside?Math.floor((p.y-g.y0)/g.rh):-1;
+  for(let r=0;r<MAXT;r++){
+   const y=g.y0+r*g.rh,row=rows[r];c.strokeStyle=r===hv&&row?'#faffdb':'#17283a';c.strokeRect(g.x0-8.5,y+.5,len*g.cs+g.cs*4.2,g.rh-3);
+   c.fillStyle='#4f6b80';c.fillText(K.pad(r+1,2),g.x0-34,y+g.rh*.6);
+   for(let i=0;i<len;i++){const x=g.x0+i*g.cs;if(row){c.fillStyle=K.DAMAGE[row.g[i]];c.fillRect(x+2,y+3,g.cs-6,g.rh-9);c.fillStyle='#05070e';c.textAlign='center';c.fillText(SYM[row.g[i]],x+g.cs/2-1,y+g.rh*.6);c.textAlign='left'}else{c.fillStyle='#0c1420';c.fillRect(x+2,y+3,g.cs-6,g.rh-9)}}
+   if(row){for(let k=0;k<len;k++){const x=g.x0+len*g.cs+14+k*14;c.fillStyle=k<row.ex?'#faffdb':k<row.ex+row.mis?'#8d78ff':'#1d2d3a';c.beginPath();c.arc(x,y+g.rh*.45,k<row.ex+row.mis?4.5:2.5,0,K.TAU);c.fill()}
+    c.fillStyle='#7f97a5';c.fillText((r===hv?'●'+row.ex+' ○'+row.mis:''),g.x0+len*g.cs+14+len*14+8,y+g.rh*.6)}
+  }
+  const by=g.y0+MAXT*g.rh+36;c.fillStyle='#9fc4d6';c.fillText('YOUR GUESS',g.x0-34,by-8);
+  for(let i=0;i<len;i++){const x=g.x0+i*g.cs;c.fillStyle=K.DAMAGE[guess[i]];c.fillRect(x+2,by,g.cs-6,g.cs-6);c.fillStyle='#05070e';c.font='bold 16px monospace';c.textAlign='center';c.fillText(SYM[guess[i]],x+g.cs/2-1,by+g.cs*.55);c.textAlign='left';c.font='10px monospace';
+   if(i===sel){c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(x-1,by-3,g.cs,g.cs);c.lineWidth=1;c.fillStyle='#faffdb';c.fillText('▲',x+g.cs/2-7,by-6);c.fillText('▼',x+g.cs/2-7,by+g.cs+9)}}
+  c.fillStyle='#faffdb';c.fillText('POSSIBLE ADDRESSES: '+cands,g.x0+len*g.cs+20,by+g.cs*.5);
+  if(done===2){c.fillStyle='#ed4e8c';c.fillText('CODE  '+code.map(i=>SYM[i]).join(' '),g.x0,by+g.cs+34)}
+  if(done===1){c.fillStyle='#10f4cf';c.fillText('RESOLVED',g.x0,by+g.cs+34)}
+ },
+ readout:K=>['TRY '+K.pad(rows.length,2)+' / '+MAXT,'RESOLVED '+K.pad(wins)+' / LOST '+K.pad(fails)+' / LEN '+len]
+});
+})();
+</script></body></html>

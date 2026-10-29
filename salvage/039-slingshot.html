@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S039 — SLINGSHOT</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Aim with the keys, bend the path with the pointer. Every click leaves a place where gravity is stronger than it should be.
+const G=1.2e7,SOFT=3000,MAXW=4;
+let wells=[],shot=null,angle=-.6,power=0,charging=false,pdir=1,target={x:0,y:0,r:26},base={x:0,y:0},score=0,shots=0,hitT=0;
+function accel(x,y){let ax=0,ay=0;for(const w of wells){const dx=w.x-x,dy=w.y-y,d2=dx*dx+dy*dy,a=G/(d2+SOFT),d=Math.sqrt(d2)+.01;ax+=dx/d*a;ay+=dy/d*a}return[ax,ay]}
+function path(K,v,n){const pts=[];let x=base.x+Math.cos(angle)*28,y=base.y+Math.sin(angle)*28,vx=Math.cos(angle)*v,vy=Math.sin(angle)*v;for(let i=0;i<n;i++){const [ax,ay]=accel(x,y);vx+=ax*.02;vy+=ay*.02;x+=vx*.02;y+=vy*.02;pts.push([x,y]);if(x<-50||y<-50||x>K.w+50||y>K.h+50)break}return pts}
+function place(K){target={x:K.w*(.55+K.rand()*.38),y:K.h*(.2+K.rand()*.6),r:26};base={x:K.w*.08,y:K.h*.74}}
+Salvage({id:'S039',title:'SLINGSHOT',parent:'031 SHEAR CRYSTALLIZATION',
+ help:'<kbd>↑</kbd><kbd>↓</kbd> AIM &nbsp;HOLD <kbd>SPACE</kbd> TO CHARGE, RELEASE TO FIRE<br>CLICK TO PLACE OR REMOVE A GRAVITY WELL (UP TO FOUR) / THE GRID SHOWS THEIR PULL',
+ aria:'A slingshot puzzle. Up and down aim a launcher at the left; holding Space charges the shot and releasing fires it. A dotted line previews the path. Clicking with the pointer places or removes gravity wells that bend the path, up to four. Hitting the ring on the right scores. A warped grid shows the pull of the wells.',
+ reset(K){wells=[];shot=null;angle=-.6;power=0;charging=false;score=shots=0;hitT=0;place(K)},
+ resize(K){place(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh&&!shot){charging=true;power=0;pdir=1}return true}
+  if(/^Arrow|^Key[WASD]$/.test(e.code))return true;
+ },
+ keyup(K,e){if(e.code==='Space'&&charging){charging=false;if(!shot){shot={x:base.x+Math.cos(angle)*28,y:base.y+Math.sin(angle)*28,vx:Math.cos(angle)*(150+power*650),vy:Math.sin(angle)*(150+power*650),t:0,trail:[]};shots++}}},
+ down(K,x,y){let hit=-1;wells.forEach((w,i)=>{if(Math.hypot(w.x-x,w.y-y)<26)hit=i});if(hit>=0)wells.splice(hit,1);else if(wells.length<MAXW&&Math.hypot(x-target.x,y-target.y)>target.r+10)wells.push({x,y,t:0});else if(wells.length>=MAXW)K.note('FOUR WELLS ONLY / CLICK ONE TO REMOVE IT');return true},
+ step(K,dt){
+  const d=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?-1:0)+(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);angle=K.clamp(angle+d*dt*.9,-1.45,.15);
+  if(charging){power+=pdir*dt*.9;if(power>=1){power=1;pdir=-1}if(power<=0){power=0;pdir=1}}
+  for(const w of wells)w.t+=dt;
+  if(shot){shot.t+=dt;const [ax,ay]=accel(shot.x,shot.y);shot.vx+=ax*dt;shot.vy+=ay*dt;shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;shot.trail.push([shot.x,shot.y]);if(shot.trail.length>40)shot.trail.shift();
+   if(Math.hypot(shot.x-target.x,shot.y-target.y)<target.r+5){score++;hitT=1;K.note('ON TARGET / '+K.pad(score)+' / ONE SHOT, '+wells.length+' WELLS');shot=null;place(K)}
+   else if(shot&&(shot.x<-50||shot.y<-50||shot.x>K.w+50||shot.y>K.h+50||shot.t>9)){shot=null;K.live('Missed')}}
+  hitT=Math.max(0,hitT-dt*1.5);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';const S=40;
+  for(let gy=0;gy<=h;gy+=S){c.beginPath();for(let gx=0;gx<=w;gx+=10){let x=gx,y=gy;for(const q of wells){const dx=q.x-gx,dy=q.y-gy,d=Math.hypot(dx,dy)+1,m=Math.min(30,6000/(d+30));x+=dx/d*m;y+=dy/d*m}gx?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}
+  for(let gx=0;gx<=w;gx+=S){c.beginPath();for(let gy=0;gy<=h;gy+=10){let x=gx,y=gy;for(const q of wells){const dx=q.x-gx,dy=q.y-gy,d=Math.hypot(dx,dy)+1,m=Math.min(30,6000/(d+30));x+=dx/d*m;y+=dy/d*m}gy?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}
+  const tp=1+Math.sin(K.time*4)*.05;c.strokeStyle=hitT?'#f4d84e':'#10f4cf';c.lineWidth=2;c.beginPath();c.arc(target.x,target.y,target.r*tp,0,TAU);c.stroke();c.beginPath();c.arc(target.x,target.y,target.r*.45,0,TAU);c.stroke();c.lineWidth=1;
+  for(const q of wells){c.fillStyle='#000';c.beginPath();c.arc(q.x,q.y,10,0,TAU);c.fill();for(let k=0;k<3;k++){c.globalAlpha=.6-k*.17;c.strokeStyle='#ed4e8c';c.beginPath();c.arc(q.x,q.y,14+k*8+Math.sin(q.t*3+k)*2,0,TAU);c.stroke()}c.globalAlpha=1}
+  if(!shot){const pts=path(K,150+Math.max(.35,power)*650,110);c.fillStyle='#faffdb';pts.forEach(([x,y],i)=>{if(i%3===0){c.globalAlpha=.6*(1-i/pts.length)+.1;c.fillRect(x-1.5,y-1.5,3,3)}});c.globalAlpha=1}
+  c.strokeStyle='#faffdb';c.lineWidth=3;c.beginPath();c.moveTo(base.x,base.y);c.lineTo(base.x+Math.cos(angle)*28,base.y+Math.sin(angle)*28);c.stroke();c.lineWidth=1;c.beginPath();c.arc(base.x,base.y,8,0,TAU);c.stroke();
+  c.fillStyle='#ffffff22';c.fillRect(base.x-30,base.y+22,60,4);c.fillStyle=power>.85?'#ed4e8c':'#faffdb';c.fillRect(base.x-30,base.y+22,60*power,4);
+  if(shot){shot.trail.forEach(([x,y],k)=>{c.globalAlpha=k/40*.6;c.fillStyle='#faffdb';c.fillRect(x-2,y-2,4,4)});c.globalAlpha=1;c.fillStyle='#faffdb';c.beginPath();c.arc(shot.x,shot.y,5,0,TAU);c.fill()}
+  if(p.inside&&wells.length<MAXW){c.globalAlpha=.45;c.strokeStyle='#ed4e8c';c.beginPath();c.arc(p.x,p.y,14,0,TAU);c.stroke();c.globalAlpha=1;c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('CLICK: WELL '+(wells.length+1)+'/'+MAXW,p.x+18,p.y-6)}
+ },
+ readout:K=>['HITS '+K.pad(score),'SHOTS '+K.pad(shots)+' / WELLS '+wells.length+'/'+MAXW]
+});
+})();
+</script></body></html>

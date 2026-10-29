@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S036 — FOG MAZE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// An address space with no map. You see two cells around you. The lamp sees further, but forgets unless you hold it down.
+const N=1,E=2,S=4,W=8,DIRS=[[N,0,-1,S],[E,1,0,W],[S,0,1,N],[W,-1,0,E]];
+let cw=9,ch=6,cell=30,ox=0,oy=0,open=null,seen=null,me={c:0,r:0},exit={c:0,r:0},level=0,repeat=0,steps=0,wins=0,solved=0;
+function gen(K){
+ cw=Math.min(33,9+level*2);ch=Math.min(21,6+level*2);cell=Math.min(K.w*.9/cw,K.h*.76/ch);ox=(K.w-cell*cw)/2;oy=(K.h-cell*ch)/2+8;
+ open=new Uint8Array(cw*ch);seen=new Uint8Array(cw*ch);const vis=new Uint8Array(cw*ch),st=[0];vis[0]=1;
+ while(st.length){const n=st[st.length-1],c=n%cw,r=Math.floor(n/cw),opts=DIRS.filter(([b,dx,dy])=>{const nc=c+dx,nr=r+dy;return nc>=0&&nr>=0&&nc<cw&&nr<ch&&!vis[nr*cw+nc]});
+  if(!opts.length){st.pop();continue}const [b,dx,dy,opp]=opts[Math.floor(K.rand()*opts.length)],m=(r+dy)*cw+c+dx;open[n]|=b;open[m]|=opp;vis[m]=1;st.push(m)}
+ me={c:0,r:0};exit={c:cw-1,r:ch-1};steps=0;solved=0;mark(K);
+}
+const cc=(K,c,r)=>[ox+(c+.5)*cell,oy+(r+.5)*cell];
+function mark(K){for(let r=Math.max(0,me.r-2);r<=Math.min(ch-1,me.r+2);r++)for(let c=Math.max(0,me.c-2);c<=Math.min(cw-1,me.c+2);c++)if(Math.hypot(c-me.c,r-me.r)<=2.3)seen[r*cw+c]=1}
+function go(K,d){if(solved)return;const [b,dx,dy]=DIRS[d];if(!(open[me.r*cw+me.c]&b))return;me.c+=dx;me.r+=dy;steps++;mark(K);if(me.c===exit.c&&me.r===exit.r){wins++;solved=.001;K.note('EXIT FOUND / LEVEL '+K.pad(wins)+' / THE MAP IS DISCARDED')}}
+const KD={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
+Salvage({id:'S036',title:'FOG MAZE',parent:'009 AN INTERIOR FOR NOTHING',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> WALK / FIND THE EXIT IN THE FAR CORNER<br>THE POINTER IS A LAMP / HOLD IT TO MAKE WHAT IT LIGHTS PERMANENT',
+ aria:'A maze hidden in fog. Arrow keys move a walker one cell at a time and reveal the cells around it. The pointer is a lamp that lights a wider area while it moves; holding the pointer makes the lit cells stay revealed. Reaching the exit in the far corner starts a larger maze.',
+ reset(K){level=0;wins=0;gen(K)},
+ resize(K){const o=open,s=seen,w0=cw;cell=Math.min(K.w*.9/cw,K.h*.76/ch);ox=(K.w-cell*cw)/2;oy=(K.h-cell*ch)/2+8},
+ key(K,e,fresh){const d=KD[e.code];if(d!==undefined){if(fresh){repeat=.22;go(K,d)}return true}},
+ step(K,dt){
+  if(K.keys.size){repeat-=dt;if(repeat<=0){repeat=.1;for(const c of K.keys)if(KD[c]!==undefined){go(K,KD[c]);break}}}
+  const p=K.pointer;if(p.inside&&p.held){const R=110;for(let r=0;r<ch;r++)for(let c=0;c<cw;c++){const [x,y]=cc(K,c,r);if(Math.hypot(x-p.x,y-p.y)<R)seen[r*cw+c]=1}}
+  if(solved){solved+=dt;if(solved>1.8){level++;gen(K)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,R=110;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(let r=0;r<ch;r++)for(let q=0;q<cw;q++){
+   const n=r*cw+q,[x,y]=cc(K,q,r),near=Math.hypot(q-me.c,r-me.r)<=2.3,lamp=p.inside&&Math.hypot(x-p.x,y-p.y)<R,vis=near||lamp||solved;
+   if(!vis&&!seen[n])continue;
+   c.globalAlpha=vis?1:.35;c.fillStyle=vis?'#0f2a2a':'#0a1618';c.fillRect(x-cell/2,y-cell/2,cell,cell);
+   c.strokeStyle=vis?'#7cf3c8':'#2f7d6a';c.lineWidth=vis?1.6:1;c.beginPath();const o=open[n],x0=x-cell/2,y0=y-cell/2;
+   if(!(o&N)){c.moveTo(x0,y0);c.lineTo(x0+cell,y0)}if(!(o&W)){c.moveTo(x0,y0);c.lineTo(x0,y0+cell)}if(!(o&S)){c.moveTo(x0,y0+cell);c.lineTo(x0+cell,y0+cell)}if(!(o&E)){c.moveTo(x0+cell,y0);c.lineTo(x0+cell,y0+cell)}c.stroke();
+   if(q===exit.c&&r===exit.r){c.fillStyle='#f4d84e';c.globalAlpha=.7+.3*Math.sin(K.time*4);c.fillRect(x-cell*.25,y-cell*.25,cell*.5,cell*.5)}
+  }
+  c.globalAlpha=1;c.lineWidth=1;const [mx,my]=cc(K,me.c,me.r);c.fillStyle='#faffdb';c.beginPath();c.arc(mx,my,cell*.22,0,TAU);c.fill();
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle=p.held?'#f4d84e':'#faffdb';c.beginPath();c.arc(p.x,p.y,R,0,TAU);c.stroke();c.globalAlpha=1;c.font='9px monospace';c.fillStyle='#faffdb';c.fillText(p.held?'REMEMBERING':'LAMP',p.x+R*.72,p.y-R*.72)}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(cw+'×'+ch+' / '+(seen.reduce((a,b)=>a+b,0)/(cw*ch)*100).toFixed(0)+'% MAPPED',ox,oy-12);
+ },
+ readout:K=>['LEVEL '+K.pad(level+1,2),'STEPS '+K.pad(steps)+' / ESCAPED '+K.pad(wins)]
+});
+})();
+</script></body></html>
