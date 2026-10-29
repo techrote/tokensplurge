@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S070 — PENDULUM WAVE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Sixteen pendulums, each one swing faster than the last. Every so often, briefly, they agree.
+const N=16;
+let N0=24,scale=4,t=0,score=0,hits=0,miss=0,streak=0,best=0,fb='',fbT=0,R=0,nextAlign=0;
+const f=i=>(N0+i)/60,phi=(i,tt)=>((f(i)*tt)%1+1)%1;
+function align(tt){let sx=0,sy=0;for(let i=0;i<N;i++){const a=phi(i,tt)*Math.PI*2;sx+=Math.cos(a);sy+=Math.sin(a)}return Math.hypot(sx,sy)/N}
+function nextAl(tt){for(let k=0;k<3000;k++){const x=tt+k*.02;if(align(x)>.97)return x-tt}return -1}
+Salvage({id:'S070',title:'PENDULUM WAVE',parent:'018 CLOCK SECESSION',
+ help:'<kbd>SPACE</kbd> WHEN ALL SIXTEEN AGREE &nbsp;<kbd>←</kbd><kbd>→</kbd> TUNE THE FAMILY &nbsp;<kbd>↑</kbd><kbd>↓</kbd> SPEED<br>THE POINTER HIGHLIGHTS ONE PENDULUM, HOLD TO SLOW TIME',
+ aria:'Sixteen pendulums swing at slightly different frequencies, producing travelling waves and snake patterns that periodically realign. Press Space at the moment all sixteen are in step to score; accuracy is shown as a percentage. Left and right arrows retune the whole family and up and down change the playback speed. Hovering the pointer highlights one pendulum and shows its frequency; holding it slows time.',
+ reset(K){N0=22+Math.floor(K.rand()*10);scale=4;t=7+K.rand()*20;score=hits=miss=streak=best=0;fb="";nextAlign=nextAl(t)},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh){const r=align(t);if(r>.9){const q=Math.round((r-.9)*1000);score+=100+q+streak*20;hits++;streak++;best=Math.max(best,streak);fb='IN STEP '+(r*100).toFixed(1)+'%'}else{miss++;streak=0;fb='OUT OF STEP '+(r*100).toFixed(0)+'%'}fbT=1}return true}
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){N0=Math.max(10,N0-1);nextAlign=nextAl(t);return true}
+  if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){N0=Math.min(50,N0+1);nextAlign=nextAl(t);return true}
+  if(fresh&&(e.code==='ArrowUp'||e.code==='KeyW')){scale=Math.min(10,scale+1);return true}
+  if(fresh&&(e.code==='ArrowDown'||e.code==='KeyS')){scale=Math.max(1,scale-1);return true}
+ },
+ step(K,dt){
+  const p=K.pointer;t+=dt*scale*(p.inside&&p.held?.3:1);fbT=Math.max(0,fbT-dt);R=align(t);
+  nextAlign-=dt*scale*(p.inside&&p.held?.3:1);if(nextAlign<-.5){nextAlign=nextAl(t)}
+  if(R>.99&&fbT<.01&&K.hash(Math.floor(t))>-1){}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,x0=w*.08,x1=w*.92,cy=h*.46,A=h*.22;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';c.beginPath();c.moveTo(x0-10,cy);c.lineTo(x1+10,cy);c.stroke();
+  const pts=[];let hv=-1;
+  for(let i=0;i<N;i++){const x=x0+(x1-x0)*i/(N-1),a=phi(i,t)*TAU,y=cy-Math.cos(a)*A*.8,y2=cy+Math.sin(a)*0;pts.push([x,y,a]);if(p.inside&&Math.abs(p.x-x)<(x1-x0)/(N-1)/2)hv=i}
+  c.strokeStyle='#28e3f4';c.globalAlpha=.5;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.globalAlpha=1;
+  pts.forEach(([x,y,a],i)=>{c.strokeStyle='#10202e';c.beginPath();c.moveTo(x,h*.14);c.lineTo(x,y);c.stroke();c.fillStyle=i===hv?'#faffdb':K.SPECTRUM[Math.floor(i/16*6)%6];c.beginPath();c.arc(x,y,i===hv?11:8,0,TAU);c.fill()});
+  c.textAlign='center';c.font='10px monospace';c.fillStyle=R>.9?'#f4d84e':'#9fc4d6';c.fillText('AGREEMENT '+(R*100).toFixed(1)+'%',w/2,h*.78);
+  c.fillStyle='#ffffff22';c.fillRect(w/2-100,h*.8,200,5);c.fillStyle=R>.9?'#f4d84e':'#10f4cf';c.fillRect(w/2-100,h*.8,200*R,5);
+  c.fillStyle='#9fc4d6';c.font='9px monospace';c.fillText('NEXT FULL ALIGNMENT IN ~'+(nextAlign>0?(nextAlign/scale).toFixed(1)+'s (real)':'—')+' / f₀ '+f(0).toFixed(3)+'Hz × '+scale,w/2,h*.8+22);
+  if(fbT>0){c.globalAlpha=fbT;c.fillStyle=fb.startsWith('IN')?'#10f4cf':'#ed4e8c';c.font='13px monospace';c.fillText(fb,w/2,h*.78-26);c.globalAlpha=1}
+  c.textAlign='left';
+  if(hv>=0){c.fillStyle='#faffdb';c.font='9px monospace';c.fillText('P'+K.pad(hv+1,2)+' / '+f(hv).toFixed(3)+' Hz / PHASE '+(phi(hv,t)).toFixed(2),p.x+14,p.y-10)}
+ },
+ readout:K=>['SCORE '+K.pad(score,5),'STREAK '+K.pad(streak,2)+' / BEST '+K.pad(best,2)+' / MISS '+K.pad(miss,2)]
+});
+})();
+</script></body></html>

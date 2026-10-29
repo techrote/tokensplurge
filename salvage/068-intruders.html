@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#030906"><title>S068 — INTRUDERS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Rows of glyphs marching down the screen. Break each wave before it reaches the floor.
+const GL=['0','1','#','%','/','|'],COLS=11;
+let en=[],bullets=[],eb=[],cannon={x:0,v:0},dir=1,stepT=0,stepEvery=.7,wave=1,score=0,lives=3,cool=0,barr=[],charges=3,chT=0,hit=0,best=0,over=0,lastShot=0,ex=0,ey=0,egap=34;
+const geo=K=>({y:K.h*.9,top:K.h*.14,gx:Math.min(44,K.w/(COLS+3))});
+function spawn(K){en=[];const g=geo(K);for(let r=0;r<Math.min(5,3+Math.floor(wave/2));r++)for(let c=0;c<COLS;c++)en.push({r,c,alive:true,ch:GL[r%6],col:K.DAMAGE[r%6]});ex=K.w/2-COLS*g.gx/2;ey=g.top;dir=1;stepEvery=Math.max(.12,.7-wave*.05);eb=[];bullets=[]}
+Salvage({id:'S068',title:'INTRUDERS',parent:'025 CODEC LARVAE',bg:'#030906',
+ help:'<kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> FIRE<br>THE POINTER CLICK DROPS A SHORT-LIVED BARRIER (THREE CHARGES) / HOVER MARKS A COLUMN',
+ aria:'A space-invaders style shooter. Left and right arrows move a cannon along the bottom and Space fires upward at rows of glyph invaders that march sideways and step down. Invaders shoot back and three lives are lost on hits. Clicking with the pointer places a temporary barrier that absorbs shots; it has three charges that recharge. Clearing a wave starts a faster one.',
+ reset(K){wave=1;score=0;lives=3;over=0;cannon={x:K.w/2,v:0};barr=[];charges=3;best=0;spawn(K)},
+ resize(K){},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh&&over){over=0;wave=1;score=0;lives=3;spawn(K)}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){if(charges>=1&&y<geo(K).y-20){barr.push({x,y,t:5,w:70});charges--;return true}return false},
+ step(K,dt){
+  const g=geo(K),d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  cannon.v+=d*3600*dt;cannon.v*=Math.exp(-dt*11);cannon.x=K.clamp(cannon.x+cannon.v*dt,24,K.w-24);cool-=dt;chT+=dt;if(chT>6&&charges<3){charges++;chT=0}
+  for(const b of barr)b.t-=dt;barr=barr.filter(b=>b.t>0);
+  if(over)return;
+  if(K.keys.has('Space')&&cool<=0&&bullets.length<2){cool=.3;bullets.push({x:cannon.x,y:g.y-14})}
+  stepT+=dt;const live=en.filter(e=>e.alive);
+  if(stepT>=stepEvery*Math.max(.2,live.length/en.length*1.2)){stepT=0;const minX=Math.min(...live.map(e=>ex+e.c*g.gx)),maxX=Math.max(...live.map(e=>ex+e.c*g.gx));if((dir>0&&maxX+g.gx*.8>K.w-20)||(dir<0&&minX<20)){dir*=-1;ey+=egap*.6}else ex+=dir*g.gx*.3}
+  for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];b.y-=640*dt;let gone=b.y<0;
+   for(const e of live){const x=ex+e.c*g.gx,y=ey+e.r*egap;if(Math.abs(b.x-x)<g.gx*.4&&Math.abs(b.y-y)<14){e.alive=false;score+=10*(5-e.r);gone=true;break}}
+   if(gone)bullets.splice(i,1)}
+  if(K.rand()<dt*(.8+wave*.25)&&live.length){const sh=live[Math.floor(K.rand()*live.length)];eb.push({x:ex+sh.c*g.gx,y:ey+sh.r*egap+10})}
+  for(let i=eb.length-1;i>=0;i--){const b=eb[i];b.y+=230*dt;let gone=false;
+   for(const br of barr)if(Math.abs(b.x-br.x)<br.w/2&&Math.abs(b.y-br.y)<8){gone=true;br.t-=1.2;break}
+   if(!gone&&b.y>g.y-14&&Math.abs(b.x-cannon.x)<20){lives--;hit=1;gone=true;K.note('HIT / '+lives+' LEFT');if(lives<=0){over=1;best=Math.max(best,score);K.note('OVERRUN / SPACE TO RESTART')}}
+   if(gone||b.y>K.h)eb.splice(i,1)}
+  hit=Math.max(0,hit-dt*2);
+  if(live.every(e=>!e.alive)){wave++;K.note('WAVE '+K.pad(wave,2));spawn(K)}
+  for(const e of live)if(ey+e.r*egap>g.y-30){over=1;best=Math.max(best,score);K.note('THEY REACHED THE FLOOR / SPACE TO RESTART');break}
+  best=Math.max(best,score);
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#030906';c.fillRect(0,0,w,h);
+  if(hit){c.fillStyle='#ed4e8c';c.globalAlpha=hit*.15;c.fillRect(0,0,w,h);c.globalAlpha=1}
+  c.font='bold 18px monospace';c.textAlign='center';for(const e of en){if(!e.alive)continue;c.fillStyle=e.col;c.fillText(Math.floor(K.time*2+e.c)%2?e.ch:e.ch+'',ex+e.c*g.gx,ey+e.r*egap+6)}
+  c.textAlign='left';c.fillStyle='#faffdb';for(const b of bullets)c.fillRect(b.x-1.5,b.y-8,3,12);c.fillStyle='#ed4e8c';for(const b of eb)c.fillRect(b.x-1.5,b.y-6,3,10);
+  for(const b of barr){c.globalAlpha=Math.min(1,b.t);c.fillStyle='#28e3f4';c.fillRect(b.x-b.w/2,b.y-4,b.w,8);c.strokeStyle='#e9fbff';c.strokeRect(b.x-b.w/2+.5,b.y-3.5,b.w-1,7)}c.globalAlpha=1;
+  c.strokeStyle=over?'#ed4e8c':'#faffdb';c.lineWidth=1.6;c.beginPath();c.moveTo(cannon.x-18,g.y);c.lineTo(cannon.x-18,g.y-6);c.lineTo(cannon.x-4,g.y-6);c.lineTo(cannon.x,g.y-16);c.lineTo(cannon.x+4,g.y-6);c.lineTo(cannon.x+18,g.y-6);c.lineTo(cannon.x+18,g.y);c.closePath();c.stroke();c.lineWidth=1;
+  c.strokeStyle='#17302a';c.beginPath();c.moveTo(0,g.y+8);c.lineTo(w,g.y+8);c.stroke();c.font='9px monospace';c.fillStyle='#7cf3c8';c.fillText('♦'.repeat(Math.max(0,lives))+'   BARRIERS '+'■'.repeat(charges)+'□'.repeat(3-charges),22,h-18);
+  if(p.inside&&p.y<g.y-20){c.globalAlpha=.4;c.strokeStyle='#28e3f4';c.strokeRect(p.x-35,p.y-4,70,8);c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(charges?'CLICK: BARRIER':'NO CHARGE',p.x+42,p.y)}
+  if(over){c.fillStyle='#030906cc';c.fillRect(w/2-130,h*.45,260,50);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText('OVERRUN / SPACE TO RESTART',w/2,h*.45+30);c.textAlign='left'}
+ },
+ readout:K=>['SCORE '+K.pad(score,5),'WAVE '+K.pad(wave,2)+' / LIVES '+Math.max(0,lives)+' / BEST '+K.pad(best,5)]
+});
+})();
+</script></body></html>

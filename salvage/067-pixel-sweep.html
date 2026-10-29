@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S067 — PIXEL SWEEP</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A screen with dead pixels hidden in it. Numbers say how many are next to each cell.
+let cols=14,rows=9,mines=null,rev=null,flag=null,cnt=null,cur={r:0,c:0},cell=40,ox=0,oy=0,first=true,over=0,won=0,wins=0,losses=0,nm=18,pd=-1,pt=0,pflag=false,level=0;
+const id=(r,c)=>r*cols+c;
+function init(K){cols=Math.min(22,14+level*2);rows=Math.min(13,9+level);nm=Math.round(cols*rows*.15);cell=Math.min(K.w*.9/cols,K.h*.74/rows,48);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8;mines=new Uint8Array(cols*rows);rev=new Uint8Array(cols*rows);flag=new Uint8Array(cols*rows);cnt=new Uint8Array(cols*rows);first=true;over=0;won=0;cur={r:Math.floor(rows/2),c:Math.floor(cols/2)}}
+function place(K,sr,sc){let n=0;while(n<nm){const r=Math.floor(K.rand()*rows),c=Math.floor(K.rand()*cols);if(mines[id(r,c)]||(Math.abs(r-sr)<=1&&Math.abs(c-sc)<=1))continue;mines[id(r,c)]=1;n++}
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){let k=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const a=r+dr,b=c+dc;if(a>=0&&b>=0&&a<rows&&b<cols)k+=mines[id(a,b)]}cnt[id(r,c)]=k}}
+function reveal(K,r,c){
+ if(over||won)return;const i=id(r,c);if(flag[i])return;
+ if(first){place(K,r,c);first=false}
+ if(rev[i]){let f=0;for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const a=r+dr,b=c+dc;if(a>=0&&b>=0&&a<rows&&b<cols)f+=flag[id(a,b)]}if(f===cnt[i]&&cnt[i]>0)for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const a=r+dr,b=c+dc;if(a>=0&&b>=0&&a<rows&&b<cols&&!rev[id(a,b)]&&!flag[id(a,b)])open(K,a,b)}return}
+ open(K,r,c);
+}
+function open(K,r,c){
+ const st=[[r,c]];while(st.length){const [a,b]=st.pop(),i=id(a,b);if(rev[i]||flag[i])continue;rev[i]=1;if(mines[i]){over=1;lose(K);return}
+  if(cnt[i]===0)for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const x=a+dr,y=b+dc;if(x>=0&&y>=0&&x<rows&&y<cols&&!rev[id(x,y)])st.push([x,y])}}
+ let safe=0;for(let i=0;i<rev.length;i++)if(rev[i]&&!mines[i])safe++;if(safe===cols*rows-nm){won=1;wins++;K.note('SWEPT / '+K.pad(wins)+' / THE SCREEN GROWS')}
+}
+function lose(K){losses++;K.note('DEAD PIXEL / SPACE FOR A NEW SCREEN')}
+function toggle(r,c){if(over||won)return;const i=id(r,c);if(!rev[i])flag[i]^=1}
+const KD={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]};
+const at=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);return r>=0&&c>=0&&r<rows&&c<cols?[r,c]:null};
+Salvage({id:'S067',title:'PIXEL SWEEP',parent:'002 AFTERIMAGE DEBT',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> REVEAL (ON A NUMBER: OPEN AROUND IT) &nbsp;<kbd>F</kbd> FLAG<br>CLICK REVEALS, HOLD A CELL TO FLAG IT',
+ aria:'A minesweeper-style game of hidden dead pixels. Arrow keys move a cursor, Space reveals a cell and F flags or unflags it. Numbers show how many dead pixels touch a cell; pressing Space on a satisfied number opens its neighbours. Revealing a dead pixel loses the screen. Clicking reveals a cell and holding the pointer on a cell flags it. The first reveal is always safe.',
+ reset(K){level=0;wins=0;losses=0;init(K)},
+ resize(K){cell=Math.min(K.w*.9/cols,K.h*.74/rows,48);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(over||won){if(won)level++;init(K)}else reveal(K,cur.r,cur.c)}return true}
+  if(e.code==='KeyF'||e.code==='KeyE'){if(fresh)toggle(cur.r,cur.c);return true}
+  const d=KD[e.code];if(d){if(fresh){cur.r=K.clamp(cur.r+d[0],0,rows-1);cur.c=K.clamp(cur.c+d[1],0,cols-1)}return true}
+ },
+ down(K,x,y){const a=at(K,x,y);if(!a)return false;cur={r:a[0],c:a[1]};pd=id(a[0],a[1]);pt=0;pflag=false;return false},
+ up(K){if(pd>=0&&!pflag&&pt<.4){const r=Math.floor(pd/cols),c=pd%cols;if(over||won){if(won)level++;init(K)}else reveal(K,r,c)}pd=-1},
+ step(K,dt){const p=K.pointer;if(p.held&&pd>=0){pt+=dt;if(pt>=.4&&!pflag){pflag=true;toggle(Math.floor(pd/cols),pd%cols)}}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);const hv=p.inside?at(K,p.x,p.y):null;
+  const NC=['','#28e3f4','#10f4cf','#f4d84e','#fe6741','#ed4e8c','#8d78ff','#e4f2bf','#fff'];
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){const i=id(r,q),x=ox+q*cell,y=oy+r*cell,rv=rev[i]||(over&&mines[i]);
+   c.fillStyle=rv?(mines[i]?'#3a0f2a':'#0a131e'):(hv&&hv[0]===r&&hv[1]===q?'#233552':'#17283a');c.fillRect(x,y,cell-1,cell-1);
+   if(!rv){c.strokeStyle='#2a3d5e';c.strokeRect(x+.5,y+.5,cell-2,cell-2)}
+   if(rv&&mines[i]){c.fillStyle='#ed4e8c';c.fillRect(x+cell*.3,y+cell*.3,cell*.35,cell*.35);c.fillStyle='#faffdb';c.fillRect(x+cell*.42,y+cell*.42,cell*.1,cell*.1)}
+   else if(rev[i]&&cnt[i]){c.fillStyle=NC[cnt[i]];c.font='bold '+Math.round(cell*.5)+'px monospace';c.textAlign='center';c.fillText(cnt[i],x+cell/2,y+cell*.68);c.textAlign='left'}
+   if(flag[i]&&!rev[i]){c.fillStyle=over&&!mines[i]?'#ed4e8c':'#f4d84e';c.beginPath();c.moveTo(x+cell*.35,y+cell*.25);c.lineTo(x+cell*.75,y+cell*.42);c.lineTo(x+cell*.35,y+cell*.58);c.fill();c.fillRect(x+cell*.33,y+cell*.25,2,cell*.5)}}
+  const cx=ox+cur.c*cell,cy=oy+cur.r*cell,b=2+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx+b,cy+b,cell-b*2,cell-b*2);c.lineWidth=1;
+  if(p.held&&pd>=0&&!pflag){const hx=ox+(pd%cols+.5)*cell,hy=oy+(Math.floor(pd/cols)+.5)*cell;c.strokeStyle='#f4d84e';c.beginPath();c.arc(hx,hy,cell*.4,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,pt/.4));c.stroke()}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';let fl=0;for(let i=0;i<flag.length;i++)fl+=flag[i];c.fillText(cols+'×'+rows+' / '+nm+' DEAD PIXELS / '+(nm-fl)+' UNFLAGGED',ox,oy-12);
+  if(over||won){c.fillStyle='#05070ecc';c.fillRect(w/2-120,oy-6+rows*cell/2-22,240,44);c.fillStyle=won?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='12px monospace';c.fillText(won?'SWEPT / SPACE FOR LARGER':'DEAD PIXEL / SPACE TO RETRY',w/2,oy+rows*cell/2+4);c.textAlign='left'}
+ },
+ readout:K=>{let rv=0;for(let i=0;i<rev.length;i++)rv+=rev[i]&&!mines[i];return['CLEAR '+K.pad(rv,3)+'/'+K.pad(cols*rows-nm,3),'SWEPT '+K.pad(wins)+' / LOST '+K.pad(losses)]}
+});
+})();
+</script></body></html>

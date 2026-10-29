@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S065 — PAIRS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Each ancestor is on two cards. Remember where.
+const GLY='0123456789ABCDEF#%/\\|*+=<>░▒▓',COLS=[4,5,6,6,7],ROWS=[3,4,4,5,6];
+let cols=4,rows=3,cards=[],cur=0,first=-1,second=-1,wait=0,moves=0,matched=0,level=0,wins=0,cell=60,ox=0,oy=0,best=0,solved=0;
+function gen(K){cols=COLS[Math.min(level,4)];rows=ROWS[Math.min(level,4)];if((cols*rows)%2)rows++;const n=cols*rows/2,gl=[];while(gl.length<n){const g=Math.floor(K.rand()*GLY.length);if(!gl.includes(g))gl.push(g)}
+ const deck=gl.concat(gl).map((g,i)=>({g,c:K.DAMAGE[g%6],up:false,done:false,flip:0}));for(let i=deck.length-1;i>0;i--){const j=Math.floor(K.rand()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}
+ cards=deck;cur=0;first=second=-1;wait=0;moves=0;matched=0;solved=0;cell=Math.min(K.w*.86/cols,K.h*.7/rows,96);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8}
+function flip(K,i){if(solved||wait>0||cards[i].up||cards[i].done)return;cards[i].up=true;if(first<0)first=i;else{second=i;moves++;if(cards[first].g===cards[second].g){cards[first].done=cards[second].done=true;matched++;first=second=-1;if(matched===cards.length/2){wins++;best=best?Math.min(best,moves):moves;solved=.001;K.note('ALL PAIRED IN '+moves+' MOVES')}}else wait=.9}}
+Salvage({id:'S065',title:'PAIRS',parent:'024 FOSSIL INDEX',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> TURN A CARD<br>FIND ALL THE PAIRS IN FEW MOVES / HOVER TO HIGHLIGHT, CLICK TO TURN',
+ aria:'A memory card game. Arrow keys move a cursor over face-down cards and Space turns one over. Turn two cards to look for a matching glyph; matches stay up and mismatches turn back after a moment. Find every pair in as few moves as possible. Clicking a card turns it. Each cleared board is followed by a larger one.',
+ reset(K){level=0;wins=0;best=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.86/cols,K.h*.7/rows,96);ox=(K.w-cell*cols)/2;oy=(K.h-cell*rows)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)flip(K,cur);return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];
+  if(d){if(fresh){const r=K.clamp(Math.floor(cur/cols)+d[0],0,rows-1),c=K.clamp(cur%cols+d[1],0,cols-1);cur=r*cols+c}return true}
+ },
+ down(K,x,y){const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);if(c<0||r<0||c>=cols||r>=rows)return false;cur=r*cols+c;flip(K,cur);return true},
+ step(K,dt){
+  for(const c of cards)c.flip+=((c.up||c.done?1:0)-c.flip)*Math.min(1,dt*14);
+  if(wait>0){wait-=dt;if(wait<=0){cards[first].up=cards[second].up=false;first=second=-1}}
+  if(solved){solved+=dt;if(solved>2.2){level++;gen(K)}}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const hv=p.inside?(()=>{const cc=Math.floor((p.x-ox)/cell),rr=Math.floor((p.y-oy)/cell);return cc>=0&&rr>=0&&cc<cols&&rr<rows?rr*cols+cc:-1})():-1;
+  cards.forEach((cd,i)=>{const r=Math.floor(i/cols),q=i%cols,x=ox+q*cell,y=oy+r*cell,s=cell-8,sc=Math.abs(Math.cos(cd.flip*Math.PI)),face=cd.flip>.5;c.save();c.translate(x+cell/2,y+cell/2);c.scale(Math.max(.02,sc),1);
+   if(face){c.fillStyle=cd.done?cd.c+'55':'#0c1420';c.fillRect(-s/2,-s/2,s,s);c.strokeStyle=cd.c;c.strokeRect(-s/2+.5,-s/2+.5,s-1,s-1);c.fillStyle=cd.c;c.font='bold '+Math.round(s*.5)+'px monospace';c.textAlign='center';c.fillText(GLY[cd.g],0,s*.18)}
+   else{const g=c.createLinearGradient(-s/2,-s/2,s/2,s/2);g.addColorStop(0,'#1b2a4a');g.addColorStop(1,'#0c1420');c.fillStyle=g;c.fillRect(-s/2,-s/2,s,s);c.strokeStyle=i===hv?'#ed4e8c':'#2a3d5e';c.strokeRect(-s/2+.5,-s/2+.5,s-1,s-1);c.strokeStyle='#2a3d5e';for(let k=-s/2+8;k<s/2;k+=8){c.beginPath();c.moveTo(-s/2,k);c.lineTo(s/2,k);c.stroke()}}
+   c.restore()});
+  const cx2=ox+(cur%cols)*cell,cy2=oy+Math.floor(cur/cols)*cell,b=1+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx2+b,cy2+b,cell-b*2,cell-b*2);c.lineWidth=1;c.textAlign='left';
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(cols+'×'+rows+' / '+matched+'/'+cards.length/2+' PAIRS',ox,oy-12);
+ },
+ readout:K=>['PAIRS '+K.pad(matched,2)+'/'+K.pad(cards.length/2,2),'MOVES '+K.pad(moves,2)+' / BEST '+(best?K.pad(best,2):'—')+' / BOARDS '+K.pad(wins)]
+});
+})();
+</script></body></html>

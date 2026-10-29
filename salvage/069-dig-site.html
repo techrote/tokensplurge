@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0806"><title>S069 — DIG SITE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Dig down through the layers for the gems. Rocks fall when you take away what they were resting on.
+const AIR=0,DIRT=1,ROCK=2,GEM=3,WALL=4;
+let W=16,H=11,g=null,me={r:1,c:1},exit={r:0,c:0},gems=0,need=5,lives=3,score=0,level=0,tick=0,fall=null,repeat=0,cell=40,ox=0,oy=0,dead=0,open=false,won=0,flash=0,crush=0;
+const id=(r,c)=>r*W+c;
+function gen(K){
+ W=Math.min(24,16+level*2);H=Math.min(14,11+level);cell=Math.min(K.w*.92/W,K.h*.76/H,56);ox=(K.w-cell*W)/2;oy=(K.h-cell*H)/2+8;g=new Uint8Array(W*H);fall=new Uint8Array(W*H);
+ for(let r=0;r<H;r++)for(let c=0;c<W;c++){const e=r===0||c===0||r===H-1||c===W-1;g[id(r,c)]=e?WALL:K.rand()<.12?ROCK:K.rand()<.09?GEM:DIRT}
+ me={r:1,c:1};for(const [r,c] of [[1,1],[1,2],[2,1]])g[id(r,c)]=AIR;exit={r:H-2,c:W-2};g[id(exit.r,exit.c)]=AIR;
+ let n=0;for(let i=0;i<g.length;i++)if(g[i]===GEM)n++;need=Math.min(n,4+level*2);gems=0;open=false;won=0;dead=0;
+}
+function step1(K){
+ for(let r=H-2;r>=1;r--)for(let c=1;c<W-1;c++){const i=id(r,c);if(g[i]!==ROCK)continue;const b=id(r+1,c);
+  if(g[b]===AIR&&!(me.r===r+1&&me.c===c&&false)){if(fall[i]){g[i]=AIR;g[b]=ROCK;fall[b]=1;if(me.r===r+1&&me.c===c){hurt(K)}}else fall[i]=1}else fall[i]=0}
+}
+function hurt(K){lives--;flash=1;crush++;K.note('CRUSHED / '+Math.max(0,lives)+' LEFT');me={r:1,c:1};if(lives<=0){dead=1;K.note('BURIED / SPACE TO DIG AGAIN')}}
+function move(K,dr,dc){
+ if(dead||won)return;const nr=me.r+dr,nc=me.c+dc,i=id(nr,nc),t=g[i];
+ if(t===WALL)return;
+ if(t===ROCK){if(dr!==0)return;const b=id(nr,nc+dc);if(g[b]!==AIR)return;g[b]=ROCK;g[i]=AIR}
+ if(t===DIRT)g[i]=AIR;if(t===GEM){g[i]=AIR;gems++;score+=50;if(gems===need){open=true;K.note('QUOTA MET / REACH THE EXIT')}}
+ me={r:nr,c:nc};if(open&&nr===exit.r&&nc===exit.c){won=1;score+=200;K.note('SURFACED / LEVEL '+K.pad(level+1))}
+}
+const KD={ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0],ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1]};
+Salvage({id:'S069',title:'DIG SITE',parent:'023 STRATIGRAPHIC SLIP',bg:'#0b0806',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> DIG AND WALK (PUSH ROCKS SIDEWAYS)<br>TAKE THE QUOTA OF GEMS THEN REACH THE EXIT / CLICK A DIRT CELL NEXT TO YOU TO DIG IT WITHOUT MOVING',
+ aria:'A digging game. Arrow keys move a miner through dirt, removing it, and collecting gems. Rocks fall when the cell beneath them is emptied and can crush the miner; rocks can be pushed sideways into empty space. Collect the quota of gems and then reach the exit. Clicking a dirt cell adjacent to the miner digs it without moving. Hovering shows what a rock above the cursor would do.',
+ reset(K){level=0;score=0;lives=3;crush=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.92/W,K.h*.76/H,56);ox=(K.w-cell*W)/2;oy=(K.h-cell*H)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(dead){lives=3;score=0;level=0;gen(K)}else if(won){level++;lives=Math.min(3,lives+1);gen(K)}}return true}
+  const d=KD[e.code];if(d){if(fresh){repeat=.2;move(K,d[0],d[1])}return true}
+ },
+ down(K,x,y){const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);if(Math.abs(r-me.r)+Math.abs(c-me.c)===1&&g[id(r,c)]===DIRT){g[id(r,c)]=AIR;return true}return false},
+ step(K,dt){
+  if(K.keys.size){repeat-=dt;if(repeat<=0){repeat=.13;for(const c of K.keys){const d=KD[c];if(d){move(K,d[0],d[1]);break}}}}
+  tick+=dt;if(tick>.16){tick=0;step1(K)}flash=Math.max(0,flash-dt*3);
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#0b0806';c.fillRect(0,0,w,h);
+  for(let r=0;r<H;r++)for(let q=0;q<W;q++){const t=g[id(r,q)],x=ox+q*cell,y=oy+r*cell;
+   if(t===AIR){c.fillStyle='#120e0a';c.fillRect(x,y,cell-1,cell-1)}
+   else if(t===DIRT){c.fillStyle='hsl(28,'+(24+K.hash(r*31+q)*10)+'%,'+(15+K.hash(r+q*13)*7)+'%)';c.fillRect(x,y,cell-1,cell-1);c.fillStyle='#00000044';c.fillRect(x+K.hash(r*7+q)*cell*.6,y+K.hash(q*5+r)*cell*.6,3,2)}
+   else if(t===WALL){c.fillStyle='#1b2a4a';c.fillRect(x,y,cell-1,cell-1);c.strokeStyle='#2a3d5e';c.strokeRect(x+.5,y+.5,cell-2,cell-2)}
+   else if(t===ROCK){const un=fall[id(r,q)];c.fillStyle='#120e0a';c.fillRect(x,y,cell-1,cell-1);c.fillStyle=un?'#ed4e8c':'#8a8f98';c.beginPath();c.arc(x+cell/2,y+cell/2+(un?Math.sin(K.time*40)*1.5:0),cell*.4,0,K.TAU);c.fill();c.fillStyle='#00000055';c.beginPath();c.arc(x+cell*.62,y+cell*.58,cell*.14,0,K.TAU);c.fill()}
+   else if(t===GEM){c.fillStyle='#120e0a';c.fillRect(x,y,cell-1,cell-1);c.fillStyle=K.DAMAGE[(r+q)%6];c.beginPath();c.moveTo(x+cell/2,y+cell*.15);c.lineTo(x+cell*.85,y+cell/2);c.lineTo(x+cell/2,y+cell*.85);c.lineTo(x+cell*.15,y+cell/2);c.closePath();c.fill()}}
+  c.strokeStyle=open?'#f4d84e':'#4f6b80';c.lineWidth=2;c.strokeRect(ox+exit.c*cell+3,oy+exit.r*cell+3,cell-7,cell-7);c.lineWidth=1;c.font='8px monospace';c.fillStyle=open?'#f4d84e':'#4f6b80';c.fillText('EXIT',ox+exit.c*cell+4,oy+exit.r*cell+cell*.6);
+  const mx=ox+me.c*cell,my=oy+me.r*cell;c.fillStyle=dead?'#ed4e8c':'#faffdb';c.fillRect(mx+cell*.25,my+cell*.2,cell*.5,cell*.6);c.fillStyle='#05070e';c.fillRect(mx+cell*.4,my+cell*.34,cell*.07,cell*.07);c.fillRect(mx+cell*.54,my+cell*.34,cell*.07,cell*.07);
+  if(flash){c.fillStyle='#ed4e8c';c.globalAlpha=flash*.2;c.fillRect(0,0,w,h);c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle='#d9c9a0';c.fillText('GEMS '+gems+'/'+need+(open?' / EXIT OPEN':'')+' / '+'♦'.repeat(Math.max(0,lives)),ox,oy-12);
+  if(p.inside){const q=Math.floor((p.x-ox)/cell),r=Math.floor((p.y-oy)/cell);if(r>=0&&q>=0&&r<H&&q<W){c.strokeStyle='#faffdb';c.globalAlpha=.6;c.strokeRect(ox+q*cell+1,oy+r*cell+1,cell-3,cell-3);c.globalAlpha=1;const t=g[id(r,q)];c.fillStyle='#faffdb';c.fillText(['AIR','DIRT','ROCK'+(fall[id(r,q)]?' / FALLING':''),'GEM','WALL'][t],p.x+12,p.y-8)}}
+  if(dead||won){c.fillStyle='#0b0806cc';c.fillRect(w/2-120,h*.44,240,48);c.fillStyle=won?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='12px monospace';c.fillText(won?'SURFACED / SPACE: NEXT':'BURIED / SPACE: AGAIN',w/2,h*.44+28);c.textAlign='left'}
+ },
+ readout:K=>['GEMS '+K.pad(gems)+'/'+K.pad(need),'SCORE '+K.pad(score,5)+' / LEVEL '+K.pad(level+1)+' / CRUSHED '+K.pad(crush)]
+});
+})();
+</script></body></html>
