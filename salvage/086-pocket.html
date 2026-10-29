@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04100c"><title>S086 — POCKET</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Clear the table in as few shots as possible. The cloth is worn and the cushions are not quite straight.
+const BR=11,PR=22;
+let T={x:0,y:0,w:0,h:0},balls=[],cue=null,aim=0,power=0,pdir=1,charging=false,shots=0,potted=0,racks=0,scratch=0,best=0,pockets=[],moving=false,usePointer=false;
+function layout(K){const w=Math.min(K.w*.86,K.h*1.9*.7),h=w/2;T={x:(K.w-w)/2,y:(K.h-h)/2+6,w,h};pockets=[[T.x,T.y],[T.x+T.w/2,T.y-3],[T.x+T.w,T.y],[T.x,T.y+T.h],[T.x+T.w/2,T.y+T.h+3],[T.x+T.w,T.y+T.h]]}
+function rack(K){balls=[];const n=Math.min(10,6+racks);let k=0;const bx=T.x+T.w*.68,by=T.y+T.h/2;for(let row=0;k<n;row++)for(let i=0;i<=row&&k<n;i++,k++)balls.push({x:bx+row*BR*1.8,y:by+(i-row/2)*BR*2.05,vx:0,vy:0,c:K.DAMAGE[k%6],n:k+1,in:false});cue={x:T.x+T.w*.25,y:T.y+T.h/2,vx:0,vy:0,c:'#fffdec',in:false};shots=0;scratch=0}
+function fire(K){if(!charging||moving||cue.in)return;charging=false;const v=160+power*980;cue.vx=Math.cos(aim)*v;cue.vy=Math.sin(aim)*v;shots++;power=0}
+Salvage({id:'S086',title:'POCKET',parent:'026 THE LAST GOOD FRAME',bg:'#04100c',
+ help:'<kbd>←</kbd><kbd>→</kbd> AIM &nbsp;HOLD <kbd>SPACE</kbd> TO CHARGE, RELEASE TO SHOOT<br>POT EVERY BALL / MOVE THE POINTER TO AIM AT IT, HOLD TO CHARGE AND RELEASE TO SHOOT',
+ aria:'A pool game on a small table. Left and right arrows turn the aim and holding Space charges the shot, which fires when released. The pointer can also aim: the cue points toward it, and holding and releasing the pointer charges and fires. Potting all the coloured balls racks a bigger set. Potting the cue ball is a scratch and returns it to the table. A guide line shows where the cue ball will first make contact.',
+ reset(K){layout(K);racks=0;best=0;aim=0;rack(K);potted=0},
+ resize(K){layout(K);rack(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh&&!moving){charging=true;power=0;pdir=1}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ keyup(K,e){if(e.code==='Space')fire(K)},
+ down(K,x,y){if(!moving&&!cue.in){charging=true;power=0;pdir=1;usePointer=true}return false},
+ up(K){if(usePointer){usePointer=false;fire(K)}},
+ step(K,dt){
+  const d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')||K.keys.has('ArrowDown')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')||K.keys.has('ArrowUp')?1:0);aim+=d*dt*(K.keys.has('ShiftLeft')?.4:1.4);
+  const p=K.pointer;if(p.inside&&!moving&&!cue.in&&(p.speed>.03||p.held))aim=Math.atan2(p.y-cue.y,p.x-cue.x);
+  if(charging){power+=pdir*dt*.9;if(power>=1){power=1;pdir=-1}if(power<=0){power=0;pdir=1}}
+  const all=cue.in?balls:[cue,...balls];moving=false;
+  const n=4;for(let s=0;s<n;s++){const h=dt/n;
+   for(const b of all){if(b.in)continue;b.x+=b.vx*h;b.y+=b.vy*h;
+    if(b.x<T.x+BR){b.x=T.x+BR;b.vx=Math.abs(b.vx)*.85}if(b.x>T.x+T.w-BR){b.x=T.x+T.w-BR;b.vx=-Math.abs(b.vx)*.85}if(b.y<T.y+BR){b.y=T.y+BR;b.vy=Math.abs(b.vy)*.85}if(b.y>T.y+T.h-BR){b.y=T.y+T.h-BR;b.vy=-Math.abs(b.vy)*.85}
+    for(const pk of pockets)if(Math.hypot(b.x-pk[0],b.y-pk[1])<PR){b.in=true;b.vx=b.vy=0}}
+   for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){const a=all[i],c=all[j];if(a.in||c.in)continue;const dx=c.x-a.x,dy=c.y-a.y,dd=Math.hypot(dx,dy);if(dd<BR*2&&dd>0){const nx=dx/dd,ny=dy/dd,ov=BR*2-dd;a.x-=nx*ov/2;a.y-=ny*ov/2;c.x+=nx*ov/2;c.y+=ny*ov/2;const rv=(c.vx-a.vx)*nx+(c.vy-a.vy)*ny;if(rv<0){a.vx+=rv*nx;a.vy+=rv*ny;c.vx-=rv*nx;c.vy-=rv*ny}}}}
+  for(const b of all){if(b.in)continue;const f=Math.exp(-dt*.75);b.vx*=f;b.vy*=f;if(Math.hypot(b.vx,b.vy)<8){b.vx=b.vy=0}else moving=true}
+  let left=0;for(const b of balls)if(!b.in)left++;potted=balls.length-left;
+  if(cue.in&&!moving){scratch++;cue={x:T.x+T.w*.25,y:T.y+T.h/2,vx:0,vy:0,c:'#fffdec',in:false};K.note('SCRATCH / CUE BALL RETURNED')}
+  if(left===0&&!moving){racks++;best=best?Math.min(best,shots):shots;K.note('TABLE CLEARED IN '+shots+' SHOTS');rack(K)}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#04100c';c.fillRect(0,0,w,h);
+  c.fillStyle='#3a2414';c.fillRect(T.x-16,T.y-16,T.w+32,T.h+32);c.fillStyle='#0c4a36';c.fillRect(T.x,T.y,T.w,T.h);c.strokeStyle='#07301f';c.strokeRect(T.x+.5,T.y+.5,T.w-1,T.h-1);
+  for(const pk of pockets){c.fillStyle='#000';c.beginPath();c.arc(pk[0],pk[1],PR,0,TAU);c.fill()}
+  c.strokeStyle='#ffffff10';c.beginPath();c.moveTo(T.x+T.w*.25,T.y);c.lineTo(T.x+T.w*.25,T.y+T.h);c.stroke();
+  if(!moving&&!cue.in){const dx=Math.cos(aim),dy=Math.sin(aim);let tmin=1e9;for(const b of balls){if(b.in)continue;const ex=b.x-cue.x,ey=b.y-cue.y,pr=ex*dx+ey*dy;if(pr<0)continue;const d2=ex*ex+ey*ey-pr*pr;if(d2<(BR*2)**2){const t=pr-Math.sqrt((BR*2)**2-d2);if(t<tmin)tmin=t}}
+   for(const [tx,ty] of [[dx>0?(T.x+T.w-BR-cue.x)/dx:(T.x+BR-cue.x)/dx,0],[0,dy>0?(T.y+T.h-BR-cue.y)/dy:(T.y+BR-cue.y)/dy]]){}
+   const tw=Math.min(tmin,Math.min(dx!==0?Math.abs(((dx>0?T.x+T.w-BR:T.x+BR)-cue.x)/dx):1e9,dy!==0?Math.abs(((dy>0?T.y+T.h-BR:T.y+BR)-cue.y)/dy):1e9));
+   c.strokeStyle='#faffdb';c.setLineDash([4,5]);c.beginPath();c.moveTo(cue.x,cue.y);c.lineTo(cue.x+dx*tw,cue.y+dy*tw);c.stroke();c.setLineDash([]);c.beginPath();c.arc(cue.x+dx*tw,cue.y+dy*tw,BR,0,TAU);c.stroke();
+   const back=12+power*50;c.strokeStyle='#d9b27c';c.lineWidth=4;c.beginPath();c.moveTo(cue.x-dx*(BR+back),cue.y-dy*(BR+back));c.lineTo(cue.x-dx*(BR+back+160),cue.y-dy*(BR+back+160));c.stroke();c.lineWidth=1}
+  for(const b of balls){if(b.in)continue;c.fillStyle=b.c;c.beginPath();c.arc(b.x,b.y,BR,0,TAU);c.fill();c.fillStyle='#ffffffcc';c.beginPath();c.arc(b.x,b.y,BR*.45,0,TAU);c.fill();c.fillStyle='#05070e';c.font='bold 8px monospace';c.textAlign='center';c.fillText(b.n,b.x,b.y+3);c.textAlign='left'}
+  if(!cue.in){c.fillStyle=cue.c;c.beginPath();c.arc(cue.x,cue.y,BR,0,TAU);c.fill()}
+  c.fillStyle='#ffffff22';c.fillRect(w/2-60,T.y+T.h+30,120,5);c.fillStyle=power>.85?'#ed4e8c':'#faffdb';c.fillRect(w/2-60,T.y+T.h+30,120*power,5);c.font='9px monospace';c.fillStyle='#9fc4d6';c.textAlign='center';c.fillText(moving?'BALLS IN MOTION':'POWER',w/2,T.y+T.h+24);c.textAlign='left';
+  if(p.inside&&!moving){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,8,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'CHARGING':'AIMING',p.x+12,p.y-6)}
+ },
+ readout:K=>['POTTED '+K.pad(potted,2)+'/'+K.pad(balls.length,2),'SHOTS '+K.pad(shots,2)+' / RACKS '+K.pad(racks)+' / BEST '+(best?K.pad(best,2):'—')]
+});
+})();
+</script></body></html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#1a1712"><title>S085 — ZEN RAKE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A garden of fine sand with no lineage in it at all. Rake it in lines; stones are where the lines have to bend.
+const TEETH=5,GAP=9,GC=36,GR=22;
+let sand=null,sg=null,rake={x:0,y:0,vx:0,vy:0,ang:0,px:0,py:0},stones=[],visited=null,cover=0,gardens=0,down=true,chk=0,hold=0,completeT=0;
+function canv(K){const old=sand;sand=document.createElement('canvas');sand.width=Math.round(K.w*K.dpr);sand.height=Math.round(K.h*K.dpr);sg=sand.getContext('2d');sg.setTransform(K.dpr,0,0,K.dpr,0,0);sg.lineCap='round';paintSand(K);if(old)sg.drawImage(old,0,0,K.w,K.h)}
+function paintSand(K){sg.fillStyle='#cdbf98';sg.fillRect(0,0,K.w,K.h);sg.globalAlpha=.08;for(let i=0;i<2500;i++){sg.fillStyle=i%2?'#fff':'#000';sg.fillRect(Math.random()*K.w,Math.random()*K.h,1,1)}sg.globalAlpha=1}
+function ripple(K,x,y,r){for(let k=1;k<=4;k++){sg.strokeStyle='#a99a70';sg.lineWidth=2;sg.beginPath();sg.arc(x,y,r+k*GAP,0,K.TAU);sg.stroke();sg.strokeStyle='#e8ddb8';sg.lineWidth=1;sg.beginPath();sg.arc(x,y,r+k*GAP+2,0,K.TAU);sg.stroke()}}
+function mark(K,x,y){const c=Math.floor(x/K.w*GC),r=Math.floor(y/K.h*GR);if(c>=0&&r>=0&&c<GC&&r<GR)visited[r*GC+c]=1}
+Salvage({id:'S085',title:'ZEN RAKE',parent:'034 INK MIGRATION',bg:'#1a1712',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE RAKE &nbsp;HOLD <kbd>SPACE</kbd> TO LIFT IT<br>RAKE MOST OF THE GARDEN / CLICK TO PLACE A STONE (SIX AT MOST), IT GETS RIPPLES AROUND IT',
+ aria:'A zen garden. Arrow keys move a five-toothed rake across a bed of sand, leaving parallel grooves behind it; holding Space lifts the rake so it does not draw. Clicking with the pointer places a stone that the rake cannot enter and that is surrounded by concentric ripples. Raking most of the garden completes it and starts a fresh bed.',
+ reset(K){canv(K);sg.clearRect(0,0,K.w,K.h);paintSand(K);rake={x:K.w/2,y:K.h/2,vx:0,vy:0,ang:0,px:K.w/2,py:K.h/2};stones=[];visited=new Uint8Array(GC*GR);cover=0;gardens=0;completeT=0},
+ resize(K){canv(K)},
+ key(K,e,fresh){if(e.code==='Space'||/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){if(stones.length>=6){K.note('SIX STONES ARE ENOUGH');return true}if(stones.some(s=>Math.hypot(s.x-x,s.y-y)<50))return true;const s={x,y,r:12+Math.random()*10,rot:Math.random()*3};stones.push(s);ripple(K,x,y,s.r);return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  down=!K.keys.has('Space');rake.vx+=dx*1100*dt;rake.vy+=dy*1100*dt;const f=Math.exp(-dt*(down?4.5:3));rake.vx*=f;rake.vy*=f;
+  rake.px=rake.x;rake.py=rake.y;rake.x=K.clamp(rake.x+rake.vx*dt,6,K.w-6);rake.y=K.clamp(rake.y+rake.vy*dt,6,K.h-6);
+  for(const s of stones){const d=Math.hypot(rake.x-s.x,rake.y-s.y),m=s.r+14;if(d<m&&d>0){rake.x=s.x+(rake.x-s.x)/d*m;rake.y=s.y+(rake.y-s.y)/d*m}}
+  const sp=Math.hypot(rake.vx,rake.vy);if(sp>25){rake.ang+=K.wrap(Math.atan2(rake.vy,rake.vx)-rake.ang)*Math.min(1,dt*10)}
+  if(down&&sp>8&&Math.hypot(rake.x-rake.px,rake.y-rake.py)>.4){const nx=-Math.sin(rake.ang),ny=Math.cos(rake.ang);
+   for(let k=-(TEETH-1)/2;k<=(TEETH-1)/2;k++){const ox=nx*k*GAP,oy=ny*k*GAP;sg.strokeStyle='#a99a70';sg.lineWidth=2.4;sg.beginPath();sg.moveTo(rake.px+ox,rake.py+oy);sg.lineTo(rake.x+ox,rake.y+oy);sg.stroke();sg.strokeStyle='#e8ddb8';sg.lineWidth=1;sg.beginPath();sg.moveTo(rake.px+ox+nx*2,rake.py+oy+ny*2);sg.lineTo(rake.x+ox+nx*2,rake.y+oy+ny*2);sg.stroke();mark(K,rake.x+ox,rake.y+oy)}}
+  chk-=dt;if(chk<=0){chk=.4;let v=0;for(let i=0;i<visited.length;i++)v+=visited[i];cover=v/visited.length}
+  if(cover>.72&&!completeT){completeT=.001;gardens++;K.note('THE GARDEN IS RAKED / '+K.pad(gardens))}
+  if(completeT){completeT+=dt;if(completeT>3){sg.clearRect(0,0,K.w,K.h);paintSand(K);for(const s of stones)ripple(K,s.x,s.y,s.r);visited.fill(0);cover=0;completeT=0}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#1a1712';c.fillRect(0,0,w,h);c.drawImage(sand,0,0,w,h);
+  for(const s of stones){c.fillStyle='#00000030';c.beginPath();c.ellipse(s.x+4,s.y+6,s.r*1.2,s.r*.8,s.rot,0,TAU);c.fill();c.fillStyle='#5d6168';c.beginPath();c.ellipse(s.x,s.y,s.r*1.15,s.r*.85,s.rot,0,TAU);c.fill();c.fillStyle='#868b93';c.beginPath();c.ellipse(s.x-s.r*.25,s.y-s.r*.25,s.r*.55,s.r*.35,s.rot,0,TAU);c.fill()}
+  const nx=-Math.sin(rake.ang),ny=Math.cos(rake.ang);c.strokeStyle=down?'#3a2e1c':'#7a6a48';c.lineWidth=3;c.beginPath();c.moveTo(rake.x+nx*GAP*2.5,rake.y+ny*GAP*2.5);c.lineTo(rake.x-nx*GAP*2.5,rake.y-ny*GAP*2.5);c.stroke();c.lineWidth=1;for(let k=-2;k<=2;k++){c.fillStyle=down?'#3a2e1c':'#7a6a48';c.fillRect(rake.x+nx*k*GAP-1,rake.y+ny*k*GAP-1,3,3)}
+  c.font='9px monospace';c.fillStyle='#cdbf98';c.fillText('RAKED '+(cover*100).toFixed(0)+'% / 72% / '+(down?'RAKE DOWN':'LIFTED')+' / STONES '+stones.length+'/6',22,h*.12);
+  if(p.inside){c.globalAlpha=.6;c.strokeStyle='#e8ddb8';c.beginPath();c.arc(p.x,p.y,18,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#e8ddb8';c.fillText('CLICK: STONE',p.x+22,p.y-6)}
+ },
+ readout:K=>['RAKED '+(cover*100).toFixed(0)+'%','GARDENS '+K.pad(gardens)+' / STONES '+stones.length]
+});
+})();
+</script></body></html>

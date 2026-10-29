@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#030409"><title>S080 — LONG EXPOSURE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Thousands of points follow an invisible field and the shutter stays open. Expose the whole plate before it fades.
+const NP=2600,PALS=[[190,300,40],[20,60,70],[120,200,60],[260,340,55]];
+let px=null,py=null,age=null,pc=null,pg=null,sc=.0032,tw=2.2,pal=0,off=0,cover=0,heldT=0,plates=0,chkT=0,vortex=false;
+function reseedP(K,i){px[i]=K.rand()*K.w;py[i]=K.rand()*K.h;age[i]=K.rand()*5}
+function canv(K){const old=pc;pc=document.createElement('canvas');pc.width=Math.round(K.w*K.dpr);pc.height=Math.round(K.h*K.dpr);pg=pc.getContext('2d');pg.setTransform(K.dpr,0,0,K.dpr,0,0);pg.lineCap='round';if(old)pg.drawImage(old,0,0,K.w,K.h)}
+Salvage({id:'S080',title:'LONG EXPOSURE',parent:'040 THE BACKLIGHT STILL WORKS',bg:'#030409',scanlines:false,
+ help:'<kbd>←</kbd><kbd>→</kbd> FIELD SCALE &nbsp;<kbd>↑</kbd><kbd>↓</kbd> TWIST &nbsp;<kbd>SPACE</kbd> CHANGE THE FILM<br>EXPOSE MORE THAN HALF THE PLATE FOR TEN SECONDS / THE POINTER SPINS THE FIELD, HOLD FOR A WHIRLPOOL',
+ aria:'A flow-field generative drawing. Thousands of points move along an invisible field and leave glowing trails on a plate that slowly fades. Left and right arrows change the scale of the field, up and down change how much it twists, and Space changes the film colour and field pattern. Keeping more than half the plate exposed for ten seconds completes a plate. The pointer spins the field around it and holding it makes a whirlpool.',
+ reset(K){px=new Float32Array(NP);py=new Float32Array(NP);age=new Float32Array(NP);for(let i=0;i<NP;i++)reseedP(K,i);canv(K);pg.clearRect(0,0,K.w,K.h);cover=heldT=0;plates=0;off=K.rand()*100;pal=0},
+ resize(K){canv(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh){pal=(pal+1)%PALS.length;off=Math.random()*100;K.note('NEW FILM')}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const ds=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dt2=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0)-(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);
+  sc=K.clamp(sc*Math.exp(ds*dt*.5),.0008,.012);tw=K.clamp(tw+dt2*dt*1.4,.4,6);const p=K.pointer,P=PALS[pal];
+  for(let i=0;i<NP;i++){
+   let a=K.noise(px[i]*sc+off,py[i]*sc+K.time*.03)*K.TAU*tw;
+   if(p.inside){const dx=px[i]-p.x,dy=py[i]-p.y,d=Math.hypot(dx,dy)+1,R=p.held?260:150;if(d<R){const q=1-d/R;a=Math.atan2(dy,dx)+Math.PI/2+(p.held?.9:0)*q+(1-q)*(a-Math.atan2(dy,dx)-Math.PI/2)*(1-q)*0+(a*(1-q))}}
+   const sp=95,nx=px[i]+Math.cos(a)*sp*dt,ny=py[i]+Math.sin(a)*sp*dt,h=P[0]+(P[1]-P[0])*((px[i]/K.w+py[i]/K.h)/2);
+   pg.strokeStyle='hsla('+Math.round(h)+','+P[2]+'%,60%,.16)';pg.lineWidth=1.1;pg.beginPath();pg.moveTo(px[i],py[i]);pg.lineTo(nx,ny);pg.stroke();
+   px[i]=nx;py[i]=ny;age[i]+=dt;if(age[i]>7||nx<0||ny<0||nx>K.w||ny>K.h)reseedP(K,i)
+  }
+  pg.save();pg.globalCompositeOperation='destination-out';pg.fillStyle='rgba(0,0,0,'+(dt*.028)+')';pg.fillRect(0,0,K.w,K.h);pg.restore();
+  chkT-=dt;if(chkT<=0){chkT=.5;const S=40,d=pg.getImageData(0,0,pc.width,pc.height),W2=d.width,H2=d.height;let on=0,tot=0;for(let j=0;j<S*.625;j++)for(let i=0;i<S;i++){const x=Math.floor((i+.5)/S*W2),y=Math.floor((j+.5)/(S*.625)*H2);tot++;if(d.data[(y*W2+x)*4+3]>36)on++}cover=on/tot}
+  if(cover>.5){heldT+=dt;if(heldT>10){plates++;K.note('PLATE '+K.pad(plates)+' DEVELOPED');pg.clearRect(0,0,K.w,K.h);heldT=0;pal=(pal+1)%PALS.length;off=Math.random()*100}}else heldT=Math.max(0,heldT-dt);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#030409';c.fillRect(0,0,w,h);c.globalCompositeOperation='lighter';c.drawImage(pc,0,0,w,h);c.globalCompositeOperation='source-over';
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('SCALE '+(sc*1000).toFixed(1)+' / TWIST '+tw.toFixed(1)+' / EXPOSED '+(cover*100).toFixed(0)+'%',22,h*.12);c.fillStyle='#ffffff22';c.fillRect(22,h*.12+8,140,3);c.fillStyle=cover>.5?'#f4d84e':'#7f97a5';c.fillRect(22,h*.12+8,140*Math.min(1,heldT/10),3);
+  if(p.inside){c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,p.held?260:150,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'WHIRLPOOL':'SPIN',p.x+8,p.y-8)}
+ },
+ readout:K=>['EXPOSED '+(cover*100).toFixed(0)+'%','PLATES '+K.pad(plates)+' / HOLD '+heldT.toFixed(0)+'s']
+});
+})();
+</script></body></html>

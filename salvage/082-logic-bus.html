@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04070c"><title>S082 — LOGIC BUS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A bus of gates, every input on its own switch. Find the setting that lights the output.
+const OPS={AND:(a,b)=>a&b,OR:(a,b)=>a|b,XOR:(a,b)=>a^b,NAND:(a,b)=>1-(a&b),NOR:(a,b)=>1-(a|b),XNOR:(a,b)=>1-(a^b)},NAMES=Object.keys(OPS);
+let root=null,leaves=[],gates=[],sw=[],sel=0,level=0,wins=0,toggles=0,solved=0,want=1,geo={x0:0,x1:0,y0:0,y1:0};
+function build(K,idxs,depth){if(idxs.length===1){const l={leaf:idxs[0],val:0,x:0,y:0,depth:0};leaves.push(l);return l}const cut=1+Math.floor(K.rand()*(idxs.length-1)),L=build(K,idxs.slice(0,cut),depth+1),R=build(K,idxs.slice(cut),depth+1),g={op:NAMES[Math.floor(K.rand()*NAMES.length)],l:L,r:R,val:0,depth:Math.max(L.depth,R.depth)+1};gates.push(g);return g}
+function ev(n){if(n.leaf!==undefined){n.val=sw[n.leaf];return n.val}n.val=OPS[n.op](ev(n.l),ev(n.r));return n.val}
+function layout(K){const maxD=root.depth||1,ys=[];let k=0;(function walk(n){if(n.leaf!==undefined){n.y=k++;return}walk(n.l);walk(n.r);n.y=(n.l.y+n.r.y)/2})(root);const rows=leaves.length;geo={x0:K.w*.12,x1:K.w*.86,y0:K.h*.2,y1:K.h*.78};
+ (function pos(n){n.x=geo.x0+(geo.x1-geo.x0)*(n.leaf!==undefined?0:(n.depth/maxD)*.92+.08*0)*1;n.py=geo.y0+(geo.y1-geo.y0)*(rows>1?n.y/(rows-1):.5);if(n.leaf===undefined){pos(n.l);pos(n.r)}})(root)}
+function gen(K){const n=Math.min(10,4+level);leaves=[];gates=[];sw=new Array(n).fill(0).map(()=>K.rand()<.5?1:0);root=build(K,Array.from({length:n},(_,i)=>i),0);want=1;layout(K);sel=0;solved=0;toggles=0;ev(root);if(root.val===want){sw[0]^=1;ev(root)}}
+function tog(K,i){if(solved)return;sw[i]^=1;toggles++;ev(root);if(root.val===want){wins++;solved=.001;K.note('OUTPUT LIT / '+K.pad(wins)+' / IN '+toggles+' FLIPS')}}
+Salvage({id:'S082',title:'LOGIC BUS',parent:'029 ORPHANED BUS',bg:'#04070c',
+ help:'<kbd>↑</kbd><kbd>↓</kbd> CHOOSE A SWITCH &nbsp;<kbd>SPACE</kbd> FLIP IT<br>LIGHT THE OUTPUT / HOVER A GATE TO SEE WHAT IT DOES, CLICK A SWITCH TO FLIP IT',
+ aria:'A logic puzzle. A tree of logic gates combines several input switches into one output on the right. Up and down arrows choose a switch on the left and Space flips it; clicking a switch flips it too. Wires glow when carrying a one. The goal is to find a setting that lights the output. Hovering a gate shows its type and its two inputs. Each solved circuit is followed by a larger one.',
+ reset(K){level=0;wins=0;gen(K)},
+ resize(K){layout(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)tog(K,sel);return true}
+  if(fresh&&(e.code==='ArrowUp'||e.code==='KeyW')){sel=(sel+sw.length-1)%sw.length;return true}
+  if(fresh&&(e.code==='ArrowDown'||e.code==='KeyS')){sel=(sel+1)%sw.length;return true}
+  if(/^Arrow|^Key[AD]$/.test(e.code))return true;
+ },
+ down(K,x,y){for(const l of leaves){if(Math.hypot(x-(geo.x0-34),y-l.py)<16){sel=l.leaf;tog(K,l.leaf);return true}}return false},
+ step(K,dt){if(solved){solved+=dt;if(solved>2.2){level++;gen(K)}}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#04070c';c.fillRect(0,0,w,h);
+  const wire=(a,b,v)=>{c.strokeStyle=v?'#f4d84e':'#2a3d5e';c.lineWidth=v?2.4:1.6;c.beginPath();c.moveTo(a.x+(a.leaf!==undefined?0:18),a.py);const mx=(a.x+b.x)/2;c.lineTo(mx,a.py);c.lineTo(mx,b.py);c.lineTo(b.x-18,b.py);c.stroke();c.lineWidth=1};
+  let hv=null;
+  (function drawW(n){if(n.leaf!==undefined)return;wire(n.l,n,n.l.val);wire(n.r,n,n.r.val);drawW(n.l);drawW(n.r)})(root);
+  for(const l of leaves){const x=geo.x0-34,sel2=l.leaf===sel;c.strokeStyle='#2a3d5e';c.beginPath();c.moveTo(x+14,l.py);c.lineTo(l.x,l.py);c.stroke();c.strokeStyle=l.val?'#f4d84e':'#2a3d5e';c.lineWidth=l.val?2.4:1;c.beginPath();c.moveTo(x+14,l.py);c.lineTo(l.x+0,l.py);c.stroke();c.lineWidth=1;
+   c.fillStyle=l.val?'#f4d84e':'#0c1420';c.fillRect(x-14,l.py-9,28,18);c.strokeStyle=sel2?'#faffdb':'#2a3d5e';c.lineWidth=sel2?2:1;c.strokeRect(x-13.5,l.py-8.5,27,17);c.lineWidth=1;c.fillStyle=l.val?'#05070e':'#9fc4d6';c.font='bold 10px monospace';c.textAlign='center';c.fillText(l.val,x,l.py+4);c.font='8px monospace';c.fillStyle='#4f6b80';c.fillText('IN'+K.pad(l.leaf+1,2),x-30,l.py+3);c.textAlign='left'}
+  for(const g of gates){const hov=p.inside&&Math.hypot(p.x-g.x,p.y-g.py)<22;if(hov)hv=g;c.fillStyle=g.val?'#f4d84e22':'#0c1420';c.fillRect(g.x-18,g.py-12,36,24);c.strokeStyle=g.val?'#f4d84e':hov?'#faffdb':'#2a3d5e';c.strokeRect(g.x-17.5,g.py-11.5,35,23);c.fillStyle=g.val?'#f4d84e':'#9fc4d6';c.font='bold 9px monospace';c.textAlign='center';c.fillText(g.op,g.x,g.py+3);c.textAlign='left'}
+  const ox2=root.x+34,oy2=root.py;c.strokeStyle=root.val?'#f4d84e':'#2a3d5e';c.lineWidth=root.val?2.4:1.6;c.beginPath();c.moveTo(root.x+18,oy2);c.lineTo(ox2,oy2);c.stroke();c.lineWidth=1;c.fillStyle=root.val?'#f4d84e':'#0c1420';c.beginPath();c.arc(ox2+14,oy2,13,0,TAU);c.fill();c.strokeStyle=root.val?'#faffdb':'#2a3d5e';c.stroke();c.fillStyle=root.val?'#05070e':'#9fc4d6';c.font='bold 11px monospace';c.textAlign='center';c.fillText(root.val,ox2+14,oy2+4);c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('OUT',ox2+14,oy2+28);c.textAlign='left';
+  if(hv){c.fillStyle='#faffdb';c.font='9px monospace';c.fillText(hv.op+'('+hv.l.val+','+hv.r.val+') = '+hv.val,p.x+14,p.y-8)}
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.strokeRect(geo.x0-60,geo.y0-30,geo.x1-geo.x0+130,geo.y1-geo.y0+60);c.globalAlpha=1}
+ },
+ readout:K=>['OUTPUT '+root.val+' / WANT '+want,'FLIPS '+K.pad(toggles)+' / SOLVED '+K.pad(wins)+' / '+sw.length+' INPUTS']
+});
+})();
+</script></body></html>

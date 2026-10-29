@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S081 — MARBLE MAZE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Tilt the board. Roll the marble to the glowing cell without dropping it through one of the holes.
+const WT=8,BR=7;
+let cols=8,rows=5,cw=60,ox=0,oy=0,walls=[],holes=[],goal={x:0,y:0},ball={x:0,y:0,vx:0,vy:0},tilt={x:0,y:0},level=0,wins=0,falls=0,start={x:0,y:0},won=0,fell=0,trail=[];
+function gen(K){
+ cols=Math.min(14,7+level);rows=Math.min(9,5+Math.floor(level*.7));cw=Math.min(K.w*.9/cols,K.h*.74/rows,92);ox=(K.w-cw*cols)/2;oy=(K.h-cw*rows)/2+8;
+ const S=cols*rows,open=new Uint8Array(S*4),vis=new Uint8Array(S),st=[0];vis[0]=1;const D=[[0,-1,0,2],[1,0,1,3],[0,1,2,0],[-1,0,3,1]];
+ while(st.length){const n=st[st.length-1],c=n%cols,r=Math.floor(n/cols),o=D.filter(([dx,dy])=>{const x=c+dx,y=r+dy;return x>=0&&y>=0&&x<cols&&y<rows&&!vis[y*cols+x]});if(!o.length){st.pop();continue}const [dx,dy,a,b]=o[Math.floor(K.rand()*o.length)],m=(r+dy)*cols+c+dx;open[n*4+a]=1;open[m*4+b]=1;vis[m]=1;st.push(m)}
+ for(let k=0;k<cols*rows*.08;k++){const n=Math.floor(K.rand()*S),d=Math.floor(K.rand()*4),c=n%cols,r=Math.floor(n/cols),x=c+D[d][0],y=r+D[d][1];if(x>=0&&y>=0&&x<cols&&y<rows){open[n*4+d]=1;open[(y*cols+x)*4+D[d][3]]=1}}
+ walls=[];const T=WT;
+ for(let r=0;r<=rows;r++)for(let c=0;c<cols;c++){const wall=r===0||r===rows||(!open[((r-1)*cols+c)*4+2]&&r>0&&r<rows)&&true;if(r===0||r===rows||!(open[(r*cols+c)*4]))walls.push({x:ox+c*cw-T/2,y:oy+r*cw-T/2,w:cw+T,h:T})}
+ for(let r=0;r<rows;r++)for(let c=0;c<=cols;c++){if(c===0||c===cols||!(open[(r*cols+c)*4+3]))walls.push({x:ox+c*cw-T/2,y:oy+r*cw-T/2,w:T,h:cw+T})}
+ start={x:ox+cw/2,y:oy+cw/2};goal={x:ox+(cols-.5)*cw,y:oy+(rows-.5)*cw};holes=[];const nh=Math.min(10,3+level);
+ for(let t=0;t<nh*8&&holes.length<nh;t++){const c=Math.floor(K.rand()*cols),r=Math.floor(K.rand()*rows);if((c<2&&r<2)||(c>=cols-1&&r>=rows-1))continue;const x=ox+(c+.5)*cw,y=oy+(r+.5)*cw;if(holes.every(h=>Math.hypot(h.x-x,h.y-y)>cw*1.2))holes.push({x,y})}
+ ball={x:start.x,y:start.y,vx:0,vy:0};tilt={x:0,y:0};won=fell=0;trail=[];
+}
+function collide(b){for(const w of walls){const cx=Math.max(w.x,Math.min(b.x,w.x+w.w)),cy=Math.max(w.y,Math.min(b.y,w.y+w.h)),dx=b.x-cx,dy=b.y-cy,d=Math.hypot(dx,dy);if(d<BR){if(d>0){const nx=dx/d,ny=dy/d;b.x=cx+nx*BR;b.y=cy+ny*BR;const vn=b.vx*nx+b.vy*ny;if(vn<0){b.vx-=1.5*vn*nx;b.vy-=1.5*vn*ny}}else{b.y-=1}}}}
+Salvage({id:'S081',title:'MARBLE MAZE',parent:'033 WHITEOUT MEMORY',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> TILT THE BOARD<br>REACH THE GLOWING CELL AND AVOID THE HOLES / THE POINTER ATTRACTS THE MARBLE, HOLD FOR A STRONGER PULL',
+ aria:'A marble labyrinth. Arrow keys tilt the board so the marble rolls through a maze toward a glowing goal cell, avoiding dark holes that return it to the start. The pointer attracts the marble gently while hovering, and holding it pulls harder. Each solved maze is followed by a larger one with more holes.',
+ reset(K){level=0;wins=falls=0;gen(K)},
+ resize(K){gen(K)},
+ key(K,e,fresh){if(/^Arrow|^Key[WASD]$|^Space$/.test(e.code))return true},
+ step(K,dt){
+  if(won){won+=dt;if(won>1.8){level++;gen(K)}return}
+  if(fell){fell+=dt;if(fell>.7){ball={x:start.x,y:start.y,vx:0,vy:0};fell=0;trail=[]}return}
+  const tx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),ty=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  tilt.x+=(tx-tilt.x)*Math.min(1,dt*6);tilt.y+=(ty-tilt.y)*Math.min(1,dt*6);
+  const p=K.pointer;let ax=tilt.x*640,ay=tilt.y*640;if(p.inside){const dx=p.x-ball.x,dy=p.y-ball.y,d=Math.hypot(dx,dy)+1;if(d<300){const q=1-d/300;ax+=dx/d*q*(p.held?520:160);ay+=dy/d*q*(p.held?520:160)}}
+  const n=3;for(let s=0;s<n;s++){const d=dt/n;ball.vx+=ax*d;ball.vy+=ay*d;ball.vx*=Math.exp(-d*.8);ball.vy*=Math.exp(-d*.8);ball.x+=ball.vx*d;ball.y+=ball.vy*d;collide(ball)}
+  trail.push([ball.x,ball.y]);if(trail.length>18)trail.shift();
+  for(const h of holes)if(Math.hypot(ball.x-h.x,ball.y-h.y)<cw*.18){fell=.001;falls++;K.note('DROPPED / BACK TO THE START');return}
+  if(Math.hypot(ball.x-goal.x,ball.y-goal.y)<cw*.25){won=.001;wins++;K.note('HOME / '+K.pad(wins)+' / A LARGER BOARD')}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.fillStyle='#0a1220';c.fillRect(ox,oy,cols*cw,rows*cw);
+  const gg=c.createRadialGradient(goal.x,goal.y,0,goal.x,goal.y,cw*.5);gg.addColorStop(0,'#f4d84eaa');gg.addColorStop(1,'#f4d84e00');c.fillStyle=gg;c.fillRect(goal.x-cw/2,goal.y-cw/2,cw,cw);c.strokeStyle='#f4d84e';c.beginPath();c.arc(goal.x,goal.y,cw*.22+Math.sin(K.time*4)*2,0,TAU);c.stroke();
+  for(const hl of holes){c.fillStyle='#000';c.beginPath();c.arc(hl.x,hl.y,cw*.18,0,TAU);c.fill();c.strokeStyle='#2a3d5e';c.stroke()}
+  c.fillStyle='#1b2a4a';for(const wl of walls)c.fillRect(wl.x,wl.y,wl.w,wl.h);c.fillStyle='#2a3d5e';for(const wl of walls)c.fillRect(wl.x,wl.y,wl.w,2);
+  trail.forEach(([x,y],k)=>{c.globalAlpha=k/18*.4;c.fillStyle='#faffdb';c.beginPath();c.arc(x,y,BR*.7,0,TAU);c.fill()});c.globalAlpha=1;
+  const sh=fell?Math.max(.1,1-fell*1.4):1;c.fillStyle='#e9fbff';c.beginPath();c.arc(ball.x,ball.y,BR*sh,0,TAU);c.fill();c.fillStyle='#ffffff99';c.beginPath();c.arc(ball.x-2,ball.y-2,2*sh,0,TAU);c.fill();
+  const tl=60,cx=w-90,cy=h-110;c.strokeStyle='#2a3d5e';c.strokeRect(cx-tl/2,cy-tl/2,tl,tl);c.fillStyle='#faffdb';c.beginPath();c.arc(cx+tilt.x*tl/2,cy+tilt.y*tl/2,4,0,TAU);c.fill();c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('TILT',cx-12,cy+tl/2+14);
+  if(p.inside){c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,p.held?24:12,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'PULL':'MAGNET',p.x+16,p.y-6)}
+ },
+ readout:K=>['BOARD '+K.pad(level+1)+' / '+cols+'×'+rows,'HOME '+K.pad(wins)+' / DROPPED '+K.pad(falls)]
+});
+})();
+</script></body></html>

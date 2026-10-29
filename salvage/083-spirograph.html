@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S083 — SPIROGRAPH</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Two gears, one pen. The number of lobes is fixed by the teeth. Find the pair that draws the lobes asked for.
+let R=84,r=35,dFrac=.7,t=0,tmax=0,lobes=0,target=7,found=0,pc=null,pg=null,hold=0,repeatT=0,captured=0,drawn=0,speed=1;
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function params(){const g=gcd(R,r);lobes=R/g;tmax=Math.PI*2*(r/g)}
+function restart(K){params();t=0;drawn=0;captured=0;if(pg){pg.clearRect(0,0,K.w,K.h)}}
+function newTarget(K){do{target=3+Math.floor(K.rand()*10)}while(target===lobes)}
+const S=K=>Math.min(K.w,K.h)*.38/(R+3);
+function pt(tt,K){const s=S(K),d=r*dFrac,k=(R-r)/r;return[(R-r)*Math.cos(tt)+d*Math.cos(k*tt),(R-r)*Math.sin(tt)-d*Math.sin(k*tt)]}
+Salvage({id:'S083',title:'SPIROGRAPH',parent:'018 CLOCK SECESSION',
+ help:'<kbd>←</kbd><kbd>→</kbd> OUTER GEAR TEETH &nbsp;<kbd>↑</kbd><kbd>↓</kbd> INNER GEAR TEETH &nbsp;<kbd>SPACE</kbd> DRAW FASTER<br>FIND TEETH THAT DRAW THE TARGET NUMBER OF LOBES / THE POINTER SETS THE PEN DISTANCE',
+ aria:'A spirograph. A pen rides on a small gear rolling inside a large one, and the curve it draws has a number of lobes that depends on the tooth counts. Left and right arrows change the outer gear, up and down change the inner gear, and Space draws faster. A target number of lobes is shown; when the current gears produce it and the curve completes, it is captured. The pointer distance from the centre sets how far the pen sits from the inner gear centre.',
+ reset(K){pc=document.createElement('canvas');pc.width=Math.round(K.w*K.dpr);pc.height=Math.round(K.h*K.dpr);pg=pc.getContext('2d');pg.setTransform(K.dpr,0,0,K.dpr,0,0);pg.lineCap='round';R=84;r=35;dFrac=.7;found=0;params();target=7;restart(K)},
+ resize(K){pc=document.createElement('canvas');pc.width=Math.round(K.w*K.dpr);pc.height=Math.round(K.h*K.dpr);pg=pc.getContext('2d');pg.setTransform(K.dpr,0,0,K.dpr,0,0);pg.lineCap='round';restart(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'){speed=3;return true}
+  const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,1],KeyW:[0,1],ArrowDown:[0,-1],KeyS:[0,-1]}[e.code];
+  if(d){if(fresh){repeatT=.3;R=K.clamp(R+d[0],40,130);r=K.clamp(r+d[1],8,R-6);restart(K)}return true}
+ },
+ keyup(K,e){if(e.code==='Space')speed=1},
+ step(K,dt){
+  if(K.keys.size){repeatT-=dt;if(repeatT<=0){repeatT=.09;let ch=false;for(const c of K.keys){const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,1],KeyW:[0,1],ArrowDown:[0,-1],KeyS:[0,-1]}[c];if(d){R=K.clamp(R+d[0],40,130);r=K.clamp(r+d[1],8,R-6);ch=true;break}}if(ch)restart(K)}}
+  const p=K.pointer;if(p.inside){const nd=K.clamp(Math.hypot(p.x-K.w/2,p.y-K.h/2)/(Math.min(K.w,K.h)*.4),.15,1.4);if(Math.abs(nd-dFrac)>.01){dFrac=nd;restart(K)}}
+  if(t<tmax){const steps=Math.ceil(dt*220*speed),dtt=tmax/1600;for(let i=0;i<steps&&t<tmax;i++){const a=pt(t,K),b=pt(t+dtt,K),s=S(K),cx=K.w/2,cy=K.h/2+6;pg.strokeStyle='hsl('+Math.round(t/tmax*360)+',90%,62%)';pg.lineWidth=1.6;pg.beginPath();pg.moveTo(cx+a[0]*s,cy+a[1]*s);pg.lineTo(cx+b[0]*s,cy+b[1]*s);pg.stroke();t+=dtt}drawn=t/tmax}
+  else if(!captured){captured=1;if(lobes===target){found++;K.note('CAPTURED / '+lobes+' LOBES ('+R+','+r+')');setTimeout(()=>{newTarget(K);restart(K)},1600)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,cx=w/2,cy=h/2+6,s=S(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';c.beginPath();c.arc(cx,cy,R*s,0,TAU);c.stroke();const a=t,ix=(R-r)*Math.cos(a)*s,iy=(R-r)*Math.sin(a)*s;c.beginPath();c.arc(cx+ix,cy+iy,r*s,0,TAU);c.stroke();
+  c.globalCompositeOperation='lighter';c.drawImage(pc,0,0,w,h);c.globalCompositeOperation='source-over';
+  const pp=pt(Math.min(t,tmax),K);c.fillStyle='#faffdb';c.beginPath();c.arc(cx+pp[0]*s,cy+pp[1]*s,4,0,TAU);c.fill();c.strokeStyle='#ffffff55';c.beginPath();c.moveTo(cx+ix,cy+iy);c.lineTo(cx+pp[0]*s,cy+pp[1]*s);c.stroke();
+  c.font='11px monospace';c.textAlign='center';c.fillStyle=lobes===target?'#f4d84e':'#faffdb';c.fillText('LOBES '+lobes+' / TARGET '+target,cx,h*.12);c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('OUTER '+R+' / INNER '+r+' / GCD '+gcd(R,r)+' / PEN '+(dFrac*100).toFixed(0)+'%',cx,h*.12+16);
+  c.fillStyle='#ffffff22';c.fillRect(cx-60,h*.12+24,120,3);c.fillStyle=lobes===target?'#f4d84e':'#10f4cf';c.fillRect(cx-60,h*.12+24,120*drawn,3);c.textAlign='left';
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(cx,cy,Math.hypot(p.x-cx,p.y-cy),0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText('PEN '+(dFrac*100).toFixed(0)+'%',p.x+12,p.y-8)}
+ },
+ readout:K=>['LOBES '+K.pad(lobes,2)+' / '+K.pad(target,2),'CAPTURED '+K.pad(found)+' / '+R+':'+r]
+});
+})();
+</script></body></html>

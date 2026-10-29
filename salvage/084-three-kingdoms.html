@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S084 — THREE KINGDOMS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Cyan eats rose, rose eats amber, amber eats cyan. Nothing wins unless you let it.
+const CELL=6,COL=['#28e3f4','#ed4e8c','#f4d84e'],NAME=['CYAN','ROSE','AMBER'];
+let cols=0,rows=0,g=null,ic=null,id=null,rgb=null,sel=0,cur={x:0,y:0,vx:0,vy:0},share=[.33,.33,.34],alive=0,best=0,ext=0,chk=0,acc=0;
+function init(K){cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);g=new Uint8Array(cols*rows);for(let i=0;i<g.length;i++)g[i]=Math.floor(K.rand()*3);ic=document.createElement('canvas');ic.width=cols;ic.height=rows;id=ic.getContext('2d').createImageData(cols,rows);rgb=COL.map(s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)));cur={x:K.w/2,y:K.h/2,vx:0,vy:0};alive=0;share=[.33,.33,.34]}
+function paint(x,y,r,s){const ci=Math.floor(x/CELL),cj=Math.floor(y/CELL),rc=Math.ceil(r/CELL);for(let j=cj-rc;j<=cj+rc;j++)for(let i=ci-rc;i<=ci+rc;i++){if(i<0||j<0||i>=cols||j>=rows)continue;if(Math.hypot(i-ci,j-cj)<=rc)g[j*cols+i]=s}}
+Salvage({id:'S084',title:'THREE KINGDOMS',parent:'014 FALSE COLOUR NECROSIS',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> PAINT A KINGDOM &nbsp;<kbd>Q</kbd><kbd>E</kbd> CHOOSE WHICH<br>KEEP ALL THREE ALIVE / THE POINTER PAINTS THE CHOSEN KINGDOM WHILE HELD',
+ aria:'A rock-paper-scissors cellular simulation with three coloured kingdoms: cyan beats rose, rose beats amber and amber beats cyan, forming spirals. Arrow keys move a cursor, Space paints a blob of the chosen kingdom, and Q and E choose which. The goal is to keep all three alive; if one is wiped out the run resets. Holding the pointer paints the chosen kingdom where it moves.',
+ reset(K){init(K);sel=0;best=0;ext=0},
+ resize(K){init(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh)paint(cur.x,cur.y,34,sel);return true}
+  if(fresh&&e.code==='KeyQ'){sel=(sel+2)%3;return true}if(fresh&&e.code==='KeyE'){sel=(sel+1)%3;return true}
+  if(/^Arrow|^Key[WASD]$/.test(e.code))return true;
+ },
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  cur.vx+=dx*1500*dt;cur.vy+=dy*1500*dt;const f=Math.exp(-dt*6);cur.vx*=f;cur.vy*=f;cur.x=K.clamp(cur.x+cur.vx*dt,0,K.w);cur.y=K.clamp(cur.y+cur.vy*dt,0,K.h);
+  if(K.keys.has('Space'))paint(cur.x,cur.y,10,sel);
+  const p=K.pointer;if(p.inside&&p.held)paint(p.x,p.y,16,sel);
+  const n=g.length;let steps=Math.floor(n*.8*Math.min(1,dt*60));
+  for(let s=0;s<steps;s++){const i=Math.floor(K.rand()*n),x=i%cols,y=Math.floor(i/cols),d=Math.floor(K.rand()*4),nx=(x+(d===0?1:d===1?-1:0)+cols)%cols,ny=(y+(d===2?1:d===3?-1:0)+rows)%rows,j=ny*cols+nx;if(g[j]===(g[i]+2)%3)g[i]=g[j]}
+  chk-=dt;if(chk<=0){chk=.4;const c=[0,0,0];for(let i=0;i<n;i+=3)c[g[i]]++;const t=c[0]+c[1]+c[2];share=c.map(v=>v/t);
+   if(Math.min(...share)<.01){if(alive>3)K.note('EXTINCTION / '+NAME[share.indexOf(Math.min(...share))]+' IS GONE / '+alive.toFixed(0)+'s HELD');best=Math.max(best,alive);alive=0;ext++;const dead=share.indexOf(Math.min(...share));paint(K.w*(.3+K.rand()*.4),K.h*(.3+K.rand()*.4),40,dead)}}
+  if(Math.min(...share)>=.01)alive+=dt;best=Math.max(best,alive);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,d=id.data;
+  for(let i=0;i<g.length;i++){const k=rgb[g[i]],o=i*4;d[o]=k[0]*.8;d[o+1]=k[1]*.8;d[o+2]=k[2]*.8;d[o+3]=255}
+  ic.getContext('2d').putImageData(id,0,0);c.imageSmoothingEnabled=false;c.drawImage(ic,0,0,cols*CELL,rows*CELL);c.imageSmoothingEnabled=true;
+  c.strokeStyle=COL[sel];c.lineWidth=2;c.beginPath();c.arc(cur.x,cur.y,34,0,TAU);c.stroke();c.lineWidth=1;c.beginPath();c.moveTo(cur.x-8,cur.y);c.lineTo(cur.x+8,cur.y);c.moveTo(cur.x,cur.y-8);c.lineTo(cur.x,cur.y+8);c.stroke();
+  const gx=22,gy=h*.12;c.font='9px monospace';c.fillStyle='#05070edd';c.fillRect(gx-6,gy-14,200,52);for(let i=0;i<3;i++){c.fillStyle=COL[i];c.fillRect(gx+(i?share.slice(0,i).reduce((a,b)=>a+b,0)*190:0),gy,share[i]*190,8)}
+  c.fillStyle='#faffdb';c.fillText('PAINTING '+NAME[sel]+' / ALL ALIVE '+alive.toFixed(0)+'s / BEST '+best.toFixed(0)+'s',gx,gy+24);
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle=COL[sel];c.beginPath();c.arc(p.x,p.y,16,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#fff';c.fillText(p.held?'PAINTING':'READY',p.x+20,p.y-8)}
+ },
+ readout:K=>['ALIVE '+K.pad(alive,3)+'s / BEST '+K.pad(best,3)+'s','C '+(share[0]*100).toFixed(0)+'% R '+(share[1]*100).toFixed(0)+'% A '+(share[2]*100).toFixed(0)+'%']
+});
+})();
+</script></body></html>
