@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03040a"><title>S091 — TUNNEL RUN</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Rings of wall come at you down a tunnel. Each has a gap. Line yourself up with it.
+let rings=[],th=0,av=0,spd=.45,dist=0,hull=3,score=0,best=0,flash=0,spawnD=0,passed=0,hit=0,vp={x:0,y:0},over=0,lastRing=0;
+const TAU=Math.PI*2;
+function reset0(K){rings=[];th=-Math.PI/2;av=0;spd=.32;dist=0;hull=3;score=0;flash=0;spawnD=0;passed=0;over=0;vp={x:K.w/2,y:K.h/2};for(let i=0;i<3;i++){rings.push(mk(K,.02+i*.2))}}
+function mk(K,t){const g=K.rand()*TAU,gaps=K.rand()<.25?2:1;return{t,g,w:Math.max(1.1,1.8-score*.0008),g2:gaps===2?g+Math.PI:null,done:false,col:K.DAMAGE[Math.floor(K.rand()*6)]}}
+Salvage({id:'S091',title:'TUNNEL RUN',parent:'016 INVERTED TOPOLOGY',bg:'#03040a',
+ help:'<kbd>←</kbd><kbd>→</kbd> ORBIT THE TUNNEL WALL &nbsp;<kbd>↑</kbd> BOOST &nbsp;<kbd>↓</kbd> BRAKE<br>FLY THROUGH THE GAP IN EACH RING / THE POINTER MOVES THE VANISHING POINT, HOLD FOR SLOW MOTION',
+ aria:'A tunnel-flying game with a first-person view. Rings of wall rush toward the viewer, each with a gap. Left and right arrows move the ship around the inside of the tunnel, up boosts and down brakes. Passing through a gap scores; hitting a wall costs hull. The pointer shifts the vanishing point so the tunnel bends, and holding it slows time.',
+ reset(K){best=0;reset0(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh&&over)reset0(K);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  if(over)return;const p=K.pointer,sc=p.inside&&p.held?.45:1,d=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),b=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0)-(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);
+  av+=d*9*dt;av*=Math.exp(-dt*6);th+=av*dt;const base=.32+Math.min(.5,dist*.0001),want=base*(1+b*.5);spd+=(want-spd)*Math.min(1,dt*3);const v=spd*sc;dist+=v*dt*100;flash=Math.max(0,flash-dt*3);hit=Math.max(0,hit-dt*3);
+  const tx=p.inside?K.w/2+(p.x-K.w/2)*.35:K.w/2,ty=p.inside?K.h/2+(p.y-K.h/2)*.35:K.h/2;vp.x+=(tx-vp.x)*Math.min(1,dt*4);vp.y+=(ty-vp.y)*Math.min(1,dt*4);
+  for(let i=rings.length-1;i>=0;i--){const r=rings[i];r.t+=v*dt*.6;
+   if(!r.done&&r.t>=.96){r.done=true;const inGap=a=>Math.abs(K.wrap(th-a))<r.w/2*.8+.08;if(inGap(r.g)||(r.g2!==null&&inGap(r.g2))){score+=10+passed;passed++;flash=.5}else{hull--;hit=1;K.note('HIT / HULL '+Math.max(0,hull));if(hull<=0){over=1;best=Math.max(best,score);K.note('HULL BREACHED / SPACE TO FLY AGAIN')}}}
+   if(r.t>1.15)rings.splice(i,1)}
+  spawnD+=v*dt*.6;if(spawnD>.15){spawnD=0;rings.push(mk(K,0))}
+  best=Math.max(best,score);
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,cx=vp.x,cy=vp.y,R=Math.hypot(w,h)*.5;c.fillStyle='#03040a';c.fillRect(0,0,w,h);
+  const g=c.createRadialGradient(cx,cy,0,cx,cy,R*.5);g.addColorStop(0,'#10182c');g.addColorStop(1,'#03040a');c.fillStyle=g;c.fillRect(0,0,w,h);
+  c.strokeStyle='#10202e';for(let k=0;k<16;k++){const a=k/16*TAU;c.beginPath();c.moveTo(cx+Math.cos(a)*10,cy+Math.sin(a)*10);c.lineTo(cx+Math.cos(a)*R*1.2,cy+Math.sin(a)*R*1.2);c.stroke()}
+  const sorted=rings.slice().sort((a,b)=>a.t-b.t);
+  for(const r of sorted){const k=Math.pow(Math.max(0,r.t),2.2),rad=8+k*R*1.05,al=Math.min(1,r.t*3);c.globalAlpha=al;c.lineWidth=2+k*14;c.strokeStyle=r.col;
+   const hw=r.w/2*.8;
+   if(r.g2===null){c.beginPath();c.arc(cx,cy,rad,r.g+hw,r.g+TAU-hw);c.stroke()}else{c.beginPath();c.arc(cx,cy,rad,r.g+hw,r.g+Math.PI-hw);c.stroke();c.beginPath();c.arc(cx,cy,rad,r.g+Math.PI+hw,r.g+TAU-hw);c.stroke()}}
+  c.globalAlpha=1;c.lineWidth=1;
+  const sx=cx+Math.cos(th)*R*.92*.82*(1),sy=cy+Math.sin(th)*R*.92*.82;c.save();c.translate(sx,sy);c.rotate(th+Math.PI/2);c.fillStyle=hit?'#ed4e8c':'#faffdb';c.beginPath();c.moveTo(0,-20);c.lineTo(14,14);c.lineTo(0,8);c.lineTo(-14,14);c.closePath();c.fill();c.restore();
+  if(flash){c.fillStyle='#fff';c.globalAlpha=flash*.12;c.fillRect(0,0,w,h);c.globalAlpha=1}
+  if(hit){c.fillStyle='#ed4e8c';c.globalAlpha=hit*.15;c.fillRect(0,0,w,h);c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('HULL '+'■'.repeat(Math.max(0,hull))+'□'.repeat(3-Math.max(0,hull))+' / SPEED '+(spd*100).toFixed(0),22,h-52);
+  if(over){c.fillStyle='#03040acc';c.fillRect(w/2-140,h*.44,280,50);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText('HULL BREACHED / SPACE',w/2,h*.44+30);c.textAlign='left'}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,10,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'SLOW':'LOOK',p.x+14,p.y-8)}
+ },
+ readout:K=>['SCORE '+K.pad(score,5),'RINGS '+K.pad(passed)+' / BEST '+K.pad(best,5)+' / HULL '+Math.max(0,hull)]
+});
+})();
+</script></body></html>

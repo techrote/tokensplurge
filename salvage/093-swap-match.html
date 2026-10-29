@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S093 — SWAP MATCH</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Swap neighbours to line up three. Anything cleared lets the rest fall, and sometimes that clears more.
+const N=8,NC=6;
+let g=null,cur={r:0,c:0},sel=null,score=0,moves=30,goal=600,level=1,best=0,stage='idle',stT=0,mark=null,chain=0,cell=44,ox=0,oy=0,parts=[],drag=null,over=0,swapA=null;
+const id=(r,c)=>r*N+c;
+function find(){const m=new Set();for(let r=0;r<N;r++){let run=1;for(let c=1;c<=N;c++){if(c<N&&g[id(r,c)]===g[id(r,c-1)]&&g[id(r,c)]>=0)run++;else{if(run>=3)for(let k=1;k<=run;k++)m.add(id(r,c-k));run=1}}}
+ for(let c=0;c<N;c++){let run=1;for(let r=1;r<=N;r++){if(r<N&&g[id(r,c)]===g[id(r-1,c)]&&g[id(r,c)]>=0)run++;else{if(run>=3)for(let k=1;k<=run;k++)m.add(id(r-k,c));run=1}}}return m}
+function fill(K){g=new Int8Array(N*N);do{for(let i=0;i<g.length;i++)g[i]=Math.floor(K.rand()*NC)}while(find().size)}
+function gravity(K){for(let c=0;c<N;c++){let w=N-1;for(let r=N-1;r>=0;r--)if(g[id(r,c)]>=0){const v=g[id(r,c)];g[id(r,c)]=-1;g[id(w,c)]=v;w--}for(let r=w;r>=0;r--)g[id(r,c)]=Math.floor(K.rand()*NC)}}
+function resolve(K){const m=find();if(m.size){chain++;mark=m;stage='clear';stT=0;score+=m.size*10*chain;for(const i of m){const r=Math.floor(i/N),c=i%N;for(let q=0;q<4;q++)parts.push({x:ox+(c+.5)*cell,y:oy+(r+.5)*cell,vx:(K.rand()-.5)*200,vy:-K.rand()*160,t:0,c:K.DAMAGE[g[i]]})}if(chain>=2)K.note('CASCADE ×'+chain)}else{stage='idle';chain=0;if(score>=goal){level++;goal=Math.round(goal*1.55);moves+=12;K.note('LEVEL '+level+' / +12 SWAPS');}else if(moves<=0){over=1;best=Math.max(best,score);K.note('OUT OF SWAPS / SPACE FOR A NEW BOARD')}}}
+function trySwap(K,a,b){if(stage!=='idle'||over)return;if(Math.abs(a.r-b.r)+Math.abs(a.c-b.c)!==1)return;const ia=id(a.r,a.c),ib=id(b.r,b.c);[g[ia],g[ib]]=[g[ib],g[ia]];
+ if(find().size){moves--;chain=0;resolve(K)}else{[g[ia],g[ib]]=[g[ib],g[ia]];swapA={a,b,t:0};stage='bad';stT=0;K.live('No match')}}
+function init(K){fill(K);cur={r:3,c:3};sel=null;score=0;moves=30;goal=600;level=1;stage='idle';over=0;parts=[];cell=Math.min(K.w*.88/N,K.h*.72/N,56);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8}
+const at=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);return r>=0&&c>=0&&r<N&&c<N?{r,c}:null};
+Salvage({id:'S093',title:'SWAP MATCH',parent:'014 FALSE COLOUR NECROSIS',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> PICK UP, THEN MOVE NEXT TO A NEIGHBOUR AND PRESS AGAIN<br>THREE IN A LINE CLEARS / CLICK TWO NEIGHBOURS OR DRAG ONE ONTO THE OTHER',
+ aria:'A match-three puzzle on an eight by eight grid of coloured pieces. Arrow keys move a cursor; Space picks up a piece and then, with the cursor on an adjacent piece, Space swaps them. A swap must create a line of three or more of the same colour, which then clear, letting pieces above fall and sometimes cascade. You have a limited number of swaps and a score goal that rises each level. With the pointer, click two neighbouring pieces or drag one onto its neighbour.',
+ reset(K){best=0;init(K)},
+ resize(K){cell=Math.min(K.w*.88/N,K.h*.72/N,56);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(over)init(K);else if(!sel)sel={...cur};else{const a=sel;sel=null;if(a.r!==cur.r||a.c!==cur.c)trySwap(K,a,{...cur})}}return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];if(d){if(fresh){cur.r=K.clamp(cur.r+d[0],0,N-1);cur.c=K.clamp(cur.c+d[1],0,N-1)}return true}
+  if(e.code==='Escape')return;
+ },
+ down(K,x,y){const a=at(K,x,y);if(!a)return false;cur=a;if(over){init(K);return true}if(sel&&Math.abs(sel.r-a.r)+Math.abs(sel.c-a.c)===1){const s=sel;sel=null;trySwap(K,s,a);return true}sel=a;drag=a;return false},
+ up(K){const p=K.pointer,b=at(K,p.x,p.y);if(drag&&b&&(b.r!==drag.r||b.c!==drag.c)&&Math.abs(drag.r-b.r)+Math.abs(drag.c-b.c)===1){const a=drag;sel=null;trySwap(K,a,b)}drag=null},
+ step(K,dt){
+  for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.t+=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=500*dt;if(q.t>.7)parts.splice(i,1)}
+  stT+=dt;if(stage==='clear'&&stT>.28){for(const i of mark)g[i]=-1;gravity(K);mark=null;stage='fall';stT=0}else if(stage==='fall'&&stT>.22){resolve(K)}else if(stage==='bad'&&stT>.25){stage='idle'}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);const hv=p.inside?at(K,p.x,p.y):null;
+  for(let r=0;r<N;r++)for(let q=0;q<N;q++){const x=ox+q*cell,y=oy+r*cell,v=g[id(r,q)],isM=mark&&mark.has(id(r,q));c.fillStyle=(r+q)%2?'#08111c':'#0a1522';c.fillRect(x,y,cell,cell);if(v<0)continue;
+   const s=isM?1+Math.sin(stT*30)*.12-(stT/.28)*.5:1,cx=x+cell/2,cy=y+cell/2,R=cell*.36*Math.max(.1,s);c.fillStyle=K.DAMAGE[v];const shape=v%3;c.beginPath();if(shape===0)c.arc(cx,cy,R,0,TAU);else if(shape===1){c.moveTo(cx,cy-R);c.lineTo(cx+R,cy+R*.8);c.lineTo(cx-R,cy+R*.8);c.closePath()}else c.rect(cx-R,cy-R,R*2,R*2);c.fill();if(v>=3){c.fillStyle='#05070e66';c.beginPath();c.arc(cx,cy,R*.35,0,TAU);c.fill()}
+   if(hv&&hv.r===r&&hv.c===q){c.strokeStyle='#ed4e8c';c.strokeRect(x+2.5,y+2.5,cell-5,cell-5)}}
+  for(const q of parts){c.globalAlpha=1-q.t/.7;c.fillStyle=q.c;c.fillRect(q.x-2,q.y-2,4,4)}c.globalAlpha=1;
+  if(sel){c.strokeStyle='#f4d84e';c.lineWidth=3;c.strokeRect(ox+sel.c*cell+2,oy+sel.r*cell+2,cell-4,cell-4);c.lineWidth=1}
+  const cx2=ox+cur.c*cell,cy2=oy+cur.r*cell,b=3+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx2+b,cy2+b,cell-b*2,cell-b*2);c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('SCORE '+score+' / GOAL '+goal+' / SWAPS '+Math.max(0,moves),ox,oy-12);c.fillStyle='#ffffff22';c.fillRect(ox,oy-8,cell*N,3);c.fillStyle='#f4d84e';c.fillRect(ox,oy-8,cell*N*Math.min(1,score/goal),3);
+  if(over){c.fillStyle='#05070ecc';c.fillRect(w/2-150,h*.44,300,50);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='12px monospace';c.fillText('OUT OF SWAPS / SPACE',w/2,h*.44+30);c.textAlign='left'}
+ },
+ readout:K=>['SCORE '+K.pad(score,5)+'/'+K.pad(goal,5),'SWAPS '+K.pad(Math.max(0,moves),2)+' / LEVEL '+K.pad(level,2)+' / BEST '+K.pad(best,5)]
+});
+})();
+</script></body></html>

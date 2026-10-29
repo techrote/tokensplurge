@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S095 — MINI SUDOKU</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A small square of numbers where nothing repeats in a row, a column or a box. A few are given.
+let N=4,BR=2,BC=2,sol=null,given=null,val=null,cur={r:0,c:0},solved=0,wins=0,level=0,mistakes=0,cell=60,ox=0,oy=0,hint='';
+const id=(r,c)=>r*N+c;
+function dims(){if(N===4){BR=2;BC=2}else{BR=2;BC=3}}
+function fillGrid(K){const g=new Array(N*N).fill(0);function ok(r,c,v){for(let i=0;i<N;i++){if(g[id(r,i)]===v||g[id(i,c)]===v)return false}const r0=Math.floor(r/BR)*BR,c0=Math.floor(c/BC)*BC;for(let i=0;i<BR;i++)for(let j=0;j<BC;j++)if(g[id(r0+i,c0+j)]===v)return false;return true}
+ function bt(p){if(p===N*N)return true;const r=Math.floor(p/N),c=p%N,vs=Array.from({length:N},(_,i)=>i+1).sort(()=>K.rand()-.5);for(const v of vs){if(ok(r,c,v)){g[p]=v;if(bt(p+1))return true;g[p]=0}}return false}bt(0);return g}
+function gen(K){N=level<2?4:6;dims();sol=fillGrid(K);given=new Uint8Array(N*N);val=new Array(N*N).fill(0);const keep=Math.round(N*N*(N===4?.5:.45-level*.01));const order=Array.from({length:N*N},(_,i)=>i).sort(()=>K.rand()-.5);for(let k=0;k<keep;k++){given[order[k]]=1;val[order[k]]=sol[order[k]]}cur={r:0,c:0};solved=0;mistakes=0;cell=Math.min(K.w*.5/N,K.h*.6/N,76);ox=(K.w-cell*N)/2-cell*.7;oy=(K.h-cell*N)/2+8}
+function conflict(i){const v=val[i];if(!v)return false;const r=Math.floor(i/N),c=i%N;for(let k=0;k<N;k++){if(k!==c&&val[id(r,k)]===v)return true;if(k!==r&&val[id(k,c)]===v)return true}const r0=Math.floor(r/BR)*BR,c0=Math.floor(c/BC)*BC;for(let a=0;a<BR;a++)for(let b=0;b<BC;b++){const j=id(r0+a,c0+b);if(j!==i&&val[j]===v)return true}return false}
+function check(K){if(solved)return;for(let i=0;i<N*N;i++)if(!val[i]||conflict(i))return;wins++;solved=.001;K.note('SQUARE COMPLETE / '+K.pad(wins))}
+function setv(K,v){const i=id(cur.r,cur.c);if(given[i]||solved)return;val[i]=v;if(v&&conflict(i)){mistakes++}check(K)}
+const at=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);return r>=0&&c>=0&&r<N&&c<N?{r,c}:null};
+Salvage({id:'S095',title:'MINI SUDOKU',parent:'009 AN INTERIOR FOR NOTHING',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>1</kbd>–<kbd>6</kbd> WRITE A NUMBER &nbsp;<kbd>0</kbd> / <kbd>BACKSPACE</kbd> CLEAR<br>NO REPEATS IN A ROW, COLUMN OR BOX / CLICK A CELL THEN A NUMBER ON THE RIGHT',
+ aria:'A small sudoku. Arrow keys move a cursor and number keys write a digit; zero or Backspace clears a cell. Every row, column and box must contain each number once. Given numbers are fixed, and any conflicting entries are shown in red. Clicking a cell and then a number in the number pad on the right also works. The first puzzles are four by four, later ones six by six.',
+ reset(K){level=0;wins=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.5/N,K.h*.6/N,76);ox=(K.w-cell*N)/2-cell*.7;oy=(K.h-cell*N)/2+8},
+ key(K,e,fresh){
+  if(!fresh)return /^Arrow|^Digit|^Numpad|^Backspace$|^Delete$/.test(e.code)||undefined;
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];if(d){cur.r=K.clamp(cur.r+d[0],0,N-1);cur.c=K.clamp(cur.c+d[1],0,N-1);return true}
+  const m=/^(Digit|Numpad)(\d)$/.exec(e.code);if(m){const v=+m[2];if(v>=0&&v<=N){setv(K,v)}return true}
+  if(e.code==='Backspace'||e.code==='Delete'){setv(K,0);return true}
+ },
+ down(K,x,y){const a=at(K,x,y);if(a){cur=a;return true}const px=ox+N*cell+cell*.6;for(let v=0;v<=N;v++){const bx=px+(v%3)*cell*.8,by=oy+Math.floor(v/3)*cell*.8;if(x>=bx&&x<=bx+cell*.72&&y>=by&&y<=by+cell*.72){setv(K,v);return true}}return false},
+ step(K,dt){if(solved){solved+=dt;if(solved>2.2){level++;gen(K)}}},
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);const hv=p.inside?at(K,p.x,p.y):null;
+  for(let r=0;r<N;r++)for(let q=0;q<N;q++){const i=id(r,q),x=ox+q*cell,y=oy+r*cell,cf=conflict(i),box=(Math.floor(r/BR)+Math.floor(q/BC))%2;c.fillStyle=cf?'#3a0f2a':box?'#0b1522':'#0f1b2a';c.fillRect(x,y,cell-1,cell-1);if(hv&&hv.r===r&&hv.c===q){c.strokeStyle='#ed4e8c';c.strokeRect(x+2.5,y+2.5,cell-6,cell-6)}
+   if(val[i]){c.fillStyle=cf?'#ed4e8c':given[i]?'#e9fbff':'#28e3f4';c.font=(given[i]?'bold ':'')+Math.round(cell*.55)+'px monospace';c.textAlign='center';c.fillText(val[i],x+cell/2,y+cell*.7);c.textAlign='left'}}
+  c.strokeStyle='#4f6b80';c.lineWidth=2;for(let r=0;r<=N;r+=BR){c.beginPath();c.moveTo(ox,oy+r*cell-.5);c.lineTo(ox+N*cell,oy+r*cell-.5);c.stroke()}for(let q=0;q<=N;q+=BC){c.beginPath();c.moveTo(ox+q*cell-.5,oy);c.lineTo(ox+q*cell-.5,oy+N*cell);c.stroke()}c.lineWidth=1;
+  const cx=ox+cur.c*cell,cy=oy+cur.r*cell,b=2+Math.sin(K.time*5)*.8;c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx+b,cy+b,cell-b*2-1,cell-b*2-1);c.lineWidth=1;
+  const px=ox+N*cell+cell*.6;for(let v=0;v<=N;v++){const bx=px+(v%3)*cell*.8,by=oy+Math.floor(v/3)*cell*.8;c.fillStyle='#0c1420';c.fillRect(bx,by,cell*.72,cell*.72);c.strokeStyle='#2a3d5e';c.strokeRect(bx+.5,by+.5,cell*.72-1,cell*.72-1);c.fillStyle='#9fc4d6';c.font=Math.round(cell*.35)+'px monospace';c.textAlign='center';c.fillText(v?v:'×',bx+cell*.36,by+cell*.47);c.textAlign='left'}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(N+'×'+N+' / MISTAKES '+mistakes,ox,oy-12);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.strokeRect(ox-5,oy-5,N*cell+10,N*cell+10);c.globalAlpha=1}
+ },
+ readout:K=>{let f=0;for(let i=0;i<N*N;i++)if(val[i])f++;return['FILLED '+K.pad(f,2)+'/'+K.pad(N*N,2),'SOLVED '+K.pad(wins)+' / MISTAKES '+K.pad(mistakes)]}
+});
+})();
+</script></body></html>

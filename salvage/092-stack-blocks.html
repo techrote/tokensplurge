@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S092 — STACK BLOCKS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Seven shapes, one well. Complete rows are taken away and nothing is kept.
+const COLS=10,ROWS=20,SHAPES=[[[0,1],[1,1],[2,1],[3,1]],[[0,0],[0,1],[1,1],[2,1]],[[2,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[2,1]],[[1,0],[2,0],[0,1],[1,1]],[[1,0],[0,1],[1,1],[2,1]],[[0,0],[1,0],[1,1],[2,1]]];
+let g=null,pc=null,bag=[],next=0,fall=0,lines=0,score=0,level=1,best=0,over=0,cell=28,ox=0,oy=0,flash=[],holdKey=0,lock=0,lastHover=-1;
+const norm=s=>{const mx=Math.min(...s.map(c=>c[0])),my=Math.min(...s.map(c=>c[1]));return s.map(c=>[c[0]-mx,c[1]-my])};
+function rot(s){return norm(s.map(([x,y])=>[-y,x]))}
+function nextType(K){if(!bag.length){bag=[0,1,2,3,4,5,6];for(let i=6;i>0;i--){const j=Math.floor(K.rand()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}}return bag.pop()}
+function spawn(K){const t=next;next=nextType(K);pc={t,s:norm(SHAPES[t]),x:3,y:0};if(hit(pc.s,pc.x,pc.y)){over=1;best=Math.max(best,score);K.note('STACKED TO THE TOP / SPACE TO CLEAR THE WELL')}}
+function hit(s,x,y){for(const [cx,cy] of s){const a=x+cx,b=y+cy;if(a<0||a>=COLS||b>=ROWS)return true;if(b>=0&&g[b*COLS+a]>=0)return true}return false}
+function place(K){for(const [cx,cy] of pc.s){const a=pc.x+cx,b=pc.y+cy;if(b>=0)g[b*COLS+a]=pc.t}
+ let n=0;const full=[];for(let r=0;r<ROWS;r++){let f=true;for(let c=0;c<COLS;c++)if(g[r*COLS+c]<0){f=false;break}if(f)full.push(r)}
+ if(full.length){flash=full.map(r=>({r,t:0}));setTimeout(()=>{for(const r of full){for(let y=r;y>0;y--)for(let c=0;c<COLS;c++)g[y*COLS+c]=g[(y-1)*COLS+c];for(let c=0;c<COLS;c++)g[c]=-1}},180);lines+=full.length;score+=[0,100,300,500,800][full.length]*level;level=1+Math.floor(lines/10);if(full.length===4)K.note('FOUR ROWS TAKEN')}
+ else score+=4;spawn(K)}
+function move(K,dx){if(over||!pc)return;if(!hit(pc.s,pc.x+dx,pc.y))pc.x+=dx}
+function rotate(K){if(over||!pc)return;const r=rot(pc.s);for(const k of [0,-1,1,-2,2])if(!hit(r,pc.x+k,pc.y)){pc.s=r;pc.x+=k;return}}
+function drop(K){if(over||!pc)return;if(!hit(pc.s,pc.x,pc.y+1))pc.y++;else place(K)}
+function hard(K){if(over||!pc)return;let n=0;while(!hit(pc.s,pc.x,pc.y+1)){pc.y++;n++}score+=n*2;place(K)}
+function init(K){g=new Int8Array(COLS*ROWS).fill(-1);bag=[];next=nextType(K);lines=score=0;level=1;over=0;flash=[];cell=Math.min(K.h*.76/ROWS,K.w*.45/COLS,36);ox=(K.w-cell*COLS)/2;oy=(K.h-cell*ROWS)/2+8;spawn(K)}
+Salvage({id:'S092',title:'STACK BLOCKS',parent:'035 VERTICAL DEATH',
+ help:'<kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>↑</kbd> ROTATE &nbsp;<kbd>↓</kbd> SOFT DROP &nbsp;<kbd>SPACE</kbd> HARD DROP<br>THE POINTER STEERS THE COLUMN, CLICK ROTATES, HOLD DROPS FASTER',
+ aria:'A falling-block puzzle. Left and right arrows move the falling piece, up rotates it, down drops it faster and Space drops it to the bottom at once. Completed rows disappear and the pieces fall faster as the level rises. With the pointer, moving across the well steers the piece to that column, clicking rotates it and holding drops it faster. The game ends when the stack reaches the top.',
+ reset(K){best=0;init(K)},
+ resize(K){cell=Math.min(K.h*.76/ROWS,K.w*.45/COLS,36);ox=(K.w-cell*COLS)/2;oy=(K.h-cell*ROWS)/2+8},
+ key(K,e,fresh){
+  if(over){if(e.code==='Space'&&fresh)init(K);return /^Arrow|^Space$/.test(e.code)||undefined}
+  if(e.code==='Space'){if(fresh)hard(K);return true}
+  if(e.code==='ArrowLeft'||e.code==='KeyA'){if(fresh){holdKey=.18;move(K,-1)}return true}if(e.code==='ArrowRight'||e.code==='KeyD'){if(fresh){holdKey=.18;move(K,1)}return true}
+  if(e.code==='ArrowUp'||e.code==='KeyW'){if(fresh)rotate(K);return true}if(e.code==='ArrowDown'||e.code==='KeyS')return true;
+ },
+ down(K,x,y){if(x>ox&&x<ox+cell*COLS&&!over){rotate(K);return false}return false},
+ step(K,dt){
+  if(over)return;const p=K.pointer;
+  if(K.keys.has('ArrowLeft')||K.keys.has('KeyA')||K.keys.has('ArrowRight')||K.keys.has('KeyD')){holdKey-=dt;if(holdKey<=0){holdKey=.05;move(K,(K.keys.has('ArrowRight')||K.keys.has('KeyD'))&&!(K.keys.has('ArrowLeft')||K.keys.has('KeyA'))?1:-1)}}
+  if(p.inside&&p.x>ox-20&&p.x<ox+cell*COLS+20){const w=Math.max(...pc.s.map(c=>c[0]))+1,target=Math.round((p.x-ox)/cell-w/2);if(target!==pc.x&&Math.abs(target-pc.x)>0&&p.speed>.02){const dx=Math.sign(target-pc.x);if(!hit(pc.s,pc.x+dx,pc.y))pc.x+=dx}}
+  const soft=K.keys.has('ArrowDown')||K.keys.has('KeyS')||(p.held&&p.inside),spd=Math.max(.06,.8-level*.07)/(soft?12:1);fall+=dt;if(fall>=spd){fall=0;drop(K)}
+  for(const f of flash)f.t+=dt;flash=flash.filter(f=>f.t<.3);
+ },
+ draw(K,c){
+  const {w,h}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.fillStyle='#08111c';c.fillRect(ox,oy,cell*COLS,cell*ROWS);c.strokeStyle='#17283a';for(let x=0;x<=COLS;x++){c.beginPath();c.moveTo(ox+x*cell+.5,oy);c.lineTo(ox+x*cell+.5,oy+ROWS*cell);c.stroke()}for(let y=0;y<=ROWS;y++){c.beginPath();c.moveTo(ox,oy+y*cell+.5);c.lineTo(ox+COLS*cell,oy+y*cell+.5);c.stroke()}
+  const col=t=>t===6?K.SPECTRUM[5]:K.DAMAGE[t%6],blk=(x,y,t,a)=>{c.globalAlpha=a;c.fillStyle=col(t);c.fillRect(ox+x*cell+1,oy+y*cell+1,cell-2,cell-2);c.fillStyle='#ffffff33';c.fillRect(ox+x*cell+1,oy+y*cell+1,cell-2,3);c.globalAlpha=1};
+  for(let r=0;r<ROWS;r++)for(let q=0;q<COLS;q++){const t=g[r*COLS+q];if(t>=0)blk(q,r,t,1)}
+  for(const f of flash){c.fillStyle='#fff';c.globalAlpha=1-f.t/.3;c.fillRect(ox,oy+f.r*cell,cell*COLS,cell);c.globalAlpha=1}
+  if(!over&&pc){let gy=pc.y;while(!hit(pc.s,pc.x,gy+1))gy++;for(const [cx,cy] of pc.s)blk(pc.x+cx,gy+cy,pc.t,.2);for(const [cx,cy] of pc.s)blk(pc.x+cx,pc.y+cy,pc.t,1)}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('NEXT',ox+cell*COLS+24,oy+12);for(const [cx,cy] of norm(SHAPES[next])){c.fillStyle=col(next);c.fillRect(ox+cell*COLS+24+cx*16,oy+22+cy*16,15,15)}
+  c.fillText('LEVEL '+level,ox+cell*COLS+24,oy+90);c.fillText('LINES '+lines,ox+cell*COLS+24,oy+104);
+  if(over){c.fillStyle='#05070ecc';c.fillRect(ox,oy+cell*ROWS*.4,cell*COLS,60);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='12px monospace';c.fillText('TOPPED OUT / SPACE',ox+cell*COLS/2,oy+cell*ROWS*.4+35);c.textAlign='left'}
+ },
+ readout:K=>['SCORE '+K.pad(score,6),'LINES '+K.pad(lines,3)+' / LEVEL '+K.pad(level,2)+' / BEST '+K.pad(best,6)]
+});
+})();
+</script></body></html>

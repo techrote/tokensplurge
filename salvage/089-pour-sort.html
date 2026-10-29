@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S089 — POUR SORT</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The liquid memory has separated in the wrong order. Pour it back, one colour to a tube.
+const CAP=4;
+let tubes=[],sel=-1,cur=0,moves=0,hist=[],level=0,wins=0,solved=0,anim=null,K0=null;
+function gen(K){
+ const nc=Math.min(9,4+level),pool=[];for(let c=0;c<nc;c++)for(let i=0;i<CAP;i++)pool.push(c);for(let i=pool.length-1;i>0;i--){const j=Math.floor(K.rand()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+ tubes=[];for(let t=0;t<nc;t++)tubes.push(pool.slice(t*CAP,t*CAP+CAP));tubes.push([],[]);sel=-1;cur=0;moves=0;hist=[];solved=0;
+}
+function top(t){return tubes[t][tubes[t].length-1]}
+function run(t){let n=0,c=top(t);for(let i=tubes[t].length-1;i>=0&&tubes[t][i]===c;i--)n++;return n}
+function pour(K,from,to){
+ if(from===to||!tubes[from].length)return false;const c=top(from),room=CAP-tubes[to].length;if(room<=0||(tubes[to].length&&top(to)!==c))return false;
+ const n=Math.min(run(from),room);hist.push(tubes.map(t=>t.slice()));for(let i=0;i<n;i++)tubes[to].push(tubes[from].pop());moves++;anim={from,to,t:0};
+ if(tubes.every(t=>t.length===0||(t.length===CAP&&t.every(v=>v===t[0])))){wins++;solved=.001;K.note('SORTED IN '+moves+' POURS')}return true;
+}
+function act(K,t){if(solved)return;cur=t;if(sel<0){if(tubes[t].length)sel=t}else{if(sel===t)sel=-1;else{if(!pour(K,sel,t))K.note('IT WILL NOT POUR THERE');sel=-1}}}
+const geo=K=>{const n=tubes.length,tw=Math.min(54,K.w/(n+1)),gap=Math.min(26,tw*.6),total=n*tw+(n-1)*gap,x0=(K.w-total)/2,th=Math.min(CAP*44,K.h*.45);return{n,tw,gap,x0,th,y0:K.h*.3}};
+Salvage({id:'S089',title:'POUR SORT',parent:'008 LIQUID MEMORY',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE A TUBE &nbsp;<kbd>SPACE</kbd> LIFT, THEN POUR INTO ANOTHER &nbsp;<kbd>Z</kbd> UNDO<br>EVERY TUBE ONE COLOUR OR EMPTY / HOVER A TUBE TO SEE IF THE LIFTED LAYER FITS, CLICK TO ACT',
+ aria:'A liquid-sorting puzzle. Tubes hold four layers of coloured liquid. Left and right arrows choose a tube and Space lifts its top colour, then pours it into another tube if that tube is empty or has the same colour on top and has room. Z undoes a pour. The goal is for every tube to be empty or hold a single colour. Hovering a tube while one is lifted shows whether the pour is allowed, and clicking acts on a tube.',
+ reset(K){level=0;wins=0;gen(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'||e.code==='ArrowDown'||e.code==='KeyS'){if(fresh)act(K,cur);return true}
+  if(e.code==='KeyZ'||e.code==='Backspace'){if(fresh&&hist.length&&!solved){tubes=hist.pop();moves=Math.max(0,moves-1);sel=-1}return true}
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){cur=Math.max(0,cur-1);return true}if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){cur=Math.min(tubes.length-1,cur+1);return true}
+  if(e.code==='ArrowUp'||e.code==='KeyW')return true;
+ },
+ down(K,x,y){const g=geo(K);for(let t=0;t<g.n;t++){const tx=g.x0+t*(g.tw+g.gap);if(x>=tx-8&&x<=tx+g.tw+8&&y>=g.y0-40&&y<=g.y0+g.th+20){act(K,t);return true}}return false},
+ step(K,dt){if(anim){anim.t+=dt*3;if(anim.t>1)anim=null}if(solved){solved+=dt;if(solved>2.2){level++;gen(K)}}},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const hv=p.inside?(()=>{for(let t=0;t<g.n;t++){const tx=g.x0+t*(g.tw+g.gap);if(p.x>=tx-8&&p.x<=tx+g.tw+8&&p.y>=g.y0-40&&p.y<=g.y0+g.th+20)return t}return -1})():-1;
+  const lh=g.th/CAP;
+  for(let t=0;t<g.n;t++){const x=g.x0+t*(g.tw+g.gap),lift=t===sel?-26:0,y=g.y0+lift;
+   const ok=sel>=0&&t!==sel&&(tubes[t].length===0||top(t)===top(sel))&&tubes[t].length<CAP;
+   c.fillStyle='#0a131e';c.fillRect(x,y,g.tw,g.th);
+   tubes[t].forEach((v,i)=>{c.fillStyle=K.DAMAGE[v%6];c.globalAlpha=v>=6?.7:1;c.fillRect(x+2,y+g.th-(i+1)*lh+1,g.tw-4,lh-2);if(v>=6){c.fillStyle='#ffffff55';for(let q=0;q<g.tw;q+=6)c.fillRect(x+2+q,y+g.th-(i+1)*lh+1,2,lh-2)}c.globalAlpha=1});
+   c.strokeStyle=t===cur?'#faffdb':t===hv&&sel>=0?(ok?'#10f4cf':'#ed4e8c'):'#3a4b66';c.lineWidth=t===cur||t===hv?2.5:1.6;c.beginPath();c.moveTo(x,y);c.lineTo(x,y+g.th);c.lineTo(x+g.tw,y+g.th);c.lineTo(x+g.tw,y);c.stroke();c.lineWidth=1;
+   if(t===sel){c.fillStyle='#faffdb';c.fillText('▼',x+g.tw/2-4,y-6)}}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(tubes.length-2+' COLOURS / TUBE '+(cur+1)+(sel>=0?' / LIFTED':''),g.x0,g.y0-48);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.strokeRect(g.x0-14,g.y0-30,g.n*(g.tw+g.gap)-g.gap+28,g.th+60);c.globalAlpha=1}
+ },
+ readout:K=>['POURS '+K.pad(moves,3),'SORTED '+K.pad(wins)+' / COLOURS '+(tubes.length-2)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S088 — CUT THE CORD</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The last good frame is hanging by threads. Cut them so it lands where it is wanted.
+const SEG=13;
+let P=[],C=[],ropes=[],candy=null,anchors=[],mouth={x:0,y:0,r:36},stars=[],got=0,wins=0,lost=0,cutN=0,cur={x:0,y:0,vx:0,vy:0},resetT=0,won=0,last=null,level=0,eat=0;
+function mk(K,x,y,fixed){const p={x,y,ox:x,oy:y,fixed};P.push(p);return p}
+function gen(K){
+ P=[];C=[];ropes=[];stars=[];got=0;won=0;eat=0;const w=K.w,h=K.h,n=Math.min(3,2+(level>2?1:0));
+ const cx=w*(.3+K.rand()*.4),cy=h*(.42+K.rand()*.1);candy=mk(K,cx,cy,false);candy.r=14;
+ anchors=[];for(let i=0;i<n;i++){const ax=cx+(i-(n-1)/2)*w*.22+(K.rand()-.5)*60,ay=h*(.09+K.rand()*.07);anchors.push([ax,ay])}
+ anchors.forEach(([ax,ay],ri)=>{const len=Math.hypot(ax-cx,ay-cy),m=Math.max(3,Math.round(len/SEG)),pts=[mk(K,ax,ay,true)];for(let i=1;i<m;i++)pts.push(mk(K,ax+(cx-ax)*i/m,ay+(cy-ay)*i/m,false));pts.push(candy);const cs=[];for(let i=0;i<pts.length-1;i++){const c={a:pts[i],b:pts[i+1],len:len/m*1.0,cut:false,rope:ri};C.push(c);cs.push(c)}ropes.push(cs)});
+ do{mouth={x:w*(.15+K.rand()*.7),y:h*.84,r:36}}while(Math.abs(mouth.x-cx)<w*.12);
+ for(let i=0;i<3;i++)stars.push({x:K.clamp(cx+(mouth.x-cx)*(.25+i*.3)+(K.rand()-.5)*50,40,w-40),y:cy+(mouth.y-cy)*(.2+i*.3),on:true});
+ candy.ox=candy.x;candy.oy=candy.y;cur={x:w/2,y:h/2,vx:0,vy:0};
+}
+function cutAt(K,x,y,r){let any=false;for(const c of C){if(c.cut)continue;const ax=c.a.x,ay=c.a.y,bx=c.b.x,by=c.b.y,dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/l2)),d=Math.hypot(ax+dx*t-x,ay+dy*t-y);if(d<r){c.cut=true;any=true}}if(any){cutN++;K.live('Cut')}return any}
+function segCut(K,x0,y0,x1,y1){for(const c of C){if(c.cut)continue;const d1=(x1-x0)*(c.a.y-y0)-(y1-y0)*(c.a.x-x0),d2=(x1-x0)*(c.b.y-y0)-(y1-y0)*(c.b.x-x0),e1=(c.b.x-c.a.x)*(y0-c.a.y)-(c.b.y-c.a.y)*(x0-c.a.x),e2=(c.b.x-c.a.x)*(y1-c.a.y)-(c.b.y-c.a.y)*(x1-c.a.x);if(d1*d2<0&&e1*e2<0){c.cut=true;cutN++}}}
+Salvage({id:'S088',title:'CUT THE CORD',parent:'026 THE LAST GOOD FRAME',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE BLADE &nbsp;<kbd>SPACE</kbd> CUT WHAT IS NEAREST<br>DROP THE FRAME INTO THE MOUTH, COLLECT THE STARS / SWIPE THE POINTER ACROSS A CORD TO CUT IT, HOLD A CLICK TO BLOW',
+ aria:'A rope-physics puzzle. A candy-like frame hangs from two or three cords. Arrow keys move a blade and Space cuts the cord segment nearest to it; swiping the pointer across a cord cuts it too. The goal is to drop the frame into the mouth near the bottom, collecting the three stars along the way. If it falls off the screen it is reset. Holding the pointer blows the frame away from the pointer.',
+ reset(K){level=0;wins=lost=cutN=0;gen(K)},
+ resize(K){gen(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh){let best=null,bd=60;for(const c of C){if(c.cut)continue;const mx=(c.a.x+c.b.x)/2,my=(c.a.y+c.b.y)/2,d=Math.hypot(mx-cur.x,my-cur.y);if(d<bd){bd=d;best=c}}if(best){best.cut=true;cutN++}}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){last=[x,y];return false},up(){last=null},
+ step(K,dt){
+  if(won){won+=dt;if(won>1.8){level++;gen(K)}return}
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  cur.vx+=dx*1600*dt;cur.vy+=dy*1600*dt;const f=Math.exp(-dt*6);cur.vx*=f;cur.vy*=f;cur.x=K.clamp(cur.x+cur.vx*dt,0,K.w);cur.y=K.clamp(cur.y+cur.vy*dt,0,K.h);
+  const p=K.pointer;if(p.inside){if(last&&(Math.hypot(p.x-last[0],p.y-last[1])>2)&&p.held){segCut(K,last[0],last[1],p.x,p.y)}last=p.held?[p.x,p.y]:null}
+  const n=3,g=900;for(let s=0;s<n;s++){const d=dt/n;
+   for(const q of P){if(q.fixed)continue;const vx=(q.x-q.ox)*.995,vy=(q.y-q.oy)*.995;q.ox=q.x;q.oy=q.y;q.x+=vx;q.y+=vy+g*d*d;if(q===candy&&p.inside&&p.held){const ex=q.x-p.x,ey=q.y-p.y,dd=Math.hypot(ex,ey)+1;if(dd<260){q.x+=ex/dd*(1-dd/260)*900*d*d;q.y+=ey/dd*(1-dd/260)*900*d*d}}}
+   for(let it=0;it<10;it++)for(const c of C){if(c.cut)continue;const ex=c.b.x-c.a.x,ey=c.b.y-c.a.y,dd=Math.hypot(ex,ey)||1,df=(dd-c.len)/dd;const wa=c.a.fixed?0:1,wb=c.b.fixed?0:1,ww=wa+wb||1;c.a.x+=ex*df*wa/ww;c.a.y+=ey*df*wa/ww;c.b.x-=ex*df*wb/ww;c.b.y-=ey*df*wb/ww}}
+  for(const s of stars)if(s.on&&Math.hypot(s.x-candy.x,s.y-candy.y)<26){s.on=false;got++;K.live('Star')}
+  if(Math.hypot(mouth.x-candy.x,mouth.y-candy.y)<mouth.r*.8){won=.001;wins++;K.note('FED / '+got+' OF 3 STARS')}
+  if(candy.y>K.h+40||candy.x<-60||candy.x>K.w+60){lost++;K.note('LOST / THE FRAME REGROWS ITS CORDS');gen(K)}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(const [ax,ay] of anchors){c.fillStyle='#2a3d5e';c.beginPath();c.arc(ax,ay,6,0,TAU);c.fill()}
+  c.lineWidth=2.4;for(const c2 of C){if(c2.cut)continue;c.strokeStyle='#d9c9a0';c.beginPath();c.moveTo(c2.a.x,c2.a.y);c.lineTo(c2.b.x,c2.b.y);c.stroke()}c.lineWidth=1;
+  for(const s of stars){if(!s.on)continue;c.fillStyle='#f4d84e';c.beginPath();for(let k=0;k<10;k++){const a=k/10*TAU-Math.PI/2,r=k%2?7:14;c.lineTo(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r)}c.closePath();c.fill()}
+  const open=Math.max(0,Math.sin(K.time*3)*.15)+(Math.hypot(mouth.x-candy.x,mouth.y-candy.y)<140?.4:0);c.fillStyle='#ed4e8c';c.beginPath();c.arc(mouth.x,mouth.y,mouth.r,0,TAU);c.fill();c.fillStyle='#05070e';c.beginPath();c.ellipse(mouth.x,mouth.y+6,mouth.r*.65,mouth.r*(.25+open),0,0,TAU);c.fill();c.fillStyle='#faffdb';c.fillRect(mouth.x-14,mouth.y-14,5,5);c.fillRect(mouth.x+9,mouth.y-14,5,5);
+  const gr=c.createLinearGradient(candy.x-14,0,candy.x+14,0);K.SPECTRUM.forEach((s,i)=>gr.addColorStop(i/5,s));c.fillStyle=gr;c.fillRect(candy.x-13,candy.y-13,26,26);c.strokeStyle='#faffdb';c.strokeRect(candy.x-12.5,candy.y-12.5,25,25);
+  c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.moveTo(cur.x-10,cur.y-10);c.lineTo(cur.x+10,cur.y+10);c.moveTo(cur.x+10,cur.y-10);c.lineTo(cur.x-10,cur.y+10);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('STARS '+got+'/3 / CORDS '+C.filter(x=>!x.cut&&x.a===undefined).length,22,h*.12);
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle=p.held?'#ed4e8c':'#faffdb';c.beginPath();c.arc(p.x,p.y,p.held?26:10,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'BLOW / SWIPE':'CLICK-DRAG TO CUT',p.x+14,p.y-8)}
+ },
+ readout:K=>['FED '+K.pad(wins),'CUTS '+K.pad(cutN)+' / LOST '+K.pad(lost)+' / STARS '+got+'/3']
+});
+})();
+</script></body></html>
