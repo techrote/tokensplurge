@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S024 — DEAD PIXELS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A ball knocks out dead pixels to show what was under them. Each miss makes the screen forget some of it again.
+const COLS=16,ROWS=7,PW=110,PH=10,BR=6;
+let bricks=[],ball={x:0,y:0,vx:0,vy:0,stuck:true,trail:[]},pad={x:0,v:0},lost=0,frames=0,speed=330,area={x0:0,x1:0,y0:0,bw:0,bh:0};
+const left=()=>bricks.filter(b=>b>0).length,padY=K=>K.h-80;
+function layout(K){area.x0=K.w*.1;area.x1=K.w*.9;area.y0=K.h*.15;area.bw=(area.x1-area.x0)/COLS;area.bh=Math.min(26,K.h*.3/ROWS)}
+function fill(K){bricks=Array.from({length:COLS*ROWS},()=>K.rand()<.2?2:1)}
+function serve(K){ball={x:pad.x,y:padY(K)-BR-1,vx:0,vy:0,stuck:true,trail:[]}}
+Salvage({id:'S024',title:'DEAD PIXELS',parent:'020 PHOSPHOR BLOOM',
+ help:'<kbd>←</kbd><kbd>→</kbd> MOVE THE PADDLE &nbsp;<kbd>SPACE</kbd> LAUNCH<br>THE POINTER BENDS THE BALL / HOLD TO PULL HARD',
+ aria:'A breakout game. A paddle at the bottom is moved with left and right arrows and Space launches a ball at a wall of dead pixels. Breaking them reveals a coloured picture beneath. Missing the ball makes some pixels die again. The pointer is a gravity lens that bends the ball toward it; holding it pulls harder.',
+ reset(K){layout(K);fill(K);pad={x:K.w/2,v:0};speed=330;lost=frames=0;serve(K)},
+ resize(K){layout(K);pad.x=K.clamp(pad.x,PW/2,K.w-PW/2);if(ball.stuck)serve(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh&&ball.stuck){const a=(K.rand()-.5)*.8;ball.stuck=false;ball.vx=speed*Math.sin(a);ball.vy=-speed*Math.cos(a)}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  pad.v+=dir*2800*dt;pad.v*=Math.exp(-dt*9);pad.x=K.clamp(pad.x+pad.v*dt,PW/2,K.w-PW/2);
+  if(ball.stuck){ball.x=pad.x;return}
+  const p=K.pointer,L=K.w*.06,R=K.w*.94,T=K.h*.1;
+  for(let s=0;s<2;s++){
+   const d2=dt/2;
+   if(p.inside){const dx=p.x-ball.x,dy=p.y-ball.y,d=Math.hypot(dx,dy)+1;if(d<260){const f=(1-d/260)*(p.held?1100:450);ball.vx+=dx/d*f*d2;ball.vy+=dy/d*f*d2}}
+   const sp=Math.hypot(ball.vx,ball.vy)||1,tgt=K.clamp(sp,speed*.8,speed*1.4);ball.vx*=tgt/sp;ball.vy*=tgt/sp;
+   const px=ball.x,py=ball.y;ball.x+=ball.vx*d2;ball.y+=ball.vy*d2;
+   if(ball.x<L){ball.x=L;ball.vx=Math.abs(ball.vx)}else if(ball.x>R){ball.x=R;ball.vx=-Math.abs(ball.vx)}
+   if(ball.y<T){ball.y=T;ball.vy=Math.abs(ball.vy)}
+   const ci=Math.floor((ball.x-area.x0)/area.bw),ri=Math.floor((ball.y-area.y0)/area.bh);
+   if(ci>=0&&ci<COLS&&ri>=0&&ri<ROWS&&bricks[ri*COLS+ci]>0){
+    bricks[ri*COLS+ci]--;speed=Math.min(520,speed+3);
+    const pc=Math.floor((px-area.x0)/area.bw),pr=Math.floor((py-area.y0)/area.bh);
+    if(pc!==ci&&pr===ri)ball.vx=-ball.vx;else if(pr!==ri&&pc===ci)ball.vy=-ball.vy;else{ball.vx=-ball.vx;ball.vy=-ball.vy}
+    ball.x=px;ball.y=py;
+   }
+   const py2=padY(K);if(ball.vy>0&&ball.y+BR>=py2&&ball.y<py2+PH+BR&&Math.abs(ball.x-pad.x)<PW/2+BR){const rel=K.clamp((ball.x-pad.x)/(PW/2),-1,1),a=rel*1.0;ball.y=py2-BR;ball.vx=speed*Math.sin(a)+pad.v*.15;ball.vy=-speed*Math.cos(a)}
+  }
+  ball.trail.push([ball.x,ball.y]);if(ball.trail.length>14)ball.trail.shift();
+  if(ball.y>K.h+20){lost++;const dead=[];bricks.forEach((b,i)=>{if(b===0)dead.push(i)});for(let k=0;k<8&&dead.length;k++)bricks[dead.splice(Math.floor(K.rand()*dead.length),1)[0]]=1;K.note('AMNESIA / PIXELS FORGOTTEN');serve(K)}
+  if(left()===0){frames++;K.note('FRAME RECOVERED / '+K.pad(frames));fill(K);speed=330;serve(K)}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,aw=area.x1-area.x0,ah=area.bh*ROWS;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';c.strokeRect(w*.06,h*.1,w*.88,h*.9+10);
+  const g=c.createLinearGradient(area.x0,0,area.x1,0);K.SPECTRUM.forEach((s,i)=>g.addColorStop(i/5,s));c.fillStyle=g;c.fillRect(area.x0,area.y0,aw,ah);
+  for(let i=0;i<3;i++){c.strokeStyle=i%2?'#f8ffff':'#050912';c.lineWidth=i%2?1.5:5;c.beginPath();c.arc(w/2,area.y0+ah/2,ah*(.25+i*.12),0,TAU);c.stroke()}c.lineWidth=1;
+  for(let r=0;r<ROWS;r++)for(let q=0;q<COLS;q++){const b=bricks[r*COLS+q];if(!b)continue;const x=area.x0+q*area.bw,y=area.y0+r*area.bh;c.fillStyle=b>1?'#1b2a4a':'#0a0f1e';c.fillRect(x,y,area.bw-1,area.bh-1);c.strokeStyle='#2a3d5e';c.strokeRect(x+.5,y+.5,area.bw-2,area.bh-2);if(K.hash(r*31+q)>.6){c.fillStyle=K.DAMAGE[(r+q)%6];c.fillRect(x+K.hash(q+r*7)*(area.bw-6),y+K.hash(q*3+r)*(area.bh-6),3,3)}}
+  const py=padY(K);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(pad.x-PW/2,py,PW,PH);c.lineWidth=1;
+  ball.trail.forEach(([x,y],k)=>{c.globalAlpha=k/14*.4;c.fillStyle='#faffdb';c.fillRect(x-2,y-2,4,4)});c.globalAlpha=1;c.fillStyle='#faffdb';c.beginPath();c.arc(ball.x,ball.y,BR,0,TAU);c.fill();
+  c.font='9px monospace';if(ball.stuck){c.fillText('SPACE TO LAUNCH',pad.x-40,py+28)}
+  if(p.inside){c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,260,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'PULLING':'LENS',p.x+8,p.y-8)}
+ },
+ readout:K=>['REVEALED '+((1-left()/(COLS*ROWS))*100).toFixed(1)+'%','FRAMES '+K.pad(frames)+' / FORGOT '+K.pad(lost)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S031 — HERD</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Glyphs that have started to move together. Drive them into the pen before the flock loses interest.
+const NB=90;
+let b=[],sh={x:0,y:0,vx:0,vy:0},pen={x:0,y:0,r:80},inside=0,holdT=0,wins=0,tries=0;
+function newPen(K){pen={x:K.w*(.2+K.rand()*.6),y:K.h*(.25+K.rand()*.5),r:Math.min(K.w,K.h)*.11};holdT=0}
+Salvage({id:'S031',title:'HERD',parent:'014 FALSE COLOUR NECROSIS',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE SHEPHERD / THE FLOCK FLEES IT<br>DRIVE THEM INTO THE RING / THE POINTER LURES, HOLD TO SCATTER',
+ aria:'A flock of coloured glyphs moves together like starlings. Arrow keys move a shepherd that the flock flees from; the goal is to drive most of the flock into a ring and hold them there. The pointer lures the flock toward it; holding it scatters them.',
+ reset(K){b=Array.from({length:NB},(_,i)=>({x:K.rand()*K.w,y:K.rand()*K.h,vx:(K.rand()-.5)*60,vy:(K.rand()-.5)*60,c:i%6,ch:'01▒#%/\\|'[i%8]}));sh={x:K.w/2,y:K.h/2,vx:0,vy:0};wins=0;newPen(K)},
+ key(K,e,fresh){if(/^Arrow|^Key[WASD]$|^Space$/.test(e.code))return true},
+ step(K,dt){
+  const ax=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),ay=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  sh.vx+=ax*1500*dt;sh.vy+=ay*1500*dt;const f=Math.exp(-dt*5);sh.vx*=f;sh.vy*=f;sh.x=K.clamp(sh.x+sh.vx*dt,0,K.w);sh.y=K.clamp(sh.y+sh.vy*dt,0,K.h);
+  const p=K.pointer;let cx=0,cy=0;for(const o of b){cx+=o.x;cy+=o.y}cx/=NB;cy/=NB;inside=0;
+  for(const o of b){
+   let sx=0,sy=0,ax2=0,ay2=0,cn=0,cohx=0,cohy=0;
+   for(const q of b){if(q===o)continue;const dx=q.x-o.x,dy=q.y-o.y,d=Math.hypot(dx,dy);if(d<26&&d>0){sx-=dx/d*(26-d)}if(d<90){ax2+=q.vx;ay2+=q.vy;cohx+=dx;cohy+=dy;cn++}}
+   let fx=sx*3,fy=sy*3;if(cn){fx+=(ax2/cn-o.vx)*1.2+cohx/cn*.35;fy+=(ay2/cn-o.vy)*1.2+cohy/cn*.35}
+   fx+=(cx-o.x)*.05;fy+=(cy-o.y)*.05;
+   let dx=o.x-sh.x,dy=o.y-sh.y,d=Math.hypot(dx,dy)+.1;if(d<150){const q=(1-d/150);fx+=dx/d*q*q*2600;fy+=dy/d*q*q*2600}
+   if(p.inside){dx=p.x-o.x;dy=p.y-o.y;d=Math.hypot(dx,dy)+.1;if(d<260){const q=1-d/260,s=p.held?-2200:520;fx+=dx/d*q*s;fy+=dy/d*q*s}}
+   const m=40;if(o.x<m)fx+=(m-o.x)*8;if(o.x>K.w-m)fx-=(o.x-(K.w-m))*8;if(o.y<m)fy+=(m-o.y)*8;if(o.y>K.h-m)fy-=(o.y-(K.h-m))*8;
+   o.vx+=fx*dt;o.vy+=fy*dt;const sp=Math.hypot(o.vx,o.vy);if(sp>190){o.vx*=190/sp;o.vy*=190/sp}if(sp<30&&sp>0){o.vx*=30/sp;o.vy*=30/sp}
+   o.x+=o.vx*dt;o.y+=o.vy*dt;if(Math.hypot(o.x-pen.x,o.y-pen.y)<pen.r)inside++;
+  }
+  if(inside>=NB*.7){holdT+=dt;if(holdT>2){wins++;K.note('PENNED / '+inside+' OF '+NB+' / THEY WILL NOT STAY');newPen(K)}}else holdT=Math.max(0,holdT-dt*.5);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle=inside>=NB*.7?'#f4d84e':'#2f7d6a';c.lineWidth=2;c.setLineDash([6,5]);c.lineDashOffset=-K.time*14;c.beginPath();c.arc(pen.x,pen.y,pen.r,0,TAU);c.stroke();c.setLineDash([]);c.lineWidth=1;
+  c.fillStyle='#ffffff22';c.fillRect(pen.x-30,pen.y+pen.r+10,60,3);c.fillStyle='#f4d84e';c.fillRect(pen.x-30,pen.y+pen.r+10,60*Math.min(1,holdT/2),3);
+  c.font='11px monospace';c.textAlign='center';
+  for(const o of b){c.globalAlpha=.85;c.fillStyle=K.DAMAGE[o.c];c.save();c.translate(o.x,o.y);c.rotate(Math.atan2(o.vy,o.vx));c.fillText(o.ch,0,4);c.restore()}
+  c.globalAlpha=1;c.textAlign='left';c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('IN PEN '+inside+' / '+NB,pen.x-26,pen.y-pen.r-10);
+  c.strokeStyle='#faffdb';c.lineWidth=1.5;c.beginPath();c.arc(sh.x,sh.y,7,0,TAU);c.stroke();c.globalAlpha=.25;c.beginPath();c.arc(sh.x,sh.y,150,0,TAU);c.stroke();c.globalAlpha=1;c.lineWidth=1;c.fillText('SHEPHERD',sh.x+12,sh.y-10);
+  if(p.inside){c.globalAlpha=.35;c.beginPath();c.arc(p.x,p.y,260,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'SCATTER':'LURE',p.x+8,p.y-8)}
+ },
+ readout:K=>['PENNED '+K.pad(inside,2)+' / '+NB,'HERDS '+K.pad(wins)]
+});
+})();
+</script></body></html>

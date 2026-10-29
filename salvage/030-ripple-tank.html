@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#030610"><title>S030 — RIPPLE TANK</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Two sources. Bring the crests together over the ring and the surface remembers a pattern.
+const CELL=6;
+let cols=0,rows=0,H=null,P=null,ic=null,id=null,A={x:0,y:0,w:.6},B={x:0,y:0,w:.6},T={x:0,y:0},acc=0,rms=0,holdT=0,wins=0,tt=0,pal=[];
+for(let i=0;i<256;i++){const v=(i-128)/128,a=Math.min(1,Math.abs(v)*1.6);pal.push(v<0?[Math.round(6+a*20),Math.round(10+a*70),Math.round(30+a*190)]:[Math.round(6+a*249),Math.round(10+a*60+a*a*150),Math.round(30+a*140+a*a*85)])}
+function build(K){cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);H=new Float32Array(cols*rows);P=new Float32Array(cols*rows);ic=document.createElement('canvas');ic.width=cols;ic.height=rows;id=ic.getContext('2d').createImageData(cols,rows);A={x:cols*.3,y:rows*.5,w:.6};respawn(K)}
+function respawn(K){B={x:cols*(.55+K.rand()*.35),y:rows*(.25+K.rand()*.5),w:.35+K.rand()*.5};T={x:cols*(.45+K.rand()*.25),y:rows*(.2+K.rand()*.6)};acc=0;holdT=0}
+Salvage({id:'S030',title:'RIPPLE TANK',parent:'019 MOIRE APPARITION',bg:'#030610',scanlines:false,
+ help:'<kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> MOVE SOURCE A &nbsp;<kbd>SPACE</kbd> HOLD TO RAISE ITS FREQUENCY<br>MAKE THE WAVES MEET OVER THE RING / THE POINTER DROPS RIPPLES',
+ aria:'A simulated water surface with two wave sources, A and B. Arrow keys move source A and holding Space raises its frequency, releasing lowers it. The goal is to make the waves reinforce at a ring target; holding there fills a meter. The pointer drops ripples as it moves and holding it makes a continuous source.',
+ reset(K){build(K);wins=0;tt=0},
+ resize(K){build(K)},
+ key(K,e,fresh){if(e.code==='Space'||/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const ax=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),ay=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  A.x=K.clamp(A.x+ax*22*dt,2,cols-3);A.y=K.clamp(A.y+ay*22*dt,2,rows-3);A.w=K.clamp(A.w+(K.keys.has('Space')?1:-1)*dt*.25,.3,1.0);
+  const p=K.pointer;
+  for(let s=0;s<2;s++){
+   tt++;
+   for(let j=1;j<rows-1;j++)for(let i=1;i<cols-1;i++){const n=j*cols+i,lap=H[n-1]+H[n+1]+H[n-cols]+H[n+cols]-4*H[n];const e=Math.min(i,j,cols-1-i,rows-1-j);let v=2*H[n]-P[n]+.25*lap;v*=e<12?1-(12-e)*.012:.9994;P[n]=v}
+   const t=P;P=H;H=t;
+   H[Math.round(A.y)*cols+Math.round(A.x)]+=Math.sin(tt*A.w)*1.2;H[Math.round(B.y)*cols+Math.round(B.x)]+=Math.sin(tt*B.w)*1.2;
+   if(p.inside){const px=Math.round(p.x/CELL),py=Math.round(p.y/CELL);if(px>1&&py>1&&px<cols-2&&py<rows-2){if(p.held)H[py*cols+px]+=Math.sin(tt*.7)*1.2;else if(p.speed>.05)H[py*cols+px]+=Math.min(1.5,p.speed*.5)*Math.sin(tt*.9)}}
+  }
+  const tv=H[Math.round(T.y)*cols+Math.round(T.x)];acc=acc*.97+tv*tv*.03;rms=Math.sqrt(acc);
+  if(rms>=.55){holdT+=dt;if(holdT>1.5){wins++;K.note('PATTERN REMEMBERED / '+K.pad(wins));respawn(K)}}else holdT=Math.max(0,holdT-dt*.6);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,d=id.data;
+  for(let n=0;n<H.length;n++){const k=pal[K.clamp(Math.round(128+H[n]*64),0,255)],o=n*4;d[o]=k[0];d[o+1]=k[1];d[o+2]=k[2];d[o+3]=255}
+  ic.getContext('2d').putImageData(id,0,0);c.imageSmoothingEnabled=true;c.drawImage(ic,0,0,cols*CELL,rows*CELL);
+  const tx=T.x*CELL,ty=T.y*CELL,pr=1+Math.sin(K.time*4)*.06;c.strokeStyle=rms>=.55?'#f4d84e':'#faffdb';c.lineWidth=1.6;c.beginPath();c.arc(tx,ty,24*pr,0,TAU);c.stroke();c.lineWidth=1;
+  c.fillStyle='#ffffff33';c.fillRect(tx-24,ty+32,48,3);c.fillStyle='#f4d84e';c.fillRect(tx-24,ty+32,48*Math.min(1,holdT/1.5),3);
+  c.font='9px monospace';c.fillStyle='#faffdb';c.textAlign='center';c.fillText('TARGET '+rms.toFixed(2)+' / 0.55',tx,ty-32);c.textAlign='left';
+  for(const [s,l] of [[A,'A'],[B,'B']]){const x=s.x*CELL,y=s.y*CELL;c.strokeStyle='#faffdb';c.beginPath();c.arc(x,y,5,0,TAU);c.moveTo(x-9,y);c.lineTo(x+9,y);c.moveTo(x,y-9);c.lineTo(x,y+9);c.stroke();c.fillStyle='#faffdb';c.fillText(l+' / ω '+s.w.toFixed(2),x+12,y-8)}
+  if(p.inside){c.globalAlpha=.6;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,12,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'SOURCE':'DROP',p.x+16,p.y)}
+ },
+ readout:K=>['TARGET '+rms.toFixed(2),'PATTERNS '+K.pad(wins)+' / ω '+A.w.toFixed(2)+'-'+B.w.toFixed(2)]
+});
+})();
+</script></body></html>

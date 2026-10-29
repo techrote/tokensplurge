@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04070c"><title>S026 — BACKLIGHT GRID</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Every panel still has its own backlight. Pressing one flips it and its four neighbours. Turn them all off.
+let n=5,cells=null,cur={r:2,c:2},moves=0,wins=0,solvedT=0,flash=0;
+function press(r,c){for(const [dr,dc] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]){const a=r+dr,b=c+dc;if(a>=0&&b>=0&&a<n&&b<n)cells[a*n+b]^=1}}
+function gen(K){cells=new Uint8Array(n*n);for(let k=0;k<n*n*2;k++)press(Math.floor(K.rand()*n),Math.floor(K.rand()*n));if(!cells.some(Boolean))press(0,0);cur={r:Math.floor(n/2),c:Math.floor(n/2)};solvedT=0}
+const geo=K=>{const side=Math.min(K.w,K.h*.78)*.7,cell=side/n;return{side,cell,x0:(K.w-side)/2,y0:(K.h-side)/2+8}};
+const lit=()=>cells.reduce((a,b)=>a+b,0);
+function at(K,x,y){const g=geo(K),c=Math.floor((x-g.x0)/g.cell),r=Math.floor((y-g.y0)/g.cell);return r>=0&&c>=0&&r<n&&c<n?[r,c]:null}
+function doPress(K,r,c){if(solvedT)return;press(r,c);moves++;flash=1;if(!lit()){wins++;solvedT=.001;K.note('BACKLIGHT OFF / PANEL '+K.pad(wins))}}
+Salvage({id:'S026',title:'BACKLIGHT GRID',parent:'040 THE BACKLIGHT STILL WORKS',bg:'#04070c',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> PRESS A PANEL<br>EACH PRESS FLIPS A CROSS OF FIVE / HOVER TO PREVIEW IT',
+ aria:'A grid of glowing panels. Arrow keys move a cursor and Space presses the panel, flipping it and its four neighbours. The goal is to turn every panel off. Hovering with the pointer previews which panels a press would flip; clicking presses. Each solved grid is followed by a larger one.',
+ reset(K){n=5;wins=moves=0;gen(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)doPress(K,cur.r,cur.c);return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];
+  if(d){if(fresh){cur.r=K.clamp(cur.r+d[0],0,n-1);cur.c=K.clamp(cur.c+d[1],0,n-1)}return true}
+ },
+ down(K,x,y){const a=at(K,x,y);if(!a)return false;cur={r:a[0],c:a[1]};doPress(K,a[0],a[1]);return true},
+ step(K,dt){flash=Math.max(0,flash-dt*4);if(solvedT){solvedT+=dt;if(solvedT>2.2){if(wins%2===0&&n<7)n++;gen(K)}}},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K),L=lit()/(n*n);c.fillStyle='#04070c';c.fillRect(0,0,w,h);
+  const bg=c.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)*.6);bg.addColorStop(0,'rgba(230,238,216,'+(.04+L*.22)+')');bg.addColorStop(1,'rgba(230,238,216,0)');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  const hv=p.inside?at(K,p.x,p.y):null,prev=new Set();if(hv)for(const [dr,dc] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]){const a=hv[0]+dr,b=hv[1]+dc;if(a>=0&&b>=0&&a<n&&b<n)prev.add(a*n+b)}
+  for(let r=0;r<n;r++)for(let q=0;q<n;q++){
+   const i=r*n+q,x=g.x0+q*g.cell+4,y=g.y0+r*g.cell+4,s=g.cell-8,on=cells[i];
+   if(on){const gr=c.createLinearGradient(x,y,x+s,y+s);gr.addColorStop(0,'#fffdec');gr.addColorStop(1,'#9cbaae');c.fillStyle=gr;c.globalAlpha=.88+Math.sin(K.time*3+i)*.04}else{c.fillStyle='#0b1118';c.globalAlpha=1}
+   c.fillRect(x,y,s,s);c.globalAlpha=1;c.strokeStyle=on?'#e6eed8':'#1d2d3a';c.strokeRect(x+.5,y+.5,s-1,s-1);
+   if(on){c.fillStyle='#3c5154';c.globalAlpha=.18;for(let k=0;k<s;k+=6)c.fillRect(x+k,y,1,s);c.globalAlpha=1}
+   if(prev.has(i)){c.strokeStyle='#ed4e8c';c.lineWidth=2;c.strokeRect(x+3,y+3,s-6,s-6);c.lineWidth=1}
+  }
+  const cx=g.x0+cur.c*g.cell,cy=g.y0+cur.r*g.cell,b=3+Math.sin(K.time*5)*1.5;c.strokeStyle='#f4d84e';c.lineWidth=2;c.strokeRect(cx+b,cy+b,g.cell-b*2,g.cell-b*2);c.lineWidth=1;
+  if(flash){c.globalAlpha=flash*.12;c.fillStyle='#fff';c.fillRect(0,0,w,h);c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(n+'×'+n+' PANEL',g.x0,g.y0-12);
+ },
+ readout:K=>['LIT '+K.pad(lit(),2)+' / '+K.pad(n*n,2),'MOVES '+K.pad(moves)+' / CLEARED '+K.pad(wins)]
+});
+})();
+</script></body></html>

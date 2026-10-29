@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S027 — REASSEMBLE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The last good frame, cut into tiles with one missing. Slide them back into place.
+let N=4,board=[],px=[],py=[],pic=null,moves=0,wins=0,solvedT=0,geo={x0:0,y0:0,side:0,cell:0};
+const PS=480;
+function paint(K){
+ pic=document.createElement('canvas');pic.width=pic.height=PS;const c=pic.getContext('2d'),sh=K.rand()*6;
+ const g=c.createLinearGradient(0,0,PS,PS);K.SPECTRUM.forEach((s,i)=>g.addColorStop(((i+sh)%6)/5%1,s));
+ c.fillStyle='#071022';c.fillRect(0,0,PS,PS);const g2=c.createLinearGradient(0,0,PS,0);K.SPECTRUM.forEach((s,i)=>g2.addColorStop(i/5,s));c.fillStyle=g2;c.fillRect(30,30,PS-60,PS-60);
+ c.globalCompositeOperation='multiply';for(let i=0;i<40;i++){c.fillStyle='rgba(2,4,26,'+(.12+.3*(.5+.5*Math.sin(i*.4+sh)))+')';c.fillRect(30,30+i*(PS-60)/40,PS-60,(PS-60)/80)}c.globalCompositeOperation='source-over';
+ for(let i=0;i<4;i++){c.strokeStyle=i%2?'#f8ffff':'#050912';c.lineWidth=i%2?2:8;c.beginPath();c.arc(PS/2,PS/2,60+i*34,0,K.TAU);c.stroke()}
+ c.fillStyle='#f4f8ef';c.font='bold 40px monospace';c.textAlign='center';c.fillText('LAST GOOD',PS/2,PS-48);c.textAlign='left';c.font='12px monospace';c.fillText('026 / '+K.seed.toString(16).toUpperCase(),40,26);
+}
+function layout(K){const side=Math.min(K.w,K.h*.8)*.72;geo={side,cell:side/N,x0:(K.w-side)/2,y0:(K.h-side)/2+8}}
+function posOf(i){return[i%N,Math.floor(i/N)]}
+function snap(){for(let i=0;i<N*N;i++){const [c,r]=posOf(i);px[board[i]]=c;py[board[i]]=r}}
+function shuffle(K){
+ board=Array.from({length:N*N},(_,i)=>i);let b=N*N-1,last=-1;
+ for(let k=0;k<N*N*40;k++){const [c,r]=posOf(b),opts=[];if(c>0)opts.push(b-1);if(c<N-1)opts.push(b+1);if(r>0)opts.push(b-N);if(r<N-1)opts.push(b+N);const o=opts.filter(x=>x!==last),m=o[Math.floor(K.rand()*o.length)];board[b]=board[m];board[m]=N*N-1;last=b;b=m}
+ if(board.every((v,i)=>v===i)){const t=board[0];board[0]=board[1];board[1]=t}
+ snap();
+}
+const blank=()=>board.indexOf(N*N-1);
+function slideTile(K,m){const b=blank();[board[b],board[m]]=[board[m],board[b]];moves++;if(board.every((v,i)=>v===i)){wins++;solvedT=.001;K.note('FRAME RESTORED / '+K.pad(wins))}}
+function tryDir(K,dx,dy){const [bc,br]=posOf(blank()),sc=bc-dx,sr=br-dy;if(sc<0||sr<0||sc>=N||sr>=N)return;slideTile(K,sr*N+sc)}
+function init(K){layout(K);paint(K);shuffle(K);solvedT=0}
+Salvage({id:'S027',title:'REASSEMBLE',parent:'026 THE LAST GOOD FRAME',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> SLIDE A TILE INTO THE GAP<br>HOVER TO PEEK AT THE ORIGINAL / HOLD TO SEE IT WHOLE / CLICK A TILE',
+ aria:'A sliding tile puzzle of a coloured picture with one tile missing. Arrow keys slide the tile on the opposite side of the gap in the arrow direction; clicking a tile next to the gap slides it too. Hovering the pointer over the board overlays a faint copy of the solved picture, and holding shows it more strongly. Solving it starts a larger puzzle.',
+ reset(K){N=4;wins=moves=0;init(K)},
+ resize(K){layout(K)},
+ key(K,e,fresh){const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[e.code];if(d){if(fresh&&!solvedT)tryDir(K,d[0],d[1]);return true}},
+ down(K,x,y){if(solvedT)return false;const c=Math.floor((x-geo.x0)/geo.cell),r=Math.floor((y-geo.y0)/geo.cell);if(c<0||r<0||c>=N||r>=N)return false;const [bc,br]=posOf(blank());if(Math.abs(c-bc)+Math.abs(r-br)===1){slideTile(K,r*N+c);return true}return false},
+ step(K,dt){
+  const k=Math.min(1,dt*14);for(let i=0;i<N*N;i++){const [c,r]=posOf(i),v=board[i];px[v]+=(c-px[v])*k;py[v]+=(r-py[v])*k}
+  if(solvedT){solvedT+=dt;if(solvedT>2.4){if(wins%2===0&&N<5)N++;init(K)}}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K,s=PS/N;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.fillStyle='#0c1420';c.fillRect(geo.x0-8,geo.y0-8,geo.side+16,geo.side+16);
+  const bv=N*N-1,done=solvedT>0;
+  for(let v=0;v<N*N;v++){if(v===bv&&!done)continue;const x=geo.x0+px[v]*geo.cell,y=geo.y0+py[v]*geo.cell,sx=(v%N)*s,sy=Math.floor(v/N)*s;c.drawImage(pic,sx,sy,s,s,x,y,geo.cell-(done?0:2),geo.cell-(done?0:2));if(!done){c.strokeStyle='#e9fbff55';c.strokeRect(x+.5,y+.5,geo.cell-3,geo.cell-3)}}
+  const inside=p.inside&&p.x>geo.x0&&p.x<geo.x0+geo.side&&p.y>geo.y0&&p.y<geo.y0+geo.side;
+  if(inside&&!done){c.globalAlpha=p.held?.92:.22;c.drawImage(pic,geo.x0,geo.y0,geo.side,geo.side);c.globalAlpha=1}
+  if(done){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.strokeRect(geo.x0-6,geo.y0-6,geo.side+12,geo.side+12);c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(N+'×'+N+' / '+(inside?(p.held?'ORIGINAL':'PEEK'):'ARROWS SLIDE INTO THE GAP'),geo.x0,geo.y0-14);
+ },
+ readout:K=>{let ok=0;for(let i=0;i<N*N;i++)ok+=board[i]===i;return['PLACED '+K.pad(ok,2)+' / '+K.pad(N*N,2),'MOVES '+K.pad(moves)+' / RESTORED '+K.pad(wins)]}
+});
+})();
+</script></body></html>

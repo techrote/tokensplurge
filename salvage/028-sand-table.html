@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S028 — SAND TABLE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Pour the memory into the vessel. Most of it will miss.
+const CELL=4,RGB=[[5,7,14],[185,200,205],...['#10f4cf','#196fff','#f4d84e','#ed4e8c','#8d78ff','#b7f6ff'].map(s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)))];
+let cols=0,rows=0,g=null,ic=null,id=null,ex=0,V={x0:0,x1:0,y0:0,y1:0},interior=1,filled=0,wins=0,poured=0,col=2,flip=0,chk=0,doneT=0;
+const idx=(x,y)=>y*cols+x;
+function build(K){
+ cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);g=new Uint8Array(cols*rows);ic=document.createElement('canvas');ic.width=cols;ic.height=rows;id=ic.getContext('2d').createImageData(cols,rows);
+ const vw=Math.floor(cols*.26),cx=Math.floor(cols*(.3+K.rand()*.4));V={x0:cx-Math.floor(vw/2),x1:cx+Math.floor(vw/2),y0:Math.floor(rows*.58),y1:Math.floor(rows*.86)};
+ for(let y=V.y0;y<=V.y1;y++){g[idx(V.x0,y)]=1;g[idx(V.x1,y)]=1}for(let x=V.x0;x<=V.x1;x++)g[idx(x,V.y1)]=1;
+ for(let k=0;k<14;k++){const a=Math.min(k,12);g[idx(V.x0-a,V.y0-k)]=1;g[idx(V.x1+a,V.y0-k)]=1}
+ for(let k=0;k<4;k++){const px=Math.floor(K.rand()*cols*.8+cols*.1),py=Math.floor(rows*(.18+K.rand()*.28));for(let q=0;q<10;q++){const x=px+q,y=py+(q>>1);if(x<cols&&y<rows)g[idx(x,y)]=1}}
+ interior=(V.x1-V.x0-1)*(V.y1-V.y0);filled=0;doneT=0;
+}
+Salvage({id:'S028',title:'SAND TABLE',parent:'008 LIQUID MEMORY',
+ help:'<kbd>←</kbd><kbd>→</kbd> MOVE THE HOPPER &nbsp;<kbd>SPACE</kbd> POUR<br>FILL THE VESSEL / THE POINTER VACUUMS SAND, HOLD FOR FULL SUCTION',
+ aria:'A falling sand simulation. Left and right arrows move a hopper at the top and Space pours coloured sand, which piles up and slides. The goal is to fill a vessel of walls near the bottom, past angled walls and obstacles. The pointer vacuums sand away; holding it gives full suction.',
+ reset(K){build(K);ex=cols/2;wins=poured=0},
+ resize(K){build(K);ex=cols/2},
+ key(K,e,fresh){if(e.code==='Space'||/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);ex=K.clamp(ex+dir*50*dt,4,cols-5);
+  if(K.keys.has('Space')){const n=Math.ceil(dt*420);for(let k=0;k<n;k++){const x=Math.round(ex+(K.rand()-.5)*5),i=idx(x,2);if(!g[i]){g[i]=col;poured++}}if(K.rand()<dt*.8)col=2+(col-1)%6}
+  const p=K.pointer;if(p.inside){const cx=p.x/CELL,cy=p.y/CELL,r=p.held?7:4,pr=p.held?1:.1;for(let y=Math.max(0,Math.floor(cy-r));y<=Math.min(rows-1,Math.ceil(cy+r));y++)for(let x=Math.max(0,Math.floor(cx-r));x<=Math.min(cols-1,Math.ceil(cx+r));x++){const i=idx(x,y);if(g[i]>1&&Math.hypot(x-cx,y-cy)<r&&K.rand()<pr)g[i]=0}}
+  flip^=1;
+  for(let y=rows-1;y>=0;y--){
+   if(y===rows-1){for(let x=0;x<cols;x++)if(g[idx(x,y)]>1)g[idx(x,y)]=0;continue}
+   for(let k=0;k<cols;k++){const x=flip?k:cols-1-k,i=idx(x,y),t=g[i];if(t<2)continue;const b=i+cols;
+    if(!g[b]){g[b]=t;g[i]=0}else{const dl=x>0&&!g[b-1]&&!g[i-1],dr=x<cols-1&&!g[b+1]&&!g[i+1];if(dl&&dr){const m=K.rand()<.5?-1:1;g[b+m]=t;g[i]=0}else if(dl){g[b-1]=t;g[i]=0}else if(dr){g[b+1]=t;g[i]=0}}}
+  }
+  chk-=dt;if(chk<=0){chk=.25;let f=0;for(let y=V.y0;y<V.y1;y++)for(let x=V.x0+1;x<V.x1;x++)if(g[idx(x,y)]>1)f++;filled=f}
+  if(filled/interior>=.85&&!doneT){doneT=.001;wins++;K.note('VESSEL FILLED / '+K.pad(wins)+' / THE REST WAS LOST')}
+  if(doneT){doneT+=dt;if(doneT>2.2)build(K)}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,d=id.data;
+  for(let n=0;n<g.length;n++){const col=RGB[g[n]],o=n*4;d[o]=col[0];d[o+1]=col[1];d[o+2]=col[2];d[o+3]=255}
+  ic.getContext('2d').putImageData(id,0,0);c.imageSmoothingEnabled=false;c.drawImage(ic,0,0,cols*CELL,rows*CELL);c.imageSmoothingEnabled=true;
+  const lvl=V.y1-(V.y1-V.y0)*.85;c.strokeStyle='#faffdb';c.globalAlpha=.5;c.setLineDash([4,4]);c.beginPath();c.moveTo(V.x0*CELL,lvl*CELL);c.lineTo(V.x1*CELL,lvl*CELL);c.stroke();c.setLineDash([]);c.globalAlpha=1;
+  c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('VESSEL '+(filled/interior*100).toFixed(0)+'% / TARGET 85%',V.x0*CELL,V.y1*CELL+16);
+  const hx=ex*CELL;c.strokeStyle='#faffdb';c.lineWidth=1.5;c.beginPath();c.moveTo(hx-16,6);c.lineTo(hx-6,22);c.lineTo(hx+6,22);c.lineTo(hx+16,6);c.stroke();c.lineWidth=1;
+  if(p.inside){c.globalAlpha=.5;c.beginPath();c.arc(p.x,p.y,(p.held?7:4)*CELL,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'SUCTION':'DRAFT',p.x+(p.held?7:4)*CELL+6,p.y)}
+ },
+ readout:K=>['VESSEL '+(filled/interior*100).toFixed(0)+'%','FILLED '+K.pad(wins)+' / POURED '+K.pad(poured,5)]
+});
+})();
+</script></body></html>

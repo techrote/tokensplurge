@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S029 — SOFT LANDING</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Land on the one flat piece of a surface that has otherwise been scrambled.
+const GRAV=110,THRUST=290,STEP=8;
+let L={x:0,y:0,vx:0,vy:0,a:0,thrust:false},ty=[],pad={x:0,w:90,y:0},fuel=100,landed=0,crashed=0,state='fly',stateT=0,debris=[];
+const groundY=(K,x)=>{const f=K.clamp(x/STEP,0,ty.length-1.001),i=Math.floor(f);return K.lerp(ty[i],ty[i+1],f-i)};
+function terrain(K){
+ const n=Math.ceil(K.w/STEP)+2;ty=[];for(let i=0;i<n;i++)ty.push(K.h*(.8-.2*K.noise(i*.06,K.rand()*0+K.seed%50)-.06*K.noise(i*.2,9)));
+ const pw=Math.max(60,90-landed*3);pad={x:K.w*(.15+K.rand()*.7),w:pw,y:0};const a=Math.floor((pad.x-pw/2)/STEP),b=Math.ceil((pad.x+pw/2)/STEP);let hy=0,cnt=0;for(let i=a;i<=b;i++){hy+=ty[i];cnt++}hy/=cnt;pad.y=hy;for(let i=a;i<=b;i++)ty[i]=hy;
+ L={x:K.w*(.1+K.rand()*.8),y:K.h*.14,vx:(K.rand()-.5)*60,vy:0,a:0,thrust:false};state='fly';stateT=0;debris=[];
+}
+Salvage({id:'S029',title:'SOFT LANDING',parent:'034 INK MIGRATION',
+ help:'<kbd>←</kbd><kbd>→</kbd> ROTATE &nbsp;<kbd>↑</kbd> / <kbd>SPACE</kbd> THRUST<br>LAND GENTLY ON THE FLAT STRIP / THE POINTER GUSTS, HOLD TO TRACTOR',
+ aria:'A small lander falls toward a rugged surface with one flat landing strip. Left and right arrows rotate it, Up or Space fires the thruster, which burns limited fuel. Landing slowly and upright on the strip scores and refuels; anything else is a crash. Moving the pointer near the lander makes wind gusts; holding it pulls the lander toward the pointer.',
+ reset(K){landed=crashed=0;fuel=100;terrain(K)},
+ resize(K){terrain(K)},
+ key(K,e,fresh){if(e.code==='Space'||/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  if(state!=='fly'){stateT+=dt;for(const d of debris){d.x+=d.vx*dt;d.y+=d.vy*dt;d.vy+=GRAV*dt;d.t+=dt}if(stateT>1.9){if(state==='landed')fuel=Math.min(100,fuel+35);else fuel=Math.max(fuel,60);terrain(K)}return}
+  const dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  L.a+=dir*2.4*dt;L.thrust=(K.keys.has('ArrowUp')||K.keys.has('KeyW')||K.keys.has('Space'))&&fuel>0;
+  let ax=0,ay=GRAV;if(L.thrust){ax+=Math.sin(L.a)*THRUST;ay-=Math.cos(L.a)*THRUST;fuel=Math.max(0,fuel-24*dt)}
+  const p=K.pointer;if(p.inside){const dx=p.x-L.x,dy=p.y-L.y,d=Math.hypot(dx,dy)+1;if(d<240){const q=1-d/240;ax+=K.clamp(p.vx,-400,400)*.25*q;ay+=K.clamp(p.vy,-400,400)*.1*q;if(p.held){ax+=dx/d*170*q;ay+=dy/d*170*q}}}
+  L.vx+=ax*dt;L.vy+=ay*dt;L.x+=L.vx*dt;L.y+=L.vy*dt;
+  if(L.x<0){L.x=0;L.vx=Math.abs(L.vx)}if(L.x>K.w){L.x=K.w;L.vx=-Math.abs(L.vx)}
+  if(L.y+10>=groundY(K,L.x)){
+   const onPad=Math.abs(L.x-pad.x)<pad.w/2,soft=Math.abs(L.vy)<70&&Math.abs(L.vx)<45&&Math.abs(L.a)<.3;
+   if(onPad&&soft){state='landed';landed++;L.y=pad.y-10;L.vx=L.vy=0;K.note('LANDED / FUEL +35')}
+   else{state='crash';crashed++;K.note(onPad?'TOO FAST / TOO TILTED':'NOT ON THE STRIP');for(let k=0;k<26;k++){const a=K.rand()*K.TAU,v=40+K.rand()*140;debris.push({x:L.x,y:L.y,vx:Math.cos(a)*v+L.vx*.3,vy:Math.sin(a)*v-60,t:0})}}
+  }
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  for(let i=0;i<60;i++){c.globalAlpha=.2+K.hash(i)*.4;c.fillStyle='#b7f6ff';c.fillRect(K.hash(i*3.1)*w,K.hash(i*7.3)*h*.7,1.5,1.5)}c.globalAlpha=1;
+  const gr=c.createLinearGradient(0,h*.6,0,h);gr.addColorStop(0,'#1d2d6a');gr.addColorStop(1,'#080c22');
+  c.beginPath();c.moveTo(0,h);ty.forEach((y,i)=>c.lineTo(i*STEP,y));c.lineTo(w+STEP,h);c.closePath();c.fillStyle=gr;c.fill();
+  c.strokeStyle='#b7f6ff';c.lineWidth=1.4;c.beginPath();ty.forEach((y,i)=>i?c.lineTo(i*STEP,y):c.moveTo(0,y));c.stroke();c.lineWidth=1;
+  c.strokeStyle='#f4d84e';c.lineWidth=3;c.beginPath();c.moveTo(pad.x-pad.w/2,pad.y-1);c.lineTo(pad.x+pad.w/2,pad.y-1);c.stroke();c.lineWidth=1;
+  c.fillStyle='#f4d84e';c.font='8px monospace';c.textAlign='center';c.fillText('PAD',pad.x,pad.y+14);c.textAlign='left';
+  if(state==='crash'){for(const d of debris){c.globalAlpha=Math.max(0,1-d.t/1.6);c.fillStyle='#ed4e8c';c.fillRect(d.x-2,d.y-2,4,4)}c.globalAlpha=1}
+  else{
+   c.save();c.translate(L.x,L.y);c.rotate(L.a);c.strokeStyle='#faffdb';c.lineWidth=1.6;c.beginPath();c.moveTo(0,-12);c.lineTo(8,6);c.lineTo(-8,6);c.closePath();c.moveTo(-8,6);c.lineTo(-12,10);c.moveTo(8,6);c.lineTo(12,10);c.stroke();
+   if(L.thrust){c.strokeStyle='#fe6741';c.beginPath();c.moveTo(-4,7);c.lineTo(0,16+Math.random()*8);c.lineTo(4,7);c.stroke()}c.restore();c.lineWidth=1;
+   const gy=groundY(K,L.x),alt=Math.max(0,gy-L.y-10),safe=Math.abs(L.vy)<70&&Math.abs(L.vx)<45&&Math.abs(L.a)<.3;
+   c.font='9px monospace';c.fillStyle=safe?'#10f4cf':'#ed4e8c';c.fillText('ALT '+alt.toFixed(0)+' / VY '+L.vy.toFixed(0)+' / VX '+L.vx.toFixed(0)+(safe?' / SAFE':''),L.x+16,L.y-10);
+  }
+  c.fillStyle='#ffffff22';c.fillRect(w/2-60,h-54,120,4);c.fillStyle=fuel>25?'#faffdb':'#ed4e8c';c.fillRect(w/2-60,h-54,120*fuel/100,4);c.font='9px monospace';c.textAlign='center';c.fillText('FUEL',w/2,h-60);c.textAlign='left';
+  if(p.inside){c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,240,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'TRACTOR':'GUST',p.x+8,p.y-8)}
+ },
+ readout:K=>['LANDED '+K.pad(landed),'FUEL '+K.pad(fuel)+' / CRASHED '+K.pad(crashed)]
+});
+})();
+</script></body></html>
