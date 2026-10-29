@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S058 — SLIME NETWORK</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A slime mould that wants to eat and does not care for your plan. Lead it to every node.
+const CELL=5,NA=3600;
+let gw=0,gh=0,T=null,T2=null,ax=null,ay=null,aa=null,nodes=[],lure={x:0,y:0,vx:0,vy:0},img=null,ic=null,pal=[],connected=0,wins=0,chk=0,level=0,boost=0;
+for(let i=0;i<64;i++){const t=i/63;pal.push([Math.round(5+t*230),Math.round(10+t*240*Math.min(1,t*1.6)),Math.round(18+Math.sin(t*2.8)*60+t*60)])}
+function nodesGen(K){nodes=[];const n=Math.min(8,4+level);for(let i=0;i<n;i++){let x,y;for(let t=0;t<30;t++){x=gw*(.1+K.rand()*.8);y=gh*(.15+K.rand()*.7);if(nodes.every(q=>Math.hypot(q.x-x,q.y-y)>gw*.15))break}nodes.push({x,y,on:false})}}
+function init(K){gw=Math.ceil(K.w/CELL);gh=Math.ceil(K.h/CELL);const n=gw*gh;T=new Float32Array(n);T2=new Float32Array(n);ax=new Float32Array(NA);ay=new Float32Array(NA);aa=new Float32Array(NA);for(let i=0;i<NA;i++){ax[i]=gw/2+(K.rand()-.5)*20;ay[i]=gh/2+(K.rand()-.5)*14;aa[i]=K.rand()*K.TAU}ic=document.createElement('canvas');ic.width=gw;ic.height=gh;img=ic.getContext('2d').createImageData(gw,gh);nodesGen(K);lure={x:K.w/2,y:K.h/2,vx:0,vy:0}}
+const sense=(x,y)=>{const i=Math.floor(x),j=Math.floor(y);return i<0||j<0||i>=gw||j>=gh?0:T[j*gw+i]};
+function deposit(x,y,r,amt){for(let j=-r;j<=r;j++)for(let i=-r;i<=r;i++){const a=Math.floor(x)+i,b=Math.floor(y)+j;if(a>=0&&b>=0&&a<gw&&b<gh&&i*i+j*j<=r*r)T[b*gw+a]=Math.min(2,T[b*gw+a]+amt)}}
+function check(){const seen=new Uint8Array(gw*gh),st=[],n0=nodes[0];let i0=Math.floor(n0.x),j0=Math.floor(n0.y);st.push(j0*gw+i0);seen[st[0]]=1;
+ while(st.length){const k=st.pop(),x=k%gw,y=Math.floor(k/gw);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const a=x+di,b=y+dj;if(a<0||b<0||a>=gw||b>=gh)continue;const m=b*gw+a;if(!seen[m]&&T[m]>.28){seen[m]=1;st.push(m)}}}
+ let c=0;for(const nd of nodes){let on=false;for(let dj=-3;dj<=3&&!on;dj++)for(let di=-3;di<=3;di++){const a=Math.floor(nd.x)+di,b=Math.floor(nd.y)+dj;if(a>=0&&b>=0&&a<gw&&b<gh&&seen[b*gw+a]){on=true;break}}nd.on=on;if(on)c++}return c}
+Salvage({id:'S058',title:'SLIME NETWORK',parent:'014 FALSE COLOUR NECROSIS',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE LURE &nbsp;HOLD <kbd>SPACE</kbd> TO FEED IT<br>CONNECT EVERY NODE WITH ONE CONTINUOUS TRAIL / THE POINTER LURES, HOLD TO ERASE',
+ aria:'A slime mould simulation. Thousands of agents follow and lay chemical trails. Arrow keys move a lure that attracts them, and holding Space makes it deposit much more. Several glowing nodes are scattered about; the goal is to grow one continuous strong trail linking every node. The pointer also lures the slime; holding it erases the trail beneath it.',
+ reset(K){level=0;wins=0;init(K)},
+ resize(K){init(K)},
+ key(K,e,fresh){if(e.code==='Space'||/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  lure.vx+=dx*1300*dt;lure.vy+=dy*1300*dt;const fr=Math.exp(-dt*6);lure.vx*=fr;lure.vy*=fr;lure.x=K.clamp(lure.x+lure.vx*dt,0,K.w);lure.y=K.clamp(lure.y+lure.vy*dt,0,K.h);
+  boost=K.keys.has('Space')?1:0;deposit(lure.x/CELL,lure.y/CELL,boost?3:1,boost?.5:.12);
+  const p=K.pointer;if(p.inside){if(p.held){const r=5;for(let j=-r;j<=r;j++)for(let i=-r;i<=r;i++){const a=Math.floor(p.x/CELL)+i,b=Math.floor(p.y/CELL)+j;if(a>=0&&b>=0&&a<gw&&b<gh&&i*i+j*j<=r*r)T[b*gw+a]=0}}else deposit(p.x/CELL,p.y/CELL,1,.08)}
+  for(const nd of nodes)deposit(nd.x,nd.y,2,.35);
+  const SA=.6,SD=6,TURN=.35;
+  for(let i=0;i<NA;i++){
+   const a=aa[i],f=sense(ax[i]+Math.cos(a)*SD,ay[i]+Math.sin(a)*SD),l=sense(ax[i]+Math.cos(a-SA)*SD,ay[i]+Math.sin(a-SA)*SD),r=sense(ax[i]+Math.cos(a+SA)*SD,ay[i]+Math.sin(a+SA)*SD);
+   if(f<l&&f<r)aa[i]+=(K.rand()<.5?-1:1)*TURN;else if(l>r)aa[i]-=TURN;else if(r>l)aa[i]+=TURN;
+   let nx=ax[i]+Math.cos(aa[i])*1.2,ny=ay[i]+Math.sin(aa[i])*1.2;if(nx<1||ny<1||nx>=gw-1||ny>=gh-1){nx=K.clamp(nx,1,gw-2);ny=K.clamp(ny,1,gh-2);aa[i]=K.rand()*K.TAU}ax[i]=nx;ay[i]=ny;const k=Math.floor(ny)*gw+Math.floor(nx);T[k]=Math.min(2,T[k]+.18);
+  }
+  for(let y=1;y<gh-1;y++)for(let x=1;x<gw-1;x++){const k=y*gw+x;T2[k]=(T[k]*4+T[k-1]+T[k+1]+T[k-gw]+T[k+gw])/8*.985-.0015}
+  for(let k=0;k<T2.length;k++)if(T2[k]<0)T2[k]=0;const t=T;T=T2;T2=t;
+  chk-=dt;if(chk<=0){chk=.5;connected=check();if(connected===nodes.length){wins++;K.note('NETWORK FORMED / '+nodes.length+' NODES / IT WILL REARRANGE');level++;nodesGen(K)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,d=img.data;
+  for(let i=0;i<T.length;i++){const q=pal[K.clamp(Math.floor(T[i]*40),0,63)],o=i*4;d[o]=q[0];d[o+1]=q[1];d[o+2]=q[2];d[o+3]=255}
+  ic.getContext('2d').putImageData(img,0,0);c.imageSmoothingEnabled=true;c.drawImage(ic,0,0,gw*CELL,gh*CELL);
+  for(const nd of nodes){const x=nd.x*CELL,y=nd.y*CELL;c.strokeStyle=nd.on?'#f4d84e':'#ed4e8c';c.lineWidth=2;c.beginPath();c.arc(x,y,12+Math.sin(K.time*4+x)*1.5,0,TAU);c.stroke();c.fillStyle=c.strokeStyle;c.beginPath();c.arc(x,y,3,0,TAU);c.fill();c.lineWidth=1}
+  c.strokeStyle='#faffdb';c.globalAlpha=boost?1:.7;c.beginPath();c.arc(lure.x,lure.y,boost?9:6,0,TAU);c.moveTo(lure.x-12,lure.y);c.lineTo(lure.x+12,lure.y);c.moveTo(lure.x,lure.y-12);c.lineTo(lure.x,lure.y+12);c.stroke();c.globalAlpha=1;
+  c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('LURE'+(boost?' / FEEDING':''),lure.x+14,lure.y-12);
+  if(p.inside){c.globalAlpha=.5;c.beginPath();c.arc(p.x,p.y,p.held?5*CELL:10,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'ERASE':'LURE',p.x+14,p.y-8)}
+ },
+ readout:K=>['LINKED '+K.pad(connected)+' / '+K.pad(nodes.length),'NETWORKS '+K.pad(wins)+' / LEVEL '+K.pad(level+1)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04080e"><title>S061 — SLIDE TO WALL</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The surface is frictionless. You stop only when something stops you. Every room is checked solvable.
+let W=10,H=7,blocks=null,start={x:0,y:0},goal={x:0,y:0},me={x:0,y:0,px:0,py:0},par=0,moves=0,level=0,wins=0,cell=44,ox=0,oy=0,solved=0,trail=[],sliding=null,hint=null;
+const DIR=[[0,-1],[1,0],[0,1],[-1,0]],id=(x,y)=>y*W+x;
+function slide(x,y,d){let nx=x,ny=y;while(true){const tx=nx+DIR[d][0],ty=ny+DIR[d][1];if(tx<0||ty<0||tx>=W||ty>=H||blocks[id(tx,ty)])break;nx=tx;ny=ty;if(nx===goal.x&&ny===goal.y)break}return[nx,ny]}
+function solve(sx,sy){const dist=new Map(),q=[[sx,sy]];dist.set(id(sx,sy),[0,-1,null]);while(q.length){const [x,y]=q.shift(),[dd]=dist.get(id(x,y));if(x===goal.x&&y===goal.y)break;for(let d=0;d<4;d++){const [nx,ny]=slide(x,y,d);if((nx!==x||ny!==y)&&!dist.has(id(nx,ny))){dist.set(id(nx,ny),[dd+1,d,[x,y]]);q.push([nx,ny])}}}
+ const g=dist.get(id(goal.x,goal.y));if(!g)return null;return{n:g[0],dist}}
+function gen(K){
+ W=Math.min(16,10+Math.floor(level/2));H=Math.min(10,7+Math.floor(level/3));cell=Math.min(K.w*.88/W,K.h*.72/H,70);ox=(K.w-cell*W)/2;oy=(K.h-cell*H)/2+8;
+ for(let t=0;t<400;t++){blocks=new Uint8Array(W*H);for(let i=0;i<blocks.length;i++)blocks[i]=K.rand()<.2?1:0;start={x:Math.floor(K.rand()*W),y:Math.floor(K.rand()*H)};goal={x:Math.floor(K.rand()*W),y:Math.floor(K.rand()*H)};if(blocks[id(start.x,start.y)]||blocks[id(goal.x,goal.y)]||(start.x===goal.x&&start.y===goal.y))continue;const s=solve(start.x,start.y);if(s&&s.n>=3+Math.min(5,level)&&s.n<=12){par=s.n;break}}
+ me={x:start.x,y:start.y,px:start.x,py:start.y};moves=0;solved=0;trail=[];sliding=null;hint=null;
+}
+function go(K,d){if(solved||sliding)return;const [nx,ny]=slide(me.x,me.y,d);if(nx===me.x&&ny===me.y)return;trail.push([me.x,me.y,nx,ny]);me.x=nx;me.y=ny;moves++;sliding=1;if(nx===goal.x&&ny===goal.y){wins++;solved=.001;K.note('STOPPED ON THE ADDRESS / '+moves+' MOVES / PAR '+par)}}
+function hintDir(){const s=solve(me.x,me.y);if(!s||s.n===0)return null;let k=id(goal.x,goal.y),e=s.dist.get(k);while(e&&e[2]&&!(e[2][0]===me.x&&e[2][1]===me.y)){k=id(e[2][0],e[2][1]);e=s.dist.get(k)}return e?e[1]:null}
+const KD={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
+Salvage({id:'S061',title:'SLIDE TO WALL',parent:'017 PRECISION LOSS',bg:'#04080e',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> SLIDE UNTIL SOMETHING STOPS YOU<br>STOP ON THE MARKED ADDRESS / HOLD THE POINTER FOR A HINT, CLICK A SIDE OF THE SLIDER TO MOVE',
+ aria:'A sliding puzzle on a frictionless grid. Arrow keys send a small square sliding until it hits a block or the edge. The goal is to stop exactly on the marked address. Every room is verified solvable, and the par move count is shown. Holding the pointer shows an arrow for the next best move, and clicking to one side of the square slides it that way.',
+ reset(K){level=0;wins=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.88/W,K.h*.72/H,70);ox=(K.w-cell*W)/2;oy=(K.h-cell*H)/2+8},
+ key(K,e,fresh){const d=KD[e.code];if(d!==undefined){if(fresh)go(K,d);return true}if(e.code==='KeyZ'||e.code==='Backspace'){return true}},
+ down(K,x,y){const mx=ox+(me.x+.5)*cell,my=oy+(me.y+.5)*cell,dx=x-mx,dy=y-my;if(Math.hypot(dx,dy)<cell*.4)return false;go(K,Math.abs(dx)>Math.abs(dy)?(dx>0?1:3):(dy>0?2:0));return true},
+ step(K,dt){
+  const k=Math.min(1,dt*18);me.px+=(me.x-me.px)*k;me.py+=(me.y-me.py)*k;if(sliding&&Math.abs(me.px-me.x)+Math.abs(me.py-me.y)<.03)sliding=null;
+  const p=K.pointer;if(p.inside&&p.held&&!solved&&!sliding)hint=hintDir();else hint=null;
+  if(solved){solved+=dt;if(solved>1.8){level++;gen(K)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#04080e';c.fillRect(0,0,w,h);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const px=ox+x*cell,py=oy+y*cell;if(blocks[id(x,y)]){c.fillStyle='#1b2a4a';c.fillRect(px,py,cell-1,cell-1);c.strokeStyle='#2a3d5e';c.strokeRect(px+.5,py+.5,cell-2,cell-2);c.strokeStyle='#2a3d5e';c.beginPath();c.moveTo(px+4,py+4);c.lineTo(px+cell-5,py+cell-5);c.stroke()}else{c.fillStyle='#08111c';c.fillRect(px,py,cell-1,cell-1)}}
+  c.strokeStyle='#f4d84e';c.lineWidth=2;c.beginPath();c.arc(ox+(goal.x+.5)*cell,oy+(goal.y+.5)*cell,cell*.3+Math.sin(K.time*4)*2,0,TAU);c.stroke();c.lineWidth=1;
+  c.strokeStyle='#28e3f4';c.globalAlpha=.4;for(const [x0,y0,x1,y1] of trail.slice(-8)){c.beginPath();c.moveTo(ox+(x0+.5)*cell,oy+(y0+.5)*cell);c.lineTo(ox+(x1+.5)*cell,oy+(y1+.5)*cell);c.stroke()}c.globalAlpha=1;
+  const mx=ox+(me.px+.5)*cell,my=oy+(me.py+.5)*cell;c.fillStyle='#faffdb';c.fillRect(mx-cell*.3,my-cell*.3,cell*.6,cell*.6);c.fillStyle='#04080e';c.fillRect(mx-cell*.08,my-cell*.08,cell*.16,cell*.16);
+  if(hint!==null){c.strokeStyle='#ed4e8c';c.lineWidth=3;c.beginPath();c.moveTo(mx,my);c.lineTo(mx+DIR[hint][0]*cell*.8,my+DIR[hint][1]*cell*.8);c.stroke();c.lineWidth=1}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(W+'×'+H+' / PAR '+par,ox,oy-12);
+  if(p.inside){c.fillStyle='#faffdb';c.fillText(p.held?'HINT':'CLICK A SIDE TO SLIDE',p.x+12,p.y-8)}
+ },
+ readout:K=>['MOVES '+K.pad(moves,2)+' / PAR '+K.pad(par,2),'ROOMS '+K.pad(wins)+' / LEVEL '+K.pad(level+1)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S057 — MIRROR GARDEN</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Whatever you draw is repeated around the centre, and everything you drew slowly fades. Keep the garden alive.
+const FOLDS=[6,8,4,12,5,3,10];
+let pc=null,pg=null,brush={x:0,y:0,vx:0,vy:0,hue:0},fold=0,cover=0,heldT=0,covT=0,peak=0,last=null,cleared=0;
+function canvases(K){const old=pc;pc=document.createElement('canvas');pc.width=Math.round(K.w*K.dpr);pc.height=Math.round(K.h*K.dpr);pg=pc.getContext('2d');pg.setTransform(K.dpr,0,0,K.dpr,0,0);pg.lineCap='round';pg.lineJoin='round';if(old)pg.drawImage(old,0,0,K.w,K.h)}
+function stroke(K,x0,y0,x1,y1,w,col){
+ const n=FOLDS[fold],cx=K.w/2,cy=K.h/2+6;pg.strokeStyle=col;pg.lineWidth=w;
+ const a0=[x0-cx,y0-cy],a1=[x1-cx,y1-cy];
+ for(let k=0;k<n;k++){const a=k/n*K.TAU,ca=Math.cos(a),sa=Math.sin(a);
+  for(const flip of [1,-1]){const p0=[a0[0]*ca-a0[1]*sa*flip,(a0[0]*sa*flip+a0[1]*ca)],p1=[a1[0]*ca-a1[1]*sa*flip,(a1[0]*sa*flip+a1[1]*ca)];
+   // Mirror across the x axis before rotating, so every fold has a reflected twin.
+   const m0=[a0[0],a0[1]*flip],m1=[a1[0],a1[1]*flip],q0=[m0[0]*ca-m0[1]*sa,m0[0]*sa+m0[1]*ca],q1=[m1[0]*ca-m1[1]*sa,m1[0]*sa+m1[1]*ca];
+   pg.beginPath();pg.moveTo(cx+q0[0],cy+q0[1]);pg.lineTo(cx+q1[0],cy+q1[1]);pg.stroke()}}
+}
+Salvage({id:'S057',title:'MIRROR GARDEN',parent:'019 MOIRE APPARITION',scanlines:false,
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE BRUSH &nbsp;<kbd>SPACE</kbd> CHANGE THE FOLD &nbsp;<kbd>X</kbd> CLEAR<br>KEEP THE GARDEN FULL AS IT FADES / DRAG WITH THE POINTER TO PAINT TOO',
+ aria:'A kaleidoscope drawing toy. Arrow keys move a brush that paints a continuous coloured line, repeated and mirrored around the centre in several folds. Space cycles the number of folds and X clears the canvas. Everything painted slowly fades, and the meter shows how much of the canvas is covered. Holding and dragging the pointer paints too.',
+ reset(K){canvases(K);brush={x:K.w/2+60,y:K.h/2,vx:0,vy:0,hue:0};fold=0;cover=peak=heldT=covT=0;last=null;cleared=0;pg.clearRect(0,0,K.w,K.h)},
+ resize(K){canvases(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh){fold=(fold+1)%FOLDS.length;K.note(FOLDS[fold]+'-FOLD')}return true}if(e.code==='KeyX'||e.code==='Backspace'){if(fresh){pg.clearRect(0,0,K.w,K.h);cleared++}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ step(K,dt){
+  const dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0)-(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0);
+  brush.vx+=dx*1700*dt;brush.vy+=dy*1700*dt;const f=Math.exp(-dt*3.5);brush.vx*=f;brush.vy*=f;const ox=brush.x,oy=brush.y;brush.x=K.clamp(brush.x+brush.vx*dt,0,K.w);brush.y=K.clamp(brush.y+brush.vy*dt,0,K.h);brush.hue=(brush.hue+dt*60)%360;
+  const sp=Math.hypot(brush.vx,brush.vy);if(sp>8)stroke(K,ox,oy,brush.x,brush.y,1.2+Math.min(3,sp*.01),'hsl('+Math.round(brush.hue)+',90%,62%)');
+  const p=K.pointer;if(p.inside&&p.held){if(last)stroke(K,last[0],last[1],p.x,p.y,2.4,'hsl('+Math.round((brush.hue+180)%360)+',90%,66%)');last=[p.x,p.y]}else last=null;
+  pg.save();pg.globalCompositeOperation='destination-out';pg.fillStyle='rgba(0,0,0,'+(dt*.05)+')';pg.fillRect(0,0,K.w,K.h);pg.restore();
+  covT-=dt;if(covT<=0){covT=.5;const S=48,d=pg.getImageData(0,0,pc.width,pc.height),W2=d.width,H2=d.height;let on=0,tot=0;for(let j=0;j<S;j++)for(let i=0;i<S;i++){const x=Math.floor((i+.5)/S*W2),y=Math.floor((j+.5)/S*H2);tot++;if(d.data[(y*W2+x)*4+3]>40)on++}cover=on/tot;peak=Math.max(peak,cover)}
+  if(cover>.35)heldT+=dt;
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,cx=w/2,cy=h/2+6;c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const g=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.6);g.addColorStop(0,'#0e1830');g.addColorStop(1,'#05070e');c.fillStyle=g;c.fillRect(0,0,w,h);
+  c.globalCompositeOperation='lighter';c.drawImage(pc,0,0,w,h);c.globalCompositeOperation='source-over';
+  c.strokeStyle='#ffffff10';const n=FOLDS[fold];for(let k=0;k<n;k++){const a=k/n*TAU;c.beginPath();c.moveTo(cx,cy);c.lineTo(cx+Math.cos(a)*Math.max(w,h),cy+Math.sin(a)*Math.max(w,h));c.stroke()}
+  c.strokeStyle='#faffdb';c.lineWidth=1.5;c.beginPath();c.arc(brush.x,brush.y,5,0,TAU);c.stroke();c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(n+'-FOLD / COVER '+(cover*100).toFixed(0)+'% / ABOVE 35%: '+heldT.toFixed(0)+'s',22,h*.12);
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,8,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(p.held?'PAINTING':'MIRROR GUIDE',p.x+12,p.y-6)}
+ },
+ readout:K=>['COVER '+(cover*100).toFixed(0)+'%','ALIVE '+K.pad(heldT,4)+'s / PEAK '+(peak*100).toFixed(0)+'%']
+});
+})();
+</script></body></html>

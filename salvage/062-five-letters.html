@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S062 — FIVE LETTERS</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A five-letter word drawn from the vocabulary of decay. Six tries; every guess is accepted, the reader just tells you where you stand.
+const WORDS=['PIXEL','FRAME','SCANS','NOISE','DECAY','LOSSY','CODEC','TUBES','FIELD','BYTES','TRACE','LINES','DRIFT','FAULT','GHOST','SHEAR','STRAY','STATE','MOIRE','HAZE','GLASS','SCARS','WIRES','LARVA','BLEED','SMEAR','FLARE','CRACK','FOSSIL'.slice(0,5),'SIGNAL'.slice(0,5),'VOIDS','TONES','BANDS','GRAIN','RASTER'.slice(0,5),'BLANK','STALE','CLOCK','FLUID','SHARD','INDEX'],ROWS=['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+let word='',rows=[],cur='',won=0,lost=0,streak=0,done=0,keys={},shake=0;
+const COL={g:'#10f4cf',y:'#f4d84e',x:'#2a3548'};
+function score(g,w){const r=['x','x','x','x','x'],c={};for(let i=0;i<5;i++)if(g[i]===w[i])r[i]='g';else c[w[i]]=(c[w[i]]||0)+1;for(let i=0;i<5;i++)if(r[i]!=='g'&&c[g[i]]>0){r[i]='y';c[g[i]]--}return r}
+function newWord(K){word=WORDS[Math.floor(K.rand()*WORDS.length)];rows=[];cur='';done=0;keys={}}
+function submit(K){
+ if(done||cur.length<5){if(!done){shake=.4;K.note('FIVE LETTERS')}return}
+ const r=score(cur,word);rows.push({g:cur,r});r.forEach((v,i)=>{const l=cur[i];if(v==='g'||!keys[l]||(v==='y'&&keys[l]==='x'))keys[l]=v;if(v==='x'&&!keys[l])keys[l]='x'});
+ if(cur===word){won++;streak++;done=1;K.note('SOLVED IN '+rows.length+' / '+word);setTimeout(()=>{if(done===1)newWord(K)},2400)}
+ else if(rows.length>=6){lost++;streak=0;done=2;K.note('IT WAS '+word);setTimeout(()=>{if(done===2)newWord(K)},3000)}
+ cur='';
+}
+function typeCh(K,ch){if(!done&&cur.length<5)cur+=ch}
+const geo=K=>{const ts=Math.min(52,K.h*.075,K.w/9),x0=K.w/2-ts*2.5-8,y0=K.h*.13,ks=Math.min(38,K.w/12);return{ts,x0,y0,ks,ky:y0+6*(ts+6)+20}};
+Salvage({id:'S062',title:'FIVE LETTERS',parent:'006 DEAD LETTER OFFICE',letters:true,
+ help:'TYPE FIVE LETTERS &nbsp;<kbd>ENTER</kbd> SUBMIT &nbsp;<kbd>BACKSPACE</kbd> DELETE<br>GREEN IS RIGHT, AMBER IS ELSEWHERE / THE ON-SCREEN KEYS CLICK TOO',
+ aria:'A five-letter word guessing game with six tries. Type letters on the keyboard or click the on-screen keys, press Enter to submit and Backspace to delete. Each tile turns green when the letter is correct and in place, amber when it is in the word elsewhere, and grey when it is absent. The on-screen keyboard shows the same colours.',
+ reset(K){won=lost=streak=0;newWord(K)},
+ key(K,e,fresh){
+  if(!fresh)return /^Backspace$|^Enter$|^Key[A-Z]$/.test(e.code)||undefined;
+  if(e.code==='Enter'){submit(K);return true}if(e.code==='Backspace'){cur=cur.slice(0,-1);return true}
+  const ch=e.key&&e.key.length===1&&/[a-z]/i.test(e.key)?e.key.toUpperCase():(/^Key[A-Z]$/.test(e.code)?e.code.slice(3):null);if(ch){typeCh(K,ch);return true}
+ },
+ down(K,x,y){const g=geo(K);for(let r=0;r<3;r++){const row=ROWS[r],x0=K.w/2-row.length*g.ks/2;for(let i=0;i<row.length;i++){const kx=x0+i*g.ks,ky=g.ky+r*(g.ks+4);if(x>kx&&x<kx+g.ks-3&&y>ky&&y<ky+g.ks){typeCh(K,row[i]);return true}}}
+  const ex=K.w/2+ROWS[1].length*g.ks/2+8,ey=g.ky+(g.ks+4);if(x>ex&&x<ex+g.ks*1.6&&y>ey&&y<ey+g.ks){submit(K);return true}
+  const dx=K.w/2-ROWS[2].length*g.ks/2-g.ks*1.6-8,dy=g.ky+2*(g.ks+4);if(x>dx&&x<dx+g.ks*1.6&&y>dy&&y<dy+g.ks){cur=cur.slice(0,-1);return true}return false},
+ step(K,dt){shake=Math.max(0,shake-dt)},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.textAlign='center';
+  for(let r=0;r<6;r++){const row=rows[r],act=r===rows.length&&!done,off=act&&shake?Math.sin(K.time*60)*4:0;for(let i=0;i<5;i++){const x=g.x0+i*(g.ts+6)+off,y=g.y0+r*(g.ts+6);let col='#0c1420',letter='';
+    if(row){col=COL[row.r[i]];letter=row.g[i]}else if(act&&i<cur.length){letter=cur[i];col='#17283a'}
+    c.fillStyle=col;c.fillRect(x,y,g.ts,g.ts);c.strokeStyle=act&&i===cur.length?'#faffdb':'#2a3d5e';c.strokeRect(x+.5,y+.5,g.ts-1,g.ts-1);c.fillStyle=row&&row.r[i]!=='x'?'#05070e':'#e9fbff';c.font='bold '+Math.round(g.ts*.55)+'px monospace';c.fillText(letter,x+g.ts/2,y+g.ts*.68)}}
+  const hv=p.inside?(()=>{for(let r=0;r<3;r++){const row=ROWS[r],x0=w/2-row.length*g.ks/2;for(let i=0;i<row.length;i++){const kx=x0+i*g.ks,ky=g.ky+r*(g.ks+4);if(p.x>kx&&p.x<kx+g.ks-3&&p.y>ky&&p.y<ky+g.ks)return row[i]}}return null})():null;
+  for(let r=0;r<3;r++){const row=ROWS[r],x0=w/2-row.length*g.ks/2;for(let i=0;i<row.length;i++){const l=row[i],kx=x0+i*g.ks,ky=g.ky+r*(g.ks+4);c.fillStyle=keys[l]?COL[keys[l]]:(l===hv?'#2a3d5e':'#10202e');c.fillRect(kx,ky,g.ks-3,g.ks);c.fillStyle=keys[l]&&keys[l]!=='x'?'#05070e':'#c8d6e0';c.font='bold '+Math.round(g.ks*.42)+'px monospace';c.fillText(l,kx+(g.ks-3)/2,ky+g.ks*.64)}}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';const ex=w/2+ROWS[1].length*g.ks/2+8,ey=g.ky+(g.ks+4);c.fillRect(ex,ey,g.ks*1.6,g.ks);c.fillStyle='#05070e';c.fillText('ENTER',ex+g.ks*.8,ey+g.ks*.6);const dx=w/2-ROWS[2].length*g.ks/2-g.ks*1.6-8,dy=g.ky+2*(g.ks+4);c.fillStyle='#9fc4d6';c.fillRect(dx,dy,g.ks*1.6,g.ks);c.fillStyle='#05070e';c.fillText('DEL',dx+g.ks*.8,dy+g.ks*.6);
+  if(done===2){c.fillStyle='#ed4e8c';c.font='12px monospace';c.fillText(word,w/2,g.y0-10)}
+  c.textAlign='left';
+ },
+ readout:K=>['TRY '+K.pad(rows.length)+' / 6','SOLVED '+K.pad(won)+' / MISSED '+K.pad(lost)+' / STREAK '+K.pad(streak)]
+});
+})();
+</script></body></html>
