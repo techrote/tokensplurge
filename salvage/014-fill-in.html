@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e6eed8"><title>S014 — FILL-IN</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The backlight still works. Blind spots spread across it. A small emitter fills them in with guesses.
+let spots=[],shots=[],splats=[],aim=-Math.PI/2,aimV=0,cool=0,patched=0,spawn=0;
+function addSpot(K,x,y,r){spots.push({x:x??K.w*(.1+K.rand()*.8),y:y??K.h*(.15+K.rand()*.7),r:r??10+K.rand()*18,seed:K.rand()*99,grow:.6+K.rand()*1.2})}
+const centre=K=>({x:K.w/2,y:K.h/2+8});
+function visible(K){let a=0;for(const s of spots)a+=Math.PI*s.r*s.r;return K.clamp(1-a/(K.w*K.h*.25))}
+function outline(c,s,t,r){c.beginPath();for(let k=0;k<=28;k++){const a=k/28*Math.PI*2,rr=r*(1+.18*Math.sin(a*3+s.seed+t*.4)+.09*Math.sin(a*7-s.seed+t*.7));k?c.lineTo(s.x+Math.cos(a)*rr,s.y+Math.sin(a)*rr):c.moveTo(s.x+rr,s.y)}c.closePath()}
+Salvage({id:'S014',title:'FILL-IN',parent:'039 THE BLIND SPOT',bg:'#e6eed8',ink:'#24363b',scanlines:false,
+ help:'<kbd>←</kbd><kbd>→</kbd> AIM THE EMITTER &nbsp;<kbd>SPACE</kbd> FILL IN<br>YOUR OWN BLIND SPOT FOLLOWS THE POINTER',
+ aria:'A pale backlit field spreading with dark blind spots. Left and right rotate an emitter at the centre; Space fires a pulse that fills in the blind spot it hits. A dark disc follows just beside the pointer, like the eye\'s own blind spot, and nearby spots are drawn toward it.',
+ reset(K){spots=[];shots=[];splats=[];patched=0;aim=-Math.PI/2;for(let k=0;k<6;k++)addSpot(K)},
+ resize(){},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh&&cool<=0){const o=centre(K);shots.push({x:o.x+Math.cos(aim)*24,y:o.y+Math.sin(aim)*24,a:aim,t:0});cool=.28}return true}
+  if(/^Arrow|^Key[AD]$/.test(e.code))return true;
+ },
+ step(K,dt){
+  const dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  aimV+=dir*dt*14;aimV*=Math.exp(-dt*8);aim+=aimV*dt;cool-=dt;
+  const p=K.pointer,bx=p.x+70,by=p.y;
+  for(const s of spots){
+   s.r+=dt*s.grow*(.6+(1-visible(K))*.8);
+   if(p.inside){const d=Math.hypot(s.x-bx,s.y-by);if(d<180){s.x+=(bx-s.x)/d*dt*22;s.y+=(by-s.y)/d*dt*22;s.r+=dt*1.6}}
+   s.x+=Math.sin(K.time*.2+s.seed)*dt*4;s.y+=Math.cos(K.time*.17+s.seed)*dt*4;
+  }
+  // Large spots occasionally bud.
+  spawn+=dt;if(spawn>3.6&&spots.length<16){spawn=0;const big=spots.reduce((a,b)=>!a||b.r>a.r?b:a,null);if(big&&big.r>40&&K.rand()<.6){const a=K.rand()*K.TAU;addSpot(K,big.x+Math.cos(a)*big.r*1.3,big.y+Math.sin(a)*big.r*1.3,8)}else addSpot(K)}
+  for(let k=shots.length-1;k>=0;k--){
+   const s=shots[k];s.t+=dt;s.x+=Math.cos(s.a)*dt*720;s.y+=Math.sin(s.a)*dt*720;let hit=null;
+   for(const b of spots)if(Math.hypot(b.x-s.x,b.y-s.y)<b.r){hit=b;break}
+   if(hit){hit.r-=26;for(let q=0;q<10;q++)splats.push({x:s.x,y:s.y,vx:(Math.random()-.5)*160,vy:(Math.random()-.5)*160,c:K.DAMAGE[q%6],t:0});
+    if(hit.r<9){spots.splice(spots.indexOf(hit),1);patched++;K.note(['FILLED IN WITH A GUESS','THE BRAIN SUPPLIES SOMETHING PLAUSIBLE','NOBODY WILL NOTICE'][patched%3])}shots.splice(k,1)}
+   else if(s.x<-20||s.y<-20||s.x>K.w+20||s.y>K.h+20)shots.splice(k,1);
+  }
+  for(let k=splats.length-1;k>=0;k--){const s=splats[k];s.t+=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.vx*=.95;s.vy*=.95;if(s.t>2.4)splats.splice(k,1)}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,o=centre(K);
+  const g=c.createRadialGradient(w*.48,h*.46,0,w*.48,h*.46,Math.max(w,h)*.72);g.addColorStop(0,'#fffdec');g.addColorStop(.65,'#e6eed8');g.addColorStop(1,'#9cbaae');c.fillStyle=g;c.fillRect(0,0,w,h);
+  c.globalAlpha=.06;c.fillStyle='#526b73';for(let x=0;x<w;x+=6)c.fillRect(x,0,1,h);
+  for(const s of splats){c.globalAlpha=Math.max(0,1-s.t/2.4)*.8;c.fillStyle=s.c;c.fillRect(s.x-2,s.y-2,4,4)}
+  for(const s of spots){
+   for(let layer=6;layer>=0;layer--){outline(c,s,K.time,s.r+layer*2.4);c.globalAlpha=layer?.45:1;c.fillStyle=layer?K.DAMAGE[layer%6]:'#05050c';c.fill()}
+   c.globalAlpha=.5;c.strokeStyle='#c7bbec';outline(c,s,K.time,s.r*.95);c.stroke();
+  }
+  // Emitter and its line of sight.
+  c.globalAlpha=.35;c.strokeStyle='#24363b';c.setLineDash([2,6]);c.beginPath();c.moveTo(o.x,o.y);c.lineTo(o.x+Math.cos(aim)*Math.hypot(w,h),o.y+Math.sin(aim)*Math.hypot(w,h));c.stroke();c.setLineDash([]);
+  c.globalAlpha=1;c.fillStyle='#24363b';c.beginPath();c.arc(o.x,o.y,11,0,TAU);c.fill();c.strokeStyle='#24363b';c.lineWidth=4;c.beginPath();c.moveTo(o.x,o.y);c.lineTo(o.x+Math.cos(aim)*24,o.y+Math.sin(aim)*24);c.stroke();c.lineWidth=1;
+  c.strokeStyle='#24363b';c.globalAlpha=.6;c.beginPath();c.arc(o.x,o.y,17,-Math.PI/2,-Math.PI/2+TAU*K.clamp(1-cool/.28));c.stroke();
+  for(const s of shots){c.globalAlpha=1;c.fillStyle='#fffdec';c.strokeStyle='#24363b';c.beginPath();c.arc(s.x,s.y,4,0,TAU);c.fill();c.stroke()}
+  if(p.inside){
+   const bx=p.x+70,by=p.y,R=p.held?56:32,b=c.createRadialGradient(bx,by,R*.4,bx,by,R);b.addColorStop(0,'#9cbaaeff');b.addColorStop(1,'#9cbaae00');
+   c.globalAlpha=1;c.fillStyle=b;c.beginPath();c.arc(bx,by,R,0,TAU);c.fill();
+   c.globalAlpha=.8;c.fillStyle='#24363b';c.fillRect(p.x-1,p.y-6,2,12);c.fillRect(p.x-6,p.y-1,12,2);c.font='8px monospace';c.fillText('FIXATION',p.x-18,p.y-12);c.fillText('OPTIC DISC',bx-20,by+R+12);
+  }
+  c.globalAlpha=.3;c.fillStyle='#3c5154';c.font='9px monospace';c.fillText('POWER IS STILL REACHING SOMETHING',w*.13,h*.86);c.globalAlpha=1;
+ },
+ readout:K=>['VISIBLE '+(visible(K)*100).toFixed(2)+'%','FILLED '+K.pad(patched)+' / SPOTS '+K.pad(spots.length,2)]
+});
+})();
+</script></body></html>

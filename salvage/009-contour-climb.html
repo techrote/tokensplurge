@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#050b12"><title>S009 — CONTOUR CLIMB</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A dead process left a landscape. The surveyor may only climb one contour at a time.
+const CELL=12,B=13;let cols=0,rows=0,hgt=null,walker={i:0,j:0,shake:0},summit={i:0,j:0},trail=[],summits=0,repeat=0,survey=0,colors=[];
+const band=n=>Math.min(B-1,Math.floor(hgt[n]*B));
+function generate(K){
+ cols=Math.ceil(K.w/CELL);rows=Math.ceil(K.h/CELL);hgt=new Float32Array(cols*rows);
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const u=i/cols*4,v=j/rows*4*K.h/K.w;hgt[j*cols+i]=K.clamp(K.noise(u,v)*.6+K.noise(u*2.3+9,v*2.3)*.28+K.noise(u*5+3,v*5)*.12)}
+ colors=Array.from({length:B},(_,b)=>'hsl('+(215-b*13)+','+(45+b*2)+'%,'+(8+b*4.2)+'%)');
+ findSummit();let lo=0;for(let n=1;n<hgt.length;n++)if(hgt[n]<hgt[lo])lo=n;walker={i:lo%cols,j:Math.floor(lo/cols),shake:0};trail=[];
+}
+function findSummit(){let hi=0;for(let n=1;n<hgt.length;n++)if(hgt[n]>hgt[hi])hi=n;summit={i:hi%cols,j:Math.floor(hi/cols)}}
+function sculpt(x,y,r,amt){const ci=Math.floor(x/CELL),cj=Math.floor(y/CELL),rc=Math.ceil(r/CELL);for(let j=Math.max(0,cj-rc);j<=Math.min(rows-1,cj+rc);j++)for(let i=Math.max(0,ci-rc);i<=Math.min(cols-1,ci+rc);i++){const d=Math.hypot((i+.5)*CELL-x,(j+.5)*CELL-y);if(d<r){const n=j*cols+i;hgt[n]=Math.max(0,Math.min(.999,hgt[n]+amt*(1-d/r)*(1-d/r)))}}}
+function walk(K,code){
+ const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[code];if(!d)return;
+ const ni=walker.i+d[0],nj=walker.j+d[1];if(ni<0||nj<0||ni>=cols||nj>=rows)return;
+ const a=band(walker.j*cols+walker.i),b=band(nj*cols+ni);
+ if(Math.abs(a-b)>1){walker.shake=1;if(K.time-survey>3){survey=K.time;K.note('TOO STEEP / RAISE A RAMP WITH THE POINTER')}return}
+ trail.push([walker.i,walker.j]);if(trail.length>60)trail.shift();walker.i=ni;walker.j=nj;
+ if(Math.abs(ni-summit.i)<=1&&Math.abs(nj-summit.j)<=1){
+  summits++;K.note('SUMMIT '+K.pad(summits)+' / IT COLLAPSES UNDER YOU');
+  // Reaching the top is what wears it down.
+  sculpt((summit.i+.5)*CELL,(summit.j+.5)*CELL,CELL*9,-.45);findSummit();
+ }
+}
+Salvage({id:'S009',title:'CONTOUR CLIMB',parent:'021 TOPOGRAPHY OF A DEAD PROCESS',bg:'#050b12',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> CLIMB ONE CONTOUR AT A TIME TOWARD THE BEACON<br>MOVE THE POINTER TO RAISE GROUND / HOLD TO ERODE',
+ aria:'A contour map of a coloured landscape with a beacon on its highest point. Arrow keys move a surveyor one cell at a time, but only across a single contour step. Moving the pointer raises the ground beneath it to build ramps; holding it erodes the ground.',
+ reset(K){generate(K);summits=0},
+ key(K,e,fresh){if(/^(Arrow|Key[WASD]$)/.test(e.code)){if(fresh){repeat=.28;walk(K,e.code)}return true}},
+ step(K,dt){
+  if(K.keys.size){repeat-=dt;if(repeat<=0){repeat=.09;for(const c of K.keys)if(/^(Arrow|Key[WASD]$)/.test(c)){walk(K,c);break}}}
+  const p=K.pointer;
+  if(p.inside){if(p.held)sculpt(p.x,p.y,CELL*5,-dt*.5);else if(p.speed>.05)sculpt(p.x,p.y,CELL*5,dt*.28*Math.min(1,p.speed))}
+  walker.shake=Math.max(0,walker.shake-dt*4);
+  if(Math.floor(K.time*2)!==Math.floor((K.time-dt)*2))findSummit();
+ },
+ draw(K,c){
+  const {w,h,TAU}=K;
+  for(let n=0;n<hgt.length;n++){c.fillStyle=colors[band(n)];c.fillRect(n%cols*CELL,Math.floor(n/cols)*CELL,CELL+.5,CELL+.5)}
+  // Contour lines wherever two neighbouring cells disagree about their band.
+  c.strokeStyle='#d6f2ea';c.globalAlpha=.55;c.beginPath();
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const n=j*cols+i,b=band(n);if(i<cols-1&&band(n+1)!==b){c.moveTo((i+1)*CELL,j*CELL);c.lineTo((i+1)*CELL,(j+1)*CELL)}if(j<rows-1&&band(n+cols)!==b){c.moveTo(i*CELL,(j+1)*CELL);c.lineTo((i+1)*CELL,(j+1)*CELL)}}
+  c.stroke();
+  c.globalAlpha=.8;c.strokeStyle='#f4d84e';c.beginPath();trail.forEach(([i,j],k)=>{const x=(i+.5)*CELL,y=(j+.5)*CELL;k?c.lineTo(x,y):c.moveTo(x,y)});c.lineTo((walker.i+.5)*CELL,(walker.j+.5)*CELL);c.setLineDash([2,3]);c.stroke();c.setLineDash([]);
+  const sx=(summit.i+.5)*CELL,sy=(summit.j+.5)*CELL,pulse=(K.time*.8)%1;
+  c.globalAlpha=1-pulse;c.strokeStyle='#ed4e8c';c.beginPath();c.arc(sx,sy,6+pulse*40,0,TAU);c.stroke();
+  c.globalAlpha=1;c.fillStyle='#ed4e8c';c.beginPath();c.moveTo(sx,sy-9);c.lineTo(sx+6,sy+4);c.lineTo(sx-6,sy+4);c.closePath();c.fill();
+  c.font='8px monospace';c.fillText('SUMMIT / BAND '+band(summit.j*cols+summit.i),sx+10,sy-8);
+  const wx=(walker.i+.5)*CELL+Math.sin(K.time*60)*walker.shake*4,wy=(walker.j+.5)*CELL,here=band(walker.j*cols+walker.i);
+  c.fillStyle='#faffdb';c.fillRect(wx-4,wy-4,8,8);c.strokeStyle='#05070e';c.strokeRect(wx-2.5,wy-2.5,5,5);
+  c.fillStyle='#faffdb';c.fillText('SURVEYOR / BAND '+here,wx+10,wy+14);
+  const p=K.pointer;
+  if(p.inside){c.globalAlpha=.6;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,CELL*5,0,TAU);c.stroke();const n=K.clamp(Math.floor(p.y/CELL),0,rows-1)*cols+K.clamp(Math.floor(p.x/CELL),0,cols-1);c.fillText((p.held?'ERODING':'RAISING')+' / ELEV '+(hgt[n]*1000).toFixed(0)+'m',p.x+CELL*5+6,p.y)}
+  c.globalAlpha=1;
+ },
+ readout:K=>['BAND '+K.pad(band(walker.j*cols+walker.i),2)+' OF '+B,'SUMMITS '+K.pad(summits)]
+});
+})();
+</script></body></html>

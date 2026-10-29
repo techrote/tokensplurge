@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#031210"><title>S013 — BUS REPAIR</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// An orphaned bus. Every trace still exists; they have only been turned the wrong way.
+const UP=1,RIGHT=2,DOWN=4,LEFT=8,DIR=[[UP,0,-1,DOWN],[RIGHT,1,0,LEFT],[DOWN,0,1,UP],[LEFT,-1,0,RIGHT]];
+let cols=0,rows=0,T=40,ox=0,oy=0,tiles=[],cur={i:0,j:0},src=0,sink=0,powered=new Set(),solved=0,restored=0,repeat=0,turns=0;
+const rot=m=>((m<<1)|(m>>3))&15;
+function geo(K){cols=Math.round(K.clamp(K.w/72,6,14));rows=Math.round(K.clamp((K.h-170)/72,4,9));T=Math.min(K.w*.8/cols,(K.h-180)/rows);ox=(K.w-T*cols)/2;oy=(K.h-T*rows)/2+8}
+function build(K){
+ geo(K);src=Math.floor(K.rand()*rows);sink=Math.floor(K.rand()*rows);
+ const mask=new Array(cols*rows).fill(0),seen=new Set(),path=[];
+ // Random depth-first walk from source column to sink cell; the walk is the bus.
+ const go=(i,j)=>{seen.add(j*cols+i);path.push([i,j]);if(i===cols-1&&j===sink)return true;
+  const dirs=DIR.slice().sort(()=>K.rand()-.5);for(const [,dx,dy] of dirs){const ni=i+dx,nj=j+dy;if(ni>=0&&nj>=0&&ni<cols&&nj<rows&&!seen.has(nj*cols+ni)&&go(ni,nj))return true}path.pop();return false};
+ go(0,src);
+ for(let k=0;k<path.length-1;k++){const [i,j]=path[k],[ni,nj]=path[k+1],d=DIR.find(d=>d[1]===ni-i&&d[2]===nj-j);mask[j*cols+i]|=d[0];mask[nj*cols+ni]|=d[3]}
+ mask[src*cols]|=LEFT;mask[sink*cols+cols-1]|=RIGHT;
+ const shapes=[UP|DOWN,UP|RIGHT,UP|RIGHT|DOWN,RIGHT,UP|RIGHT|DOWN|LEFT];
+ for(let n=0;n<mask.length;n++)if(!mask[n])mask[n]=shapes[Math.floor(K.rand()*4)];
+ tiles=mask.map(m=>{let r=m;const k=Math.floor(K.rand()*4);for(let q=0;q<k;q++)r=rot(r);return{m:r,anim:0}});
+ cur={i:0,j:src};solved=0;power();
+}
+function net(start){
+ const out=new Set();if(start<0)return out;const q=[start];out.add(start);
+ while(q.length){const n=q.shift(),i=n%cols,j=Math.floor(n/cols);for(const [b,dx,dy,opp] of DIR){const ni=i+dx,nj=j+dy,m=nj*cols+ni;if(ni<0||nj<0||ni>=cols||nj>=rows||out.has(m))continue;if(tiles[n].m&b&&tiles[m].m&opp){out.add(m);q.push(m)}}}
+ return out;
+}
+function power(){powered=tiles[src*cols].m&LEFT?net(src*cols):new Set()}
+function turn(K,n){tiles[n].m=rot(tiles[n].m);tiles[n].anim=-Math.PI/2;turns++;power();if(!solved&&powered.has(sink*cols+cols-1)&&tiles[sink*cols+cols-1].m&RIGHT){solved=.001;restored++;K.note('BUS RESTORED / '+powered.size+' TILES CARRYING')}}
+function at(K,x,y){const i=Math.floor((x-ox)/T),j=Math.floor((y-oy)/T);return i>=0&&j>=0&&i<cols&&j<rows?j*cols+i:-1}
+Salvage({id:'S013',title:'BUS REPAIR',parent:'029 ORPHANED BUS',bg:'#031210',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> TURN A TILE<br>CONNECT SOURCE TO SINK / HOVER TO TRACE A NET',
+ aria:'A circuit board of square tiles carrying traces. Arrow keys move a cursor and Space rotates the tile beneath it; clicking a tile rotates it too. Connecting the source on the left to the sink on the right lights the bus. Hovering a tile highlights every trace connected to it.',
+ reset(K){restored=turns=0;build(K)},
+ resize(K){build(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh&&!solved)turn(K,cur.j*cols+cur.i);return true}
+  const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[e.code];
+  if(d){if(fresh){repeat=.25;cur.i=K.clamp(cur.i+d[0],0,cols-1);cur.j=K.clamp(cur.j+d[1],0,rows-1)}return true}
+ },
+ down(K,x,y){const n=at(K,x,y);if(n<0||solved)return false;cur={i:n%cols,j:Math.floor(n/cols)};turn(K,n);return true},
+ step(K,dt){
+  if(K.keys.size){repeat-=dt;if(repeat<=0){repeat=.1;for(const c of K.keys){const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[c];if(d){cur.i=K.clamp(cur.i+d[0],0,cols-1);cur.j=K.clamp(cur.j+d[1],0,rows-1);break}}}}
+  for(const t of tiles)t.anim*=Math.exp(-dt*16);
+  if(solved){solved+=dt;if(solved>4){K.note('A NEW FAULT / THE BUS IS ORPHANED AGAIN');build(K)}}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#031210';c.fillRect(0,0,w,h);
+  c.fillStyle='#0a2420';for(let x=8;x<w;x+=16)for(let y=8;y<h;y+=16)c.fillRect(x,y,1,1);
+  const hoverNet=p.inside?net(at(K,p.x,p.y)):new Set(),lw=Math.max(2,T*.11);
+  tiles.forEach((t,n)=>{
+   const i=n%cols,j=Math.floor(n/cols),x=ox+i*T,y=oy+j*T,on=powered.has(n),hv=hoverNet.has(n);
+   c.globalAlpha=1;c.strokeStyle='#0f2f2a';c.strokeRect(x+.5,y+.5,T-1,T-1);
+   c.save();c.translate(x+T/2,y+T/2);c.rotate(t.anim);
+   c.strokeStyle=on?(solved?'#faffdb':'#f4d84e'):hv?'#ed4e8c':'#2f7d6a';c.lineWidth=lw;c.lineCap='round';c.beginPath();
+   for(const [b,dx,dy] of DIR)if(t.m&b){c.moveTo(0,0);c.lineTo(dx*T/2,dy*T/2)}c.stroke();
+   c.fillStyle=c.strokeStyle;c.beginPath();c.arc(0,0,lw*1.3,0,TAU);c.fill();c.fillStyle='#031210';c.beginPath();c.arc(0,0,lw*.5,0,TAU);c.fill();
+   if(on){c.fillStyle='#ffffff';for(const [b,dx,dy] of DIR)if(t.m&b){const f=(K.time*(solved?2.4:1.2)+n*.13)%1;c.fillRect(dx*T/2*f-1.5,dy*T/2*f-1.5,3,3)}}
+   c.restore();c.lineWidth=1;c.lineCap='butt';
+  });
+  const sy=oy+(src+.5)*T,ky=oy+(sink+.5)*T;c.font='9px monospace';c.fillStyle='#f4d84e';c.strokeStyle='#f4d84e';c.lineWidth=lw;
+  c.beginPath();c.moveTo(ox-28,sy);c.lineTo(ox,sy);c.stroke();c.fillText('SRC',ox-58,sy+3);
+  c.strokeStyle=solved?'#faffdb':'#2f7d6a';c.beginPath();c.moveTo(ox+cols*T,ky);c.lineTo(ox+cols*T+28,ky);c.stroke();c.fillStyle=solved?'#faffdb':'#7fb8a8';c.fillText('SINK',ox+cols*T+34,ky+3);c.lineWidth=1;
+  const cx=ox+cur.i*T,cy=oy+cur.j*T,b=3+Math.sin(K.time*5)*1.5;c.strokeStyle='#faffdb';c.beginPath();
+  for(const [sx,sy2] of [[0,0],[1,0],[1,1],[0,1]]){const x=cx+sx*T+(sx?b:-b),y=cy+sy2*T+(sy2?b:-b),dx=sx?-8:8,dy=sy2?-8:8;c.moveTo(x+dx,y);c.lineTo(x,y);c.lineTo(x,y+dy)}c.stroke();
+  if(hoverNet.size>1){c.fillStyle='#ed4e8c';c.fillText('NET 0x'+((Math.min(...hoverNet)*2654435761)>>>20).toString(16).toUpperCase()+' / '+hoverNet.size+' TILES'+(hoverNet.has(src*cols)&&powered.size?' / LIVE':' / ORPHANED'),p.x+14,p.y-10)}
+ },
+ readout:K=>['CARRYING '+K.pad(powered.size,2)+' / '+(cols*rows),'RESTORED '+K.pad(restored)+' / TURNS '+K.pad(turns)]
+});
+})();
+</script></body></html>

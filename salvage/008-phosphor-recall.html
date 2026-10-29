@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#020504"><title>S008 — PHOSPHOR RECALL</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Four phosphors flash in an order. Repeating it correctly is the only way the screen is allowed to forget.
+const COLORS=['#7cf3c8','#f4d84e','#ed4e8c','#4f8dff'],DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+const KEYMAP={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
+let seq=[],mode='pause',step=0,timer=1,lit=[0,0,0,0],longest=0,burns=0,idle=0;
+const burn=document.createElement('canvas'),bc=burn.getContext('2d'),scar=document.createElement('canvas'),sc=scar.getContext('2d');
+const geo=K=>{const m=Math.min(K.w,K.h);return{cx:K.w/2,cy:K.h/2+6,d:m*.22,s:m*.15}};
+function petal(K,k){const g=geo(K);return{x:g.cx+DIRS[k][0]*g.d,y:g.cy+DIRS[k][1]*g.d,s:g.s}}
+function hit(K,x,y){for(let k=0;k<4;k++){const p=petal(K,k);if(Math.abs(x-p.x)+Math.abs(y-p.y)<p.s*1.2)return k}return -1}
+function canvases(K){for(const [cv,c] of [[burn,bc],[scar,sc]]){cv.width=Math.round(K.w*K.dpr);cv.height=Math.round(K.h*K.dpr);c.setTransform(K.dpr,0,0,K.dpr,0,0)}}
+function play(K){mode='show';step=0;timer=.6}
+function answer(K,k){
+ if(mode!=='input')return;lit[k]=1;idle=0;
+ if(k===seq[step]){step++;if(step===seq.length){longest=Math.max(longest,seq.length);K.note('RECALLED '+seq.length+' / THE SCREEN FORGETS A LITTLE');seq.push(Math.floor(K.rand()*4));mode='pause';timer=1;bc.globalCompositeOperation='destination-out';bc.fillStyle='#00000066';bc.fillRect(0,0,K.w,K.h);bc.globalCompositeOperation='source-over'}}
+ else{
+  // A wrong recall burns permanently into the glass.
+  burns++;const p=petal(K,k);sc.globalAlpha=.16;sc.fillStyle=COLORS[k];sc.save();sc.translate(p.x+(K.rand()-.5)*p.s,p.y+(K.rand()-.5)*p.s);sc.rotate(Math.PI/4);sc.fillRect(-p.s*.3,-p.s*.3,p.s*.6,p.s*.6);sc.restore();
+  K.note('BURN-IN / THE SEQUENCE WAS '+seq.map(i=>'↑→↓←'[i]).join(''));if(seq.length>3)seq.pop();mode='pause';timer=1.6;
+ }
+}
+Salvage({id:'S008',title:'PHOSPHOR RECALL',parent:'020 PHOSPHOR BLOOM',bg:'#020504',
+ help:'WATCH THE ORDER, THEN REPEAT IT<br><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd><kbd>←</kbd> OR CLICK / THE POINTER BURNS A TRAIL',
+ aria:'Four glowing phosphor panels arranged in a diamond flash a sequence. Repeat it with the arrow keys or by clicking the panels; each success adds a step, each mistake burns a permanent mark into the screen. The pointer leaves a slowly fading phosphor trail.',
+ reset(K){canvases(K);seq=Array.from({length:3},()=>Math.floor(K.rand()*4));mode='pause';timer=1.2;longest=burns=0;lit=[0,0,0,0]},
+ resize(K){canvases(K)},
+ key(K,e,fresh){const k=KEYMAP[e.code];if(k===undefined)return;if(fresh)answer(K,k);return true},
+ down(K,x,y){const k=hit(K,x,y);if(k<0)return false;answer(K,k);return true},
+ step(K,dt){
+  for(let k=0;k<4;k++)lit[k]=Math.max(0,lit[k]-dt*2.4);
+  timer-=dt;
+  if(mode==='pause'&&timer<=0)play(K);
+  else if(mode==='show'&&timer<=0){if(step<seq.length){lit[seq[step]]=1;step++;timer=Math.max(.32,.62-seq.length*.02)}else{mode='input';step=0;idle=0}}
+  else if(mode==='input'){idle+=dt;if(idle>7){K.note('THE SEQUENCE AGAIN');play(K)}}
+  // Persistence: the trail fades, the scars do not.
+  bc.globalCompositeOperation='destination-out';bc.fillStyle='rgba(0,0,0,'+(dt*.35)+')';bc.fillRect(0,0,K.w,K.h);bc.globalCompositeOperation='lighter';
+  const p=K.pointer;if(p.inside){const k=hit(K,p.x,p.y),col=k>=0?COLORS[k]:'#7cf3c8',r=p.held?18:7,g=bc.createRadialGradient(p.x,p.y,0,p.x,p.y,r);g.addColorStop(0,col+(p.held?'aa':'55'));g.addColorStop(1,col+'00');bc.fillStyle=g;bc.fillRect(p.x-r,p.y-r,r*2,r*2)}
+  bc.globalCompositeOperation='source-over';
+ },
+ draw(K,c){
+  const {w,h}=K,g=geo(K);c.fillStyle='#020504';c.fillRect(0,0,w,h);
+  c.strokeStyle='#0d1a16';for(let x=0;x<w;x+=3){c.beginPath();c.moveTo(x+.5,0);c.lineTo(x+.5,h);c.stroke()}
+  c.drawImage(scar,0,0,w,h);c.drawImage(burn,0,0,w,h);
+  const hover=K.pointer.inside?hit(K,K.pointer.x,K.pointer.y):-1;
+  for(let k=0;k<4;k++){
+   const p=petal(K,k),L=Math.max(lit[k],k===hover?.14:0);
+   c.save();c.translate(p.x,p.y);c.rotate(Math.PI/4);
+   c.globalAlpha=.12+L*.75;c.fillStyle=COLORS[k];c.fillRect(-p.s*.7,-p.s*.7,p.s*1.4,p.s*1.4);
+   c.globalAlpha=.5+L*.5;c.strokeStyle=COLORS[k];c.strokeRect(-p.s*.7+.5,-p.s*.7+.5,p.s*1.4-1,p.s*1.4-1);
+   c.globalAlpha=.25;for(let y=-p.s*.7;y<p.s*.7;y+=4)c.fillRect(-p.s*.7,y,p.s*1.4,1);
+   c.restore();
+   if(L>0){c.globalCompositeOperation='lighter';const b=c.createRadialGradient(p.x,p.y,0,p.x,p.y,p.s*2.6);b.addColorStop(0,COLORS[k]+'88');b.addColorStop(1,COLORS[k]+'00');c.globalAlpha=L;c.fillStyle=b;c.fillRect(p.x-p.s*2.6,p.y-p.s*2.6,p.s*5.2,p.s*5.2);c.globalCompositeOperation='source-over'}
+   c.globalAlpha=.6;c.fillStyle=COLORS[k];c.font='14px monospace';c.textAlign='center';c.fillText('↑→↓←'[k],p.x,p.y+5);
+  }
+  c.globalAlpha=.9;c.fillStyle='#d8fff0';c.font='10px monospace';
+  c.fillText(mode==='show'?'WATCH':mode==='input'?'REPEAT '+step+' / '+seq.length:'…',g.cx,g.cy-4);
+  c.globalAlpha=.5;c.font='8px monospace';c.fillText('SEQUENCE LENGTH '+seq.length,g.cx,g.cy+10);
+  for(let i=0;i<seq.length;i++){c.globalAlpha=mode==='input'&&i<step?.9:.25;c.fillStyle=mode==='input'&&i<step?COLORS[seq[i]]:'#d8fff0';c.fillRect(g.cx-seq.length*4+i*8,g.cy+18,5,5)}
+  c.textAlign='left';
+ },
+ readout:K=>['RECALL '+K.pad(seq.length,2),'LONGEST '+K.pad(longest,2)+' / BURNS '+K.pad(burns,2)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04070c"><title>S007 — LIQUID RETENTION</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// The memory floats. The room tilts. Keep it over the place where it is allowed to stay.
+const N=110;let H=new Float32Array(N),V=new Float32Array(N),rest=new Float32Array(N),S=new Float32Array(N);
+let tilt=0,tiltV=0,bx=.5,bv=0,zone=.7,zoneTo=.7,meter=0,retained=0,splash=0,addr=0;
+const tank=K=>({x0:K.w*.1,x1:K.w*.9,top:K.h*.24,bot:K.h*.8,base:K.h*.54});
+function surface(K){const t=tank(K),dx=(t.x1-t.x0)/(N-1),k=Math.tan(tilt);for(let i=0;i<N;i++){rest[i]=t.base+k*(i*dx-(t.x1-t.x0)/2);S[i]=K.clamp(rest[i]+H[i],t.top+6,t.bot-6)}return dx}
+Salvage({id:'S007',title:'LIQUID RETENTION',parent:'008 LIQUID MEMORY',bg:'#04070c',
+ help:'<kbd>←</kbd><kbd>→</kbd> TILT THE ROOM<br>KEEP THE MEMORY INSIDE THE BRACKET / THE POINTER STIRS',
+ aria:'A tank of layered liquid with a small glowing memory floating on its surface. Left and right arrows tilt gravity so the memory slides; keeping it inside a moving bracket retains it. Moving the pointer across the surface makes waves; holding it presses the surface.',
+ reset(K){H.fill(0);V.fill(0);tilt=tiltV=0;bx=.3;bv=0;zone=zoneTo=.7;meter=0;retained=0;addr=Math.floor(K.rand()*65535);surface(K)},
+ resize(K){surface(K)},
+ step(K,dt){
+  const t=tank(K),dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  tiltV+=dir*dt*1.6;if(K.rand()<dt*1.5)V[Math.floor(K.rand()*N)]+=(K.rand()-.5)*260;tiltV*=Math.exp(-dt*4);if(!dir)tilt*=Math.exp(-dt*.35);
+  const before=rest.slice();tilt=K.clamp(tilt+tiltV*dt,-.32,.32);const dx=surface(K);
+  // The liquid does not learn about the new tilt immediately; that delay is the slosh.
+  for(let i=0;i<N;i++)H[i]-=(rest[i]-before[i])*.92;
+  const p=K.pointer;
+  if(p.inside&&p.x>t.x0&&p.x<t.x1){const c=Math.round((p.x-t.x0)/dx);for(let i=Math.max(0,c-5);i<=Math.min(N-1,c+5);i++){const fall=1-Math.abs(i-c)/6,near=Math.abs(p.y-S[i])<70;if(near)V[i]+=p.vy*fall*dt*2.2;if(p.held)H[i]+=(p.y-rest[i]-H[i])*Math.min(1,dt*5)*fall}}
+  for(let sub=0;sub<3;sub++){const d=dt/3;for(let i=0;i<N;i++){const l=H[Math.max(0,i-1)],r=H[Math.min(N-1,i+1)];V[i]+=((l+r-2*H[i])*1700-V[i]*.9)*d}for(let i=0;i<N;i++)H[i]+=V[i]*d}
+  let mean=0;for(let i=0;i<N;i++)mean+=H[i];mean/=N;for(let i=0;i<N;i++)H[i]-=mean;
+  surface(K);
+  const w=t.x1-t.x0,fi=bx*(N-1),i=Math.round(K.clamp(fi,1,N-2)),slope=(S[i+1]-S[i-1])/(2*dx);
+  bv+=slope*2200/w*dt;bv*=Math.exp(-dt*.9);bx+=bv*dt;
+  if(bx<.03||bx>.97){bx=K.clamp(bx,.03,.97);if(Math.abs(bv)>.12){splash=1;V[bx<.5?1:N-2]-=Math.abs(bv)*900;K.note('SPLASH / THE WALL REMEMBERS NOTHING')}bv*=-.45}
+  splash=Math.max(0,splash-dt*2);
+  zone+=(zoneTo-zone)*Math.min(1,dt*.6);
+  const inside=Math.abs(bx-zone)<.07;meter=K.clamp(meter+(inside?dt/4:-dt/9));
+  if(meter>=1){retained++;meter=0;K.note('MEMORY RETAINED / '+K.pad(retained));do zoneTo=.12+K.rand()*.76;while(Math.abs(zoneTo-bx)<.3)}
+ },
+ draw(K,c){
+  const {w,h}=K,t=tank(K),dx=(t.x1-t.x0)/(N-1);
+  const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#08111f');bg.addColorStop(1,'#020307');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  c.strokeStyle='#17283a';for(let y=t.top;y<t.bot;y+=24){c.beginPath();c.moveTo(t.x0-14,y);c.lineTo(t.x0-6,y);c.moveTo(t.x1+6,y);c.lineTo(t.x1+14,y);c.stroke()}
+  // Liquid body: a gradient, then strata that follow the surface at increasing lag.
+  c.beginPath();c.moveTo(t.x0,t.bot);for(let i=0;i<N;i++)c.lineTo(t.x0+i*dx,S[i]);c.lineTo(t.x1,t.bot);c.closePath();
+  const lg=c.createLinearGradient(0,t.top,0,t.bot);lg.addColorStop(0,'#1d6fe0');lg.addColorStop(.45,'#5920ab');lg.addColorStop(1,'#14081f');c.globalAlpha=.85;c.fillStyle=lg;c.fill();
+  c.save();c.clip();
+  for(let k=1;k<9;k++){c.globalAlpha=.6-k*.04;c.lineWidth=k<3?1.4:1;c.strokeStyle=K.DAMAGE[k%6];c.beginPath();for(let i=0;i<N;i++){const y=S[i]+k*k*5.5+Math.sin(i*.2+K.time*.6+k)*k*.8-H[i]*(k/9);i?c.lineTo(t.x0+i*dx,y):c.moveTo(t.x0,y)}c.stroke()}
+  c.restore();
+  c.globalAlpha=1;c.strokeStyle='#b7f6ff';c.lineWidth=1.4;c.beginPath();for(let i=0;i<N;i++)i?c.lineTo(t.x0+i*dx,S[i]):c.moveTo(t.x0,S[i]);c.stroke();c.lineWidth=1;
+  c.strokeStyle=splash?'#ed4e8c':'#9fc4d6';c.globalAlpha=.7;c.strokeRect(t.x0-.5,t.top-.5,t.x1-t.x0+1,t.bot-t.top+1);
+  // Retention bracket.
+  const zx=t.x0+zone*(t.x1-t.x0),zw=.07*(t.x1-t.x0),zi=Math.round(zone*(N-1)),zy=S[zi]-34;
+  c.globalAlpha=.9;c.strokeStyle='#f4d84e';c.beginPath();c.moveTo(zx-zw,zy+8);c.lineTo(zx-zw,zy);c.lineTo(zx+zw,zy);c.lineTo(zx+zw,zy+8);c.stroke();
+  c.setLineDash([3,4]);c.globalAlpha=.35;c.beginPath();c.moveTo(zx-zw,zy+8);c.lineTo(zx-zw,t.bot);c.moveTo(zx+zw,zy+8);c.lineTo(zx+zw,t.bot);c.stroke();c.setLineDash([]);
+  c.globalAlpha=.9;c.fillStyle='#f4d84e';c.fillRect(zx-zw,zy-6,zw*2*meter,2);c.font='9px monospace';c.textAlign='center';c.fillText('RETAIN',zx,zy-10);
+  // The memory.
+  const bi=K.clamp(bx*(N-1),1,N-2),i0=Math.floor(bi),y=K.lerp(S[i0],S[i0+1],bi-i0),mx=t.x0+bx*(t.x1-t.x0),ang=Math.atan2(S[i0+1]-S[i0],dx);
+  const glow=c.createRadialGradient(mx,y,0,mx,y,40);glow.addColorStop(0,'#fffde055');glow.addColorStop(1,'#fffde000');c.fillStyle=glow;c.globalAlpha=1;c.fillRect(mx-40,y-40,80,80);
+  c.save();c.translate(mx,y-5);c.rotate(ang);c.fillStyle='#fffde0';c.fillRect(-6,-6,12,12);c.strokeStyle='#04070c';c.strokeRect(-3.5,-3.5,7,7);c.restore();
+  c.fillStyle='#fffde0';c.fillText('MEMORY / '+addr.toString(16).toUpperCase().padStart(4,'0'),mx,y+22);
+  // Tilt gauge.
+  const gx=w/2,gy=t.top-36;c.strokeStyle='#9fc4d6';c.globalAlpha=.7;c.beginPath();c.arc(gx,gy+30,30,-Math.PI*.8,-Math.PI*.2);c.stroke();
+  c.strokeStyle='#faffdb';c.beginPath();c.moveTo(gx,gy+30);c.lineTo(gx+Math.sin(tilt*2.4)*30,gy+30-Math.cos(tilt*2.4)*30);c.stroke();
+  c.fillStyle='#9fc4d6';c.fillText('GRAVITY '+(tilt*180/Math.PI).toFixed(1)+'°',gx,gy+44);
+  if(K.pointer.inside&&K.pointer.held){c.fillStyle='#faffdb';c.fillText('PRESSING',K.pointer.x,K.pointer.y-14)}
+  c.textAlign='left';
+ },
+ readout:K=>['RETAINED '+K.pad(retained),'HOLD '+(meter*100).toFixed(0)+'%']
+});
+})();
+</script></body></html>

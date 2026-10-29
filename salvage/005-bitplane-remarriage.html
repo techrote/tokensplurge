@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04050b"><title>S005 — BITPLANE REMARRIAGE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// One picture, split into its six bits. Each bit has wandered off sideways on its own.
+const P=6;let planes=[],off=[],vel=[],locked=[],sel=0,pw=1,ph=1,heldFor=0,remarried=0,lastMove=0;
+function build(K){
+ pw=Math.ceil(K.w/4);ph=Math.ceil(K.h/4);planes=[];
+ const data=[];for(let k=0;k<P;k++){const cv=document.createElement('canvas');cv.width=pw;cv.height=ph;planes.push(cv);data.push(cv.getContext('2d').createImageData(pw,ph))}
+ const rgb=K.DAMAGE.map(s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16))),aspect=K.h/K.w,ph0=K.seed%7;
+ for(let y=0;y<ph;y++)for(let x=0;x<pw;x++){
+  const u=x/pw,v=y/ph,r=Math.hypot(u-.5,(v-.5)*aspect);
+  let lum=.12+.42*u+.18*Math.sin(v*9+ph0)*Math.cos(u*4);
+  if(r<.32)lum+=.3*(.5+.5*Math.cos(r*44));
+  if(Math.abs(v-.5)<.17&&Math.abs(u-.5)<.38)lum+=.12;
+  lum+=.22*(K.noise(u*7,v*7)-.5);
+  const val=Math.round(K.clamp(lum)*63),o=(y*pw+x)*4;
+  for(let k=0;k<P;k++)if(val>>k&1){const d=data[k].data;d[o]=rgb[k][0];d[o+1]=rgb[k][1];d[o+2]=rgb[k][2];d[o+3]=255}
+ }
+ data.forEach((d,k)=>planes[k].getContext('2d').putImageData(d,0,0));
+}
+function scramble(K){for(let k=0;k<P;k++){off[k]=(K.rand()<.5?-1:1)*(.06+K.rand()*.3);vel[k]=0;locked[k]=false}}
+const alignment=()=>off.reduce((s,o)=>s+1-Math.min(1,Math.abs(o)/.2),0)/P;
+Salvage({id:'S005',title:'BITPLANE REMARRIAGE',parent:'005 BITPLANE DIVORCE',bg:'#04050b',
+ help:'<kbd>↑</kbd><kbd>↓</kbd> CHOOSE A BITPLANE &nbsp;<kbd>←</kbd><kbd>→</kbd> SLIDE IT HOME<br>THE POINTER TILTS THE STACK / HOLD TO EXPLODE IT',
+ aria:'A picture divided into six coloured bitplanes, each displaced sideways. Up and down choose a plane; left and right slide it back into register. The pointer tilts the stack in parallax; holding it spreads the planes apart.',
+ reset(K){build(K);scramble(K);sel=0;heldFor=0;remarried=0},
+ resize(K){build(K)},
+ key(K,e,fresh){
+  if(!fresh)return;
+  if(e.code==='ArrowUp'||e.code==='KeyW'){sel=(sel+P-1)%P;return true}
+  if(e.code==='ArrowDown'||e.code==='KeyS'){sel=(sel+1)%P;return true}
+ },
+ step(K,dt){
+  const dir=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0);
+  if(dir){vel[sel]+=dir*dt*.5;locked[sel]=false}
+  for(let k=0;k<P;k++){
+   vel[k]*=Math.exp(-dt*5);
+   if(!locked[k]){off[k]+=vel[k]*dt+Math.sin(K.time*.21+k*1.7)*dt*.0035;if(Math.abs(off[k])<.0035&&Math.abs(vel[k])<.02&&!(dir&&k===sel)){off[k]=0;vel[k]=0;locked[k]=true;K.live('Plane '+(k+1)+' in register')}}
+   off[k]=K.clamp(off[k],-.6,.6);
+  }
+  if(locked.every(Boolean)){heldFor+=dt;if(heldFor>3.2){remarried++;K.note('REMARRIED / '+K.pad(remarried)+' / THE DIVORCE RESUMES');scramble(K);heldFor=0}}else heldFor=0;
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#04050b';c.fillRect(0,0,w,h);
+  const tx=p.inside?p.x/w-.5:0,ty=p.inside?p.y/h-.5:0,spread=p.held?70:16;
+  c.imageSmoothingEnabled=false;c.globalCompositeOperation='lighter';
+  for(let k=0;k<P;k++){
+   const dx=off[k]*w+(k-2.5)*tx*spread,dy=(k-2.5)*ty*spread;
+   c.globalAlpha=.3+.7*Math.pow(2,k)/32;c.drawImage(planes[k],dx,dy,w,h);
+  }
+  c.globalCompositeOperation='source-over';c.globalAlpha=1;
+  const all=locked.every(Boolean);
+  if(all){c.globalAlpha=.25+.2*Math.sin(K.time*6);c.strokeStyle='#faffdb';c.strokeRect(8.5,8.5,w-17,h-17);c.globalAlpha=1}
+  // Selected plane: its frame drawn where it actually sits.
+  const sx=off[sel]*w+(sel-2.5)*tx*spread,sy=(sel-2.5)*ty*spread;
+  c.strokeStyle=K.DAMAGE[sel];c.setLineDash([6,5]);c.lineDashOffset=-K.time*20;c.strokeRect(sx+.5,sy+.5,w-1,h-1);c.setLineDash([]);
+  // The ledger: one row per bit, showing how far from home it is.
+  const lx=22,ly=h*.3,lw=Math.min(180,w*.28);c.font='9px monospace';
+  for(let k=0;k<P;k++){
+   const y=ly+k*22,on=k===sel;c.globalAlpha=on?1:.55;c.fillStyle=K.DAMAGE[k];
+   c.fillText((on?'▶ ':'  ')+'BIT '+k+' / 2^'+k+(locked[k]?' / HOME':''),lx,y);
+   c.fillStyle='#ffffff22';c.fillRect(lx,y+5,lw,2);c.fillStyle='#faffdb';c.fillRect(lx+lw/2-.5,y+2,1,8);
+   c.fillStyle=K.DAMAGE[k];c.fillRect(lx+lw/2+K.clamp(off[k]/.6,-1,1)*lw/2-2,y+3,4,6);
+  }
+  c.globalAlpha=1;
+ },
+ readout:K=>['ALIGNMENT '+(alignment()*100).toFixed(2)+'%','PLANE '+(sel+1)+' / REMARRIED '+K.pad(remarried)]
+});
+})();
+</script></body></html>

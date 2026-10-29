@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0a10"><title>S015 — REWEAVE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Every crossing is one bit: warp over, or weft over. The pattern is the only record of which was meant.
+const WARP=['#e4f2bf','#28e3f4','#f1118b','#fe6741','#5920ab','#102cfa'],WEFT='#1c2235';
+let N=0,M=0,s=20,ox=0,oy=0,want=null,have=null,vibX=null,vibY=null,needle={i:0,j:0},mends=0,holds=false,repeat=0,unravel=0,kind=0;
+const PATTERNS=[(i,j)=>(i+j)%4<2,(i,j)=>(Math.abs(i%10-5)+Math.abs(j%10-5))%5<2!==((i+j)%2===0),(i,j)=>((i>>1)+(j>>1))%2===0?(i+j)%4<2:(i-j+400)%4<2,(i,j)=>(i%6<3)!==(j%6<3)?(i+j)%2===0:(i*j)%3===0];
+function setup(K){
+ N=Math.round(K.clamp(K.w*.8/20,16,56));M=Math.round(K.clamp(K.h*.6/20,10,30));s=Math.min(K.w*.82/N,K.h*.62/M);ox=(K.w-s*N)/2;oy=(K.h-s*M)/2+10;
+ kind=Math.floor(K.rand()*PATTERNS.length);want=new Uint8Array(N*M);have=new Uint8Array(N*M);vibX=new Float32Array(N);vibY=new Float32Array(M);
+ for(let j=0;j<M;j++)for(let i=0;i<N;i++){const n=j*N+i;want[n]=PATTERNS[kind](i,j)?1:0;have[n]=K.rand()<.18?1-want[n]:want[n]}
+ needle={i:Math.floor(N/2),j:Math.floor(M/2)};holds=false;
+}
+const integrity=()=>{let ok=0;for(let n=0;n<want.length;n++)ok+=want[n]===have[n];return ok/want.length};
+function flip(K,n,byHand){have[n]^=1;if(byHand&&have[n]===want[n])mends++}
+Salvage({id:'S015',title:'REWEAVE',parent:'038 UNRAVELLING',bg:'#0b0a10',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE THE NEEDLE &nbsp;<kbd>SPACE</kbd> PASS OVER / UNDER<br>MEND THE BREAKS IN THE PATTERN / THE POINTER PLUCKS, HOLDING PULLS',
+ aria:'A woven cloth of coloured warp threads crossing dark weft threads in a repeating pattern, with errors where crossings have flipped. Arrow keys move a needle and Space flips the crossing beneath it. Moving the pointer plucks threads so they vibrate; holding it pulls crossings loose.',
+ reset(K){setup(K);mends=0},
+ resize(K){setup(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh)flip(K,needle.j*N+needle.i,true);return true}
+  const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[e.code];
+  if(d){if(fresh){repeat=.25;needle.i=K.clamp(needle.i+d[0],0,N-1);needle.j=K.clamp(needle.j+d[1],0,M-1)}return true}
+ },
+ down(K,x,y){const i=Math.floor((x-ox)/s),j=Math.floor((y-oy)/s);if(i>=0&&j>=0&&i<N&&j<M){needle={i,j};return false}return false},
+ step(K,dt){
+  if(K.keys.size){repeat-=dt;if(repeat<=0){repeat=.08;for(const c of K.keys){const d={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[c];if(d){needle.i=K.clamp(needle.i+d[0],0,N-1);needle.j=K.clamp(needle.j+d[1],0,M-1);break}}}}
+  const p=K.pointer;
+  for(let i=0;i<N;i++){vibX[i]*=Math.exp(-dt*2.5);if(p.inside&&Math.abs(ox+(i+.5)*s-p.x)<s*.8)vibX[i]=Math.max(vibX[i],Math.min(1,Math.abs(p.vx)/600))}
+  for(let j=0;j<M;j++){vibY[j]*=Math.exp(-dt*2.5);if(p.inside&&Math.abs(oy+(j+.5)*s-p.y)<s*.8)vibY[j]=Math.max(vibY[j],Math.min(1,Math.abs(p.vy)/600))}
+  // Unravelling starts at the selvedge and works inward.
+  unravel+=dt*(.7+(1-integrity())*.6);
+  while(unravel>=1){unravel--;const edge=K.rand()<.6,i=edge?(K.rand()<.5?Math.floor(K.rand()*3):N-1-Math.floor(K.rand()*3)):Math.floor(K.rand()*N),j=Math.floor(K.rand()*M);flip(K,j*N+i,false)}
+  if(p.held&&p.inside&&K.rand()<dt*14){const i=Math.floor((p.x-ox)/s+(K.rand()-.5)*3),j=Math.floor((p.y-oy)/s+(K.rand()-.5)*3);if(i>=0&&j>=0&&i<N&&j<M)flip(K,j*N+i,false)}
+  const it=integrity();if(it>.995&&!holds){holds=true;K.note('THE WEAVE HOLDS / FOR NOW')}else if(it<.97)holds=false;
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#0b0a10';c.fillRect(0,0,w,h);
+  const t=K.time,wx=(i,j)=>ox+(i+.5)*s+vibX[i]*Math.sin(j*.9+t*28)*s*.35,wy=(i,j)=>oy+(j+.5)*s+vibY[j]*Math.sin(i*.9+t*28)*s*.35;
+  const lamp=p.inside?Math.max(90,Math.min(w,h)*.16):0;
+  // Underlayer: every weft and every warp as a continuous line.
+  c.lineWidth=s*.5;c.strokeStyle=WEFT;for(let j=0;j<M;j++){c.beginPath();for(let i=0;i<N;i++){i?c.lineTo(ox+(i+.5)*s,wy(i,j)):c.moveTo(ox,wy(0,j))}c.lineTo(ox+N*s,wy(N-1,j));c.stroke()}
+  for(let i=0;i<N;i++){c.strokeStyle=WARP[Math.floor(i/4)%WARP.length];c.globalAlpha=.55;c.beginPath();for(let j=0;j<M;j++){j?c.lineTo(wx(i,j),oy+(j+.5)*s):c.moveTo(wx(i,0),oy)}c.lineTo(wx(i,M-1),oy+M*s);c.stroke()}
+  c.globalAlpha=1;c.lineWidth=1;
+  // Crossings: whichever thread is over gets drawn last.
+  for(let j=0;j<M;j++)for(let i=0;i<N;i++){
+   const n=j*N+i,x=wx(i,j),y=wy(i,j),q=s*.46,warpOver=have[n]===1;
+   if(warpOver){c.fillStyle=WARP[Math.floor(i/4)%WARP.length];c.fillRect(x-s*.25,y-q,s*.5,q*2);c.fillStyle='#00000033';c.fillRect(x-s*.25,y+q*.4,s*.5,q*.6)}
+   else{c.fillStyle='#2b3350';c.fillRect(x-q,y-s*.25,q*2,s*.5);c.fillStyle='#ffffff14';c.fillRect(x-q,y-s*.25,q*2,s*.12)}
+   if(lamp&&want[n]!==have[n]){const d=Math.hypot(x-p.x,y-p.y);if(d<lamp){c.globalAlpha=(1-d/lamp)*.9;c.strokeStyle='#ed4e8c';c.beginPath();c.moveTo(x-3,y-3);c.lineTo(x+3,y+3);c.moveTo(x+3,y-3);c.lineTo(x-3,y+3);c.stroke();c.globalAlpha=1}}
+  }
+  // Frayed ends at the selvedge.
+  c.strokeStyle='#e4f2bf55';for(let j=0;j<M;j+=2)for(const side of [0,1]){const x=side?ox+N*s:ox,y=oy+(j+.5)*s,len=s*(1+K.hash(j+side*99)*2);c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+(side?1:-1)*len*.6,y+Math.sin(t*2+j)*s*.6,x+(side?1:-1)*len,y+Math.sin(t*1.3+j)*s);c.stroke()}
+  const nx=ox+(needle.i+.5)*s,ny=oy+(needle.j+.5)*s;
+  c.strokeStyle='#faffdb';c.lineWidth=1.5;c.strokeRect(nx-s*.55,ny-s*.55,s*1.1,s*1.1);c.lineWidth=1;
+  c.beginPath();c.moveTo(nx+s*.6,ny-s*.6);c.lineTo(nx+s*1.8,ny-s*1.8);c.stroke();c.beginPath();c.arc(nx+s*1.9,ny-s*1.9,2.5,0,TAU);c.stroke();
+  const n=needle.j*N+needle.i;c.font='9px monospace';c.fillStyle=want[n]===have[n]?'#faffdb':'#ed4e8c';
+  c.fillText((have[n]?'WARP OVER':'WEFT OVER')+(want[n]===have[n]?'':' / BREAK'),nx+s*2.4,ny-s*1.6);
+  if(p.inside){c.globalAlpha=.35;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,lamp,0,TAU);c.stroke();c.globalAlpha=.8;c.fillStyle='#faffdb';c.fillText(p.held?'PULLING':'PLUCK',p.x+lamp*.72,p.y-lamp*.72);c.globalAlpha=1}
+ },
+ readout:K=>['INTEGRITY '+(integrity()*100).toFixed(2)+'%','MENDED '+K.pad(mends)]
+});
+})();
+</script></body></html>

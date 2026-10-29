@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0806"><title>S010 — SEDIMENT</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Sediment arrives one slab at a time. Laid on its own kind, it compacts and is gone.
+const EARTH=['#c98a4b','#6f5640','#4f7f8a','#d9c9a0','#8d78ff'];
+let C=0,stacks=[],slab=null,compacted=0,slips=0,repeat=0,subside=0,slipClock=0,rings=[];
+const g=K=>{const colW=Math.min(46,K.w*.8/C),x0=(K.w-colW*C)/2,lh=Math.max(9,Math.min(16,K.h/48)),ground=K.h-90;return{colW,x0,lh,ground,max:Math.floor((ground-K.h*.2)/lh)}};
+function newSlab(K){slab={col:Math.floor(C/2),y:K.h*.14,color:Math.floor(K.rand()*EARTH.length)}}
+function slip(K,from,to){if(to<0||to>=C||!stacks[from].length)return;stacks[to].push(stacks[from].pop());slips++}
+function init(K){C=Math.round(K.clamp(K.w/46,9,24));stacks=Array.from({length:C},()=>Array.from({length:3+Math.floor(K.rand()*8)},()=>Math.floor(K.rand()*EARTH.length)));compacted=slips=0;newSlab(K)}
+Salvage({id:'S010',title:'SEDIMENT',parent:'023 STRATIGRAPHIC SLIP',bg:'#0b0806',
+ help:'<kbd>←</kbd><kbd>→</kbd> GUIDE THE SLAB &nbsp;<kbd>↓</kbd> LET IT FALL<br>LAY IT ON ITS OWN COLOUR TO COMPACT / THE POINTER SHEARS',
+ aria:'Columns of coloured sediment layers with a slab falling from above. Left and right move the slab, down drops it faster; landing on a layer of the same colour compacts both away. Tall columns slip onto their neighbours. The pointer shears the strata sideways; holding it forces a slip.',
+ reset(K){init(K)},
+ resize(K){const n=Math.round(K.clamp(K.w/46,9,24));if(n!==C){K.notes.length=0;init(K)}},
+ key(K,e,fresh){
+  const d=e.code==='ArrowLeft'||e.code==='KeyA'?-1:e.code==='ArrowRight'||e.code==='KeyD'?1:0;
+  if(d){if(fresh){repeat=.22;slab.col=K.clamp(slab.col+d,0,C-1)}return true}
+  if(e.code==='ArrowDown'||e.code==='KeyS'||e.code==='Space')return true;
+ },
+ step(K,dt){
+  const G=g(K);
+  if(K.keys.size){repeat-=dt;if(repeat<=0){repeat=.08;const l=K.keys.has('ArrowLeft')||K.keys.has('KeyA'),r=K.keys.has('ArrowRight')||K.keys.has('KeyD');if(l!==r)slab.col=K.clamp(slab.col+(r?1:-1),0,C-1)}}
+  const fast=K.keys.has('ArrowDown')||K.keys.has('KeyS')||K.keys.has('Space');
+  slab.y+=dt*(fast?620:55);
+  const s=stacks[slab.col],top=G.ground-s.length*G.lh;
+  if(slab.y+G.lh>=top){
+   const x=G.x0+(slab.col+.5)*G.colW;
+   if(s.length&&s[s.length-1]===slab.color){s.pop();compacted++;rings.push({x,y:top,t:0});K.live('Compacted')}
+   else s.push(slab.color);
+   newSlab(K);
+  }
+  // Overloaded columns shed their top layer onto the lower neighbour.
+  slipClock-=dt;
+  if(slipClock<=0){for(let i=0;i<C;i++){const l=i>0?stacks[i-1].length:99,r=i<C-1?stacks[i+1].length:99,hgt=stacks[i].length;if(hgt-Math.min(l,r)>4||hgt>G.max){slip(K,i,l<r?i-1:i+1);slipClock=.22;if(K.rand()<.3)K.note('STRATIGRAPHIC SLIP');break}}}
+  subside+=dt;if(subside>2.4){subside=0;let t=0;for(let i=1;i<C;i++)if(stacks[i].length>stacks[t].length)t=i;stacks[t].shift()}
+  const p=K.pointer;if(p.held&&p.inside&&slipClock<=0){const i=Math.floor((p.x-G.x0)/G.colW);if(i>=0&&i<C&&stacks[i].length){slip(K,i,p.x-(G.x0+(i+.5)*G.colW)<0?i-1:i+1);slipClock=.18}}
+  for(let k=rings.length-1;k>=0;k--){rings[k].t+=dt;if(rings[k].t>.8)rings.splice(k,1)}
+ },
+ draw(K,c){
+  const {w,h,TAU}=K,G=g(K),p=K.pointer;
+  const bg=c.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#14100c');bg.addColorStop(1,'#050302');c.fillStyle=bg;c.fillRect(0,0,w,h);
+  c.strokeStyle='#2a221a';c.beginPath();c.moveTo(0,G.ground+.5);c.lineTo(w,G.ground+.5);c.stroke();
+  for(let i=0;i<C;i++)stacks[i].forEach((col,k)=>{
+   const y=G.ground-(k+1)*G.lh;let x=G.x0+i*G.colW;
+   if(p.inside){const d=(y-p.y)/80;x+=Math.exp(-d*d)*Math.sin(k*.9+K.time*2)*G.colW*.35*(p.held?2:1)}
+   c.globalAlpha=1;c.fillStyle=EARTH[col];c.fillRect(x,y,G.colW-1,G.lh-1);
+   c.globalAlpha=.22;c.fillStyle='#000';for(let q=0;q<4;q++){const hx=K.hash(i*131+k*17+q);c.fillRect(x+hx*(G.colW-4),y+K.hash(i+k*7+q*3)*(G.lh-3),2,1)}
+   if(k===stacks[i].length-1&&slab&&col===slab.color){c.globalAlpha=.4+.3*Math.sin(K.time*5);c.strokeStyle='#faffdb';c.strokeRect(x+.5,y+.5,G.colW-2,G.lh-2)}
+  });
+  c.globalAlpha=.25;c.fillStyle='#faffdb';c.fillRect(G.x0+slab.col*G.colW,slab.y+G.lh,G.colW-1,G.ground-stacks[slab.col].length*G.lh-slab.y-G.lh);
+  c.globalAlpha=1;c.fillStyle=EARTH[slab.color];c.fillRect(G.x0+slab.col*G.colW,slab.y,G.colW-1,G.lh-1);c.strokeStyle='#faffdb';c.strokeRect(G.x0+slab.col*G.colW+.5,slab.y+.5,G.colW-2,G.lh-2);
+  c.strokeStyle='#f4d84e';for(const r of rings){c.globalAlpha=1-r.t/.8;c.beginPath();c.ellipse(r.x,r.y,G.colW*(.5+r.t*2),G.lh*(.5+r.t),0,0,TAU);c.stroke()}
+  c.globalAlpha=.55;c.fillStyle='#d9c9a0';c.font='8px monospace';
+  for(let i=0;i<C;i+=3)c.fillText('C'+K.pad(i,2),G.x0+i*G.colW+2,G.ground+12);
+  c.fillText('DEPTH ↓ / EACH LAYER ~'+(G.lh*120)+' YEARS',G.x0,G.ground+26);
+  if(p.inside){c.globalAlpha=.8;c.fillStyle='#faffdb';c.fillText(p.held?'FORCING SLIP':'SHEAR',p.x+12,p.y-10)}
+  c.globalAlpha=1;
+ },
+ readout:K=>['COMPACTED '+K.pad(compacted),'SLIPS '+K.pad(slips)]
+});
+})();
+</script></body></html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S011 — LARVAL STAGE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Compression artefacts are food. Something has hatched that knows it.
+const BS=16,GAP=6;let bc=0,br=0,blocks=null,larvae=[],me=null,eaten=0,shed=0,grow=0;
+const STEER={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]};
+function spawn(K,x,y,player){const a=K.rand()*K.TAU,seg=[];for(let k=0;k<(player?12:8+Math.floor(K.rand()*10));k++)seg.push([x-Math.cos(a)*k*GAP,y-Math.sin(a)*k*GAP]);return{seg,path:seg.slice(),a,ta:a,speed:player?125:70+K.rand()*30,player,color:player?'#faffdb':K.DAMAGE[Math.floor(K.rand()*6)],wander:K.rand()*9}}
+function seed(K){
+ bc=Math.ceil(K.w/BS);br=Math.ceil(K.h/BS);blocks=new Int8Array(bc*br).fill(-1);
+ for(let k=0;k<24;k++){const ci=Math.floor(K.rand()*bc),cj=Math.floor(K.rand()*br),r=2+Math.floor(K.rand()*6),col=Math.floor(K.rand()*6);for(let j=cj-r;j<=cj+r;j++)for(let i=ci-r;i<=ci+r;i++)if(i>=0&&j>=0&&i<bc&&j<br&&Math.hypot(i-ci,j-cj)<r&&K.rand()<.82)blocks[j*bc+i]=col}
+}
+function shedFrom(K,l,k){
+ // A larva that bites its own body leaves the rest behind as fresh artefacts.
+ for(const [x,y] of l.seg.slice(k)){const i=Math.floor(x/BS),j=Math.floor(y/BS);if(i>=0&&j>=0&&i<bc&&j<br)blocks[j*bc+i]=Math.floor(K.hash(i+j*7)*6)}
+ l.len=Math.max(6,k);l.seg.length=l.len;if(l.player){shed++;K.note('SHED / THE TAIL BECOMES ARTEFACT AGAIN')}
+}
+function move(K,l,dt){
+ const h=l.seg[0];let turn=K.wrap(l.ta-l.a);l.a+=K.clamp(turn,-dt*5.5,dt*5.5);
+ let x=h[0]+Math.cos(l.a)*l.speed*dt,y=h[1]+Math.sin(l.a)*l.speed*dt;const wrapped=x<0||y<0||x>K.w||y>K.h;
+ x=(x+K.w)%K.w;y=(y+K.h)%K.h;l.path.unshift([x,y]);
+ // Segments are sampled from the head's own path at fixed arc length.
+ const seg=[[x,y]];let acc=0,k=1;
+ for(;k<l.path.length&&seg.length<l.len;k++){const a=l.path[k-1],b=l.path[k];let d=Math.hypot(b[0]-a[0],b[1]-a[1]);if(d>Math.min(K.w,K.h)/2)d=0;acc+=d;if(acc>=GAP){acc-=GAP;seg.push(b)}}
+ l.path.length=Math.min(l.path.length,k+2);l.seg=seg;
+ const i=Math.floor(x/BS),j=Math.floor(y/BS),n=j*bc+i;
+ if(i>=0&&j>=0&&i<bc&&j<br&&blocks[n]>=0){blocks[n]=-1;l.len+=2;if(l.player)eaten++}
+ if(!wrapped)for(let k=14;k<l.seg.length;k++)if(Math.hypot(l.seg[k][0]-x,l.seg[k][1]-y)<GAP*.6){shedFrom(K,l,k);break}
+ if(!l.player&&l.len>46)shedFrom(K,l,24);
+}
+Salvage({id:'S011',title:'LARVAL STAGE',parent:'025 CODEC LARVAE',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> STEER THE PALE LARVA / EAT THE ARTEFACTS<br>THE OTHERS FOLLOW THE POINTER / HOLD TO SCATTER THEM',
+ aria:'A field of coloured compression blocks being eaten by segmented larvae. Arrow keys steer the pale larva, which grows as it eats and sheds its tail if it bites itself. The other larvae are drawn toward the pointer; holding it scatters them. Blocks near the pointer show their compression pattern.',
+ reset(K){seed(K);larvae=[];me=spawn(K,K.w/2,K.h/2,true);me.len=me.seg.length;larvae.push(me);for(let k=0;k<4;k++){const l=spawn(K,K.rand()*K.w,K.rand()*K.h,false);l.len=l.seg.length;larvae.push(l)}eaten=shed=0},
+ resize(K){const old=blocks,oc=bc,or=br;bc=Math.ceil(K.w/BS);br=Math.ceil(K.h/BS);blocks=new Int8Array(bc*br).fill(-1);for(let j=0;j<Math.min(br,or);j++)for(let i=0;i<Math.min(bc,oc);i++)blocks[j*bc+i]=old[j*oc+i]},
+ key(K,e){if(STEER[e.code])return true},
+ step(K,dt){
+  let dx=0,dy=0;for(const c of K.keys)if(STEER[c]){dx+=STEER[c][0];dy+=STEER[c][1]}
+  if(dx||dy)me.ta=Math.atan2(dy,dx);
+  const p=K.pointer;
+  for(const l of larvae){
+   if(!l.player){
+    const h=l.seg[0];let tx=null;
+    if(p.inside){tx=Math.atan2(p.y-h[1],p.x-h[0]);if(p.held)tx+=Math.PI}
+    else{l.wander+=dt*(K.rand()-.5)*3;tx=l.a+Math.sin(l.wander)*1.2}
+    // Sniff the nearest artefact in front.
+    const i0=Math.floor(h[0]/BS),j0=Math.floor(h[1]/BS);let best=null,bd=1e9;for(let j=j0-4;j<=j0+4;j++)for(let i=i0-4;i<=i0+4;i++)if(i>=0&&j>=0&&i<bc&&j<br&&blocks[j*bc+i]>=0){const d=(i-i0)*(i-i0)+(j-j0)*(j-j0);if(d<bd){bd=d;best=[i,j]}}
+    if(best&&!(p.inside&&p.held))tx=p.inside?K.lerp(tx,Math.atan2((best[1]+.5)*BS-h[1],(best[0]+.5)*BS-h[0]),.4):Math.atan2((best[1]+.5)*BS-h[1],(best[0]+.5)*BS-h[0]);
+    l.ta=tx;l.speed=p.inside&&p.held?140:62;
+   }
+   move(K,l,dt);
+  }
+  grow+=dt;if(grow>.04){grow=0;const n=Math.floor(K.rand()*blocks.length);if(blocks[n]>=0){const m=n+[1,-1,bc,-bc][Math.floor(K.rand()*4)];if(m>=0&&m<blocks.length&&blocks[m]<0)blocks[m]=blocks[n]}else if(K.rand()<.04)blocks[n]=Math.floor(K.rand()*6)}
+ },
+ draw(K,c){
+  const {w,h,TAU}=K,p=K.pointer,R=Math.max(90,Math.min(w,h)*.15);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.strokeStyle='#0c1420';c.beginPath();for(let x=0;x<w;x+=BS){c.moveTo(x+.5,0);c.lineTo(x+.5,h)}for(let y=0;y<h;y+=BS){c.moveTo(0,y+.5);c.lineTo(w,y+.5)}c.stroke();
+  for(let n=0;n<blocks.length;n++){const b=blocks[n];if(b<0)continue;const x=n%bc*BS,y=Math.floor(n/bc)*BS;
+   c.globalAlpha=.72;c.fillStyle=K.DAMAGE[b];c.fillRect(x+1,y+1,BS-2,BS-2);
+   if(p.inside&&Math.hypot(x+BS/2-p.x,y+BS/2-p.y)<R){
+    // Under the pointer, each block shows the cosine pattern it was quantised from.
+    const f=1+Math.floor(K.hash(n)*3);c.globalAlpha=.55;c.fillStyle='#05070e';for(let q=0;q<4;q++)for(let r=0;r<4;r++)if(((q*f)+(r*(4-f)))%2)c.fillRect(x+1+q*(BS-2)/4,y+1+r*(BS-2)/4,(BS-2)/4,(BS-2)/4)}
+  }
+  for(const l of larvae){
+   for(let k=l.seg.length-1;k>=0;k--){const [x,y]=l.seg[k],r=(l.player?5:4)*(1-k/l.seg.length*.6);c.globalAlpha=l.player?1:.85;c.fillStyle=k%3===0?l.color:'#05070e';c.beginPath();c.arc(x,y,r,0,TAU);c.fill();c.strokeStyle=l.color;c.stroke()}
+   const [hx,hy]=l.seg[0];c.fillStyle='#05070e';c.globalAlpha=1;for(const s of [-1,1])c.fillRect(hx+Math.cos(l.a+s*.6)*3-1,hy+Math.sin(l.a+s*.6)*3-1,2,2);
+  }
+  const [hx,hy]=me.seg[0];c.font='8px monospace';c.fillStyle='#faffdb';c.fillText('YOU / '+me.seg.length+' SEGMENTS',hx+12,hy-10);
+  if(p.inside){c.globalAlpha=.4;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,R,0,TAU);c.stroke();c.globalAlpha=.8;c.fillText(p.held?'SCATTER':'LURE / DECOMPRESS',p.x+R*.72,p.y-R*.72)}
+  c.globalAlpha=1;
+ },
+ readout:K=>['LENGTH '+K.pad(me.seg.length),'EATEN '+K.pad(eaten)+' / SHED '+K.pad(shed)]
+});
+})();
+</script></body></html>
