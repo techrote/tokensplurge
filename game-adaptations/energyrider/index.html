@@ -4,13 +4,13 @@
 (()=>{'use strict';
 // The memory rides a tank the room keeps tilting. Gather five pieces of it, stomp or shoot what drifts above, and reach the gate.
 const D2R=Math.PI/180;
-const SP=24,G=900,RUN=260,MAXV=300,JET=1150,SEC=2,REGEN=1.8,JUMP=520,STOMP=-420,SHOT_CD=.16,ENEMY_RATE=2.1,WAVE=160,DAMP=1.2,SPRING=3;
-const LIMIT=50*D2R,PRESET_MAX=20*D2R,PRESET_GAP=10*D2R;
+const SP=24,G=900,RUN=260,MAXV=300,JET=1150,SEC=4,REGEN=1.8,JUMP=330,STOMP=-420,SHOT_CD=.16,ENEMY_RATE=2.1,WAVE=160,DAMP=1.2,SPRING=3;
+const LIMIT=60*D2R,PRESET_MAX=20*D2R,PRESET_GAP=10*D2R;
 let K=null,stage=1,score=0,hp=3,cam=0,LEN=0,n=0,state='play',stateT=0,grab=-1,warnT=0,tilt=0,tiltGoal=0,rippleT=0,swellT=0;
 const presets=[-25*D2R,0,25*D2R],held=new Set();
 let baseF=new Float32Array(0),H=new Float32Array(0),V=new Float32Array(0);
 let mems=[],enemies=[],shots=[],eshots=[],parts=[];
-const P={x:0,y:0,vx:0,vy:0,r:8,ground:false,nx:0,ny:-1,jet:false,jetFloor:0,fuel:3,facing:1,shot:0,inv:0};
+const P={x:0,y:0,vx:0,vy:0,r:8,ground:false,nx:0,ny:-1,ang:0,jet:false,fuel:3,facing:1,shot:0,inv:0};
 const deg=r=>(r/D2R).toFixed(0)+'°';
 const surfY=x=>{const f=K.clamp(x/SP,0,n-1.001),i=Math.floor(f),t=f-i;return K.lerp(K.h*baseF[i]+H[i],K.h*baseF[i+1]+H[i+1],t)};
 const surfSlope=x=>(surfY(x+3)-surfY(x-3))/6;
@@ -27,12 +27,14 @@ function build(k){
   enemies=Array.from({length:Math.min(9,1+stage*2)},()=>({x:700+K.rand()*(LEN-1100),fy:.14+K.rand()*.26,ph:K.rand()*6.3,t:1+K.rand()*ENEMY_RATE,alive:true,fall:null}));
   shots=[];eshots=[];parts=[];
   for(let s=0;s<240;s++)liquid(1/60);// the liquid is already moving when you arrive
-  Object.assign(P,{x:120,vx:0,vy:0,ground:false,nx:0,ny:-1,jet:false,jetFloor:0,fuel:3,facing:1,shot:0,inv:0});
+  Object.assign(P,{x:120,vx:0,vy:0,ground:false,nx:0,ny:-1,ang:0,jet:false,fuel:3,facing:1,shot:0,inv:0});
   P.y=surfY(P.x)-P.r;
   cam=0;state='play';stateT=0;warnT=0;
 }
 
 function splash(wx,amt){const c=Math.round(wx/SP);for(let j=Math.max(0,c-2);j<=Math.min(n-1,c+2);j++)V[j]+=amt*(1-Math.abs(j-c)/3)}
+// An enemy shot landing on the liquid presses it down: a pushed height and a downward kick, both fading out to the sides.
+function impact(wx){const c=Math.round(wx/SP);for(let j=Math.max(0,c-4);j<=Math.min(n-1,c+4);j++){const f=1-Math.abs(j-c)/5;V[j]+=260*f;H[j]+=28*f}}
 function burst(x,y){for(let i=0;i<14;i++){const a=K.rand()*K.TAU,s=60+K.rand()*200;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1})}}
 function hurt(){hp--;P.inv=1.2;if(hp<=0){state='dead';stateT=0;K.note('THE MEMORY IS LOST');burst(P.x,P.y)}else K.note('HIT / '+hp+' LEFT')}
 
@@ -44,12 +46,10 @@ function setPreset(i,a){
   presets[2]=K.clamp(Math.max(presets[2],presets[1]+PRESET_GAP),-1.2,1.2);
 }
 
-// Takeoff: pressing jump on the surface launches along the surface normal, then the jetpack lights.
-function jet(){
-  if(state!=='play')return;
-  if(P.ground){P.vx+=P.nx*JUMP;P.vy+=P.ny*JUMP;P.ground=false}
-  if(P.jet||P.fuel<=1e-3)return;
-  P.jet=true;P.jetFloor=Math.max(0,Math.ceil(P.fuel-1e-6)-1);
+// Takeoff: pressing jump on the surface launches along the surface normal.
+function takeoff(){
+  if(state!=='play'||!P.ground)return;
+  P.vx+=P.nx*JUMP;P.vy+=P.ny*JUMP;P.ground=false;
 }
 
 // The liquid: a wave solver that is always moving. Gravity pulls its level toward the low side of the tilted room.
@@ -58,7 +58,14 @@ function liquid(dt){
   rippleT-=dt;
   if(rippleT<=0){rippleT=.3+K.rand()*.5;const j=Math.floor(K.rand()*n);V[j]+=(K.rand()-.5)*160}
   swellT-=dt;
-  if(swellT<=0){swellT=2.5+K.rand()*2.5;const j=Math.floor(K.rand()*n);for(let s=-4;s<=4;s++){const q=j+s;if(q>=0&&q<n)V[q]+=500*(1-Math.abs(s)/5)}}
+  if(swellT<=0){
+    swellT=2.5+K.rand()*2.5;
+    // Swells only start off screen, so they roll in from the edges rather than appearing.
+    const lo=cam-120,hi=cam+K.w+120;
+    let j=-1;
+    for(let t=0;t<8&&j<0;t++){const c=Math.floor(K.rand()*n);if(c*SP<lo||c*SP>hi)j=c}
+    if(j>=0)for(let s=-4;s<=4;s++){const q=j+s;if(q>=0&&q<n)V[q]+=500*(1-Math.abs(s)/5)}
+  }
   if(grab>=0&&p.held){
     const tgt=K.clamp(p.y-K.h*baseF[grab],-240,240);
     for(let j=Math.max(0,grab-6);j<=Math.min(n-1,grab+6);j++){const w=1-Math.abs(j-grab)/7;H[j]+=(tgt*w-H[j])*Math.min(1,dt*10)}
@@ -81,14 +88,13 @@ function play(dt){
   if(dir)P.facing=dir;
   // A and D steer directly; Ctrl halves the run speed.
   if(dir||P.ground)P.vx+=(dir*RUN*(ctrl?.5:1)-P.vx)*Math.min(1,dt*(P.ground?9:3));
-  // S triples gravity in the air; Ctrl halves it. Together they give 1.5x.
-  const gm=(held.has('KeyS')&&!P.ground?3:1)*(ctrl?.5:1),st=Math.sin(tilt),ct=Math.cos(tilt);
+  // Gravity acts on the ground only. In the air it is off unless S is held, which pulls at triple strength; Ctrl halves either.
+  const gm=(P.ground?1:(held.has('KeyS')?3:0))*(ctrl?.5:1),st=Math.sin(tilt),ct=Math.cos(tilt);
   P.vx+=G*st*gm*dt;P.vy+=G*ct*gm*dt;
-  // Jetpack: once lit, a fuel section burns down to its floor. Fuel refills only on the liquid.
-  if(P.jet){
-    if(P.fuel<=P.jetFloor+1e-6){P.jet=false;P.fuel=P.jetFloor}
-    else{P.fuel=Math.max(P.jetFloor,P.fuel-dt/SEC);P.vx-=st*JET*dt;P.vy-=ct*JET*dt}
-  }else if(P.ground)P.fuel=Math.min(3,P.fuel+REGEN*dt);
+  // Jetpack follows the key: thrust and fuel burn only while W or Space is held. Fuel refills only on the liquid.
+  P.jet=(held.has('Space')||held.has('KeyW'))&&P.fuel>0;
+  if(P.jet){P.fuel=Math.max(0,P.fuel-dt/SEC);P.vx-=st*JET*dt;P.vy-=ct*JET*dt}
+  else if(P.ground)P.fuel=Math.min(3,P.fuel+REGEN*dt);
   // Airborne, momentum is kept; the cap only stops runaway sideways gravity.
   const cap=maxV*2.2;P.vx=K.clamp(P.vx,-cap,cap);
   P.x+=P.vx*dt;P.y+=P.vy*dt;
@@ -103,6 +109,9 @@ function play(dt){
     P.ground=false;if(gap<0)P.y=sy-P.r;
   }
   P.nx=nx;P.ny=ny;
+  // The body turns to the surface while grounded and keeps its angle in the air.
+  if(P.ground)P.ang+=(K.clamp(Math.atan2(nx,-ny),-LIMIT,LIMIT)-P.ang)*Math.min(1,dt*12);
+  P.ang=K.clamp(P.ang,-LIMIT,LIMIT);
   if(P.y<P.r){P.y=P.r;if(P.vy<0)P.vy=0}
 
   P.shot-=dt;P.inv-=dt;
@@ -129,7 +138,7 @@ function play(dt){
   eshots=eshots.filter(s=>{
     s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
     if(s.life<=0)return false;
-    if(s.y>surfY(s.x)){splash(s.x,60);return false}
+    if(s.y>surfY(s.x)){impact(s.x);return false}
     if(P.inv<=0&&Math.hypot(s.x-P.x,s.y-P.y)<P.r+4){hurt();return false}
     return true;
   });
@@ -159,7 +168,7 @@ function play(dt){
 function advance(){if(state==='clear')stage++;hp=3;build(K)}
 
 Salvage({id:'S007',title:'ENERGYRIDER',parent:'008 LIQUID MEMORY',bg:'#04070c',
- help:'<kbd>A</kbd><kbd>D</kbd> RUN &nbsp;<kbd>W</kbd> / <kbd>SPACE</kbd> JUMP + JETPACK &nbsp;<kbd>S</kbd> FAST FALL &nbsp;<kbd>CTRL</kbd> GLIDE &nbsp;<kbd>F</kbd> FIRE<br><kbd>←</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>E</kbd> TILT GRAVITY &nbsp;<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> READ A PRESET &nbsp;<kbd>SHIFT</kbd>+# WRITE ONE / DRAG THE LIQUID WITH THE POINTER',
+ help:'<kbd>A</kbd><kbd>D</kbd> RUN &nbsp;<kbd>W</kbd> / <kbd>SPACE</kbd> JUMP, HOLD FOR JETPACK &nbsp;<kbd>S</kbd> FAST FALL &nbsp;<kbd>CTRL</kbd> GLIDE &nbsp;<kbd>F</kbd> FIRE<br><kbd>←</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>E</kbd> TILT GRAVITY &nbsp;<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> READ A PRESET &nbsp;<kbd>SHIFT</kbd>+# WRITE ONE / DRAG THE LIQUID WITH THE POINTER',
  aria:'A side-scrolling game on a tank of liquid that is always rippling. You are a glowing memory riding the surface while the room tilts. A and D run. W or Space makes you jump off the surface, then fires a three-section jetpack that refills only while you touch the liquid. Land on a drone to stomp it; it sinks into the liquid and is destroyed. S falls faster in the air, Control glides, and F fires. Arrow keys and Q and E tilt the gravity; keys 1 to 3 read a stored tilt and Shift with 1 to 3 stores one. Drag the liquid with the pointer to push waves under you. Collect all five memories, then reach the gate.',
  reset(k){K=k;stage=1;score=0;hp=3;tilt=tiltGoal=0;presets.splice(0,3,-25*D2R,0,25*D2R);build(K)},
  resize(k){K=k},
@@ -219,9 +228,8 @@ Salvage({id:'S007',title:'ENERGYRIDER',parent:'008 LIQUID MEMORY',bg:'#04070c',
   c.lineWidth=1;
   for(const q of parts){c.globalAlpha=Math.max(0,q.life);c.fillStyle='#fe6741';c.fillRect(q.x-cam,q.y,3,3)}
   c.globalAlpha=1;
-  // The player: aligned to the surface normal when on it, leaning with speed in the air, never past 50 degrees.
-  const lim=a=>K.clamp(a,-LIMIT,LIMIT),ang=P.ground?lim(Math.atan2(P.nx,-P.ny)):lim(P.vx*.0015);
-  c.save();c.translate(P.x-cam,P.y);c.rotate(ang);
+  // The player: turns to the surface when grounded, holds its angle in the air, never past 60 degrees.
+  c.save();c.translate(P.x-cam,P.y);c.rotate(P.ang);
   if(P.jet){const fl=10+Math.sin(K.time*40)*3;c.fillStyle='#fe6741';c.beginPath();c.moveTo(-4,P.r);c.lineTo(0,P.r+fl);c.lineTo(4,P.r);c.fill()}
   if(!(P.inv>0&&Math.floor(K.time*18)%2===0)){c.fillStyle='#faffdb';c.fillRect(-7,-7,14,14);c.strokeStyle='#04070c';c.strokeRect(-3.5,-3.5,7,7)}
   c.restore();
@@ -265,7 +273,7 @@ window.addEventListener('keydown',e=>{
   held.add(k);
   if(/^(Arrow|Space)/.test(k)||(e.ctrlKey&&/^Key[SF]$/.test(k)))e.preventDefault();
   if(K.paused||e.repeat)return;
-  if(k==='Space'||k==='KeyW')jet();
+  if(k==='Space'||k==='KeyW')takeoff();
   const d=/^Digit([1-3])$/.exec(k);
   if(d){
     const i=+d[1]-1;

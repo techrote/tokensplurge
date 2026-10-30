@@ -24,8 +24,8 @@ S007 was chosen as the first game because its mechanics were already there: a ti
 | Input | Effect |
 |---|---|
 | A / D | Run directly. Ctrl halves the run speed. |
-| W or Space | Jump off the surface along its normal, then light the jetpack. In the air, it only lights the jetpack. |
-| S (in the air) | Triples gravity. |
+| W or Space | Jump off the surface along its normal. Hold for jetpack thrust, which follows the key. |
+| S (in the air) | Pulls down at three times gravity. Gravity is otherwise off in the air. |
 | Ctrl | Glide: halves gravity and horizontal speed while held. Stacks with S for 1.5× gravity. |
 | F | Fire. |
 | ← / → (also ↑ / ↓), Q / E | Tilt gravity. |
@@ -35,9 +35,11 @@ S007 was chosen as the first game because its mechanics were already there: a ti
 
 **Presets.** Preset 2 is limited to ±20° of vertical. Preset 1 always sits at least 10° left of 2, and preset 3 at least 10° right of 2. Defaults are −25°, 0°, +25°. Storing a value outside these limits clamps it, and the outer presets move if 2 moves.
 
-**Fuel rules.** Fuel is three sections, each 2 s of burn. A jump or jetpack press lights the current section and burns it down to the start of the section below, then stops. Fuel refills at 1.8 per second only while you are in contact with the liquid.
+**Fuel rules.** Fuel is three sections, 4 s of thrust each, so 12 s in total. Thrust and fuel burn follow the key while held. Fuel refills at 1.8 per second only while you are in contact with the liquid.
 
-**Movement rules.** Takeoff is an impulse along the surface normal. The character rotates to the surface normal, capped at 50°. Momentum carries you through the air, so crossing a crest at speed launches you like a rally car over a bridge. You only stick while the surface is pushing back.
+**Movement rules.** Takeoff is an impulse of 330 along the surface normal. The character turns to the surface normal while grounded and holds its angle in the air, capped at 60°. Momentum carries you through the air, so crossing a crest at speed launches you like a rally car over a bridge. You only stick while the surface is pushing back.
+
+**Liquid rules.** Swells only start off screen. Enemy shots that land on the liquid press it down.
 
 **Stomp rule.** Landing on a drone from above stomps it. It falls, and it is destroyed when it touches the liquid. You bounce up after the stomp.
 
