@@ -2,44 +2,63 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04070c"><title>ENERGYRIDER</title><script src="../../salvage/kit.js"></script></head><body>
 <script>
 (()=>{'use strict';
-// The memory rides a tank the room keeps tilting. Gather five pieces of it, shoot what drifts above, and reach the gate.
-const SP=24,G=900,RUN=260,MAXV=300,JET=1300,SEC=1.5,REGEN=.9,SHOT_CD=.16,ENEMY_RATE=2.1,WAVE=160,DAMP=1.2,SPRING=1.5;
-let K=null,stage=1,score=0,hp=3,cam=0,LEN=0,n=0,state='play',stateT=0,grab=-1,warnT=0,tilt=0,tiltGoal=0,prevTilt=0;
-const presets=[0,.4,-.4],held=new Set();
+// The memory rides a tank the room keeps tilting. Gather five pieces of it, stomp or shoot what drifts above, and reach the gate.
+const D2R=Math.PI/180;
+const SP=24,G=900,RUN=260,MAXV=300,JET=1150,SEC=2,REGEN=1.8,JUMP=520,STOMP=-420,SHOT_CD=.16,ENEMY_RATE=2.1,WAVE=160,DAMP=1.2,SPRING=3;
+const LIMIT=50*D2R,PRESET_MAX=20*D2R,PRESET_GAP=10*D2R;
+let K=null,stage=1,score=0,hp=3,cam=0,LEN=0,n=0,state='play',stateT=0,grab=-1,warnT=0,tilt=0,tiltGoal=0,rippleT=0,swellT=0;
+const presets=[-25*D2R,0,25*D2R],held=new Set();
 let baseF=new Float32Array(0),H=new Float32Array(0),V=new Float32Array(0);
 let mems=[],enemies=[],shots=[],eshots=[],parts=[];
 const P={x:0,y:0,vx:0,vy:0,r:8,ground:false,nx:0,ny:-1,jet:false,jetFloor:0,fuel:3,facing:1,shot:0,inv:0};
-const deg=r=>(r*180/Math.PI).toFixed(0)+'°';
+const deg=r=>(r/D2R).toFixed(0)+'°';
 const surfY=x=>{const f=K.clamp(x/SP,0,n-1.001),i=Math.floor(f),t=f-i;return K.lerp(K.h*baseF[i]+H[i],K.h*baseF[i+1]+H[i+1],t)};
 const surfSlope=x=>(surfY(x+3)-surfY(x-3))/6;
-const eyOf=en=>K.h*en.fy+Math.sin(en.ph)*22;
+const eyOf=en=>en.fall?en.fall.y:K.h*en.fy+Math.sin(en.ph)*22;
 const memsLeft=()=>mems.reduce((a,m)=>a+(m.got?0:1),0);
 const ctrlHeld=()=>held.has('ControlLeft')||held.has('ControlRight');
 
 function build(k){
   K=k;
   LEN=3000+stage*900;n=Math.ceil(LEN/SP)+1;
-  baseF=new Float32Array(n);H=new Float32Array(n);V=new Float32Array(n);
-  const a=K.rand()*6.3,b=K.rand()*6.3,c=K.rand()*6.3;
-  for(let i=0;i<n;i++){const x=i*SP;baseF[i]=.6+.06*Math.sin(x*.0021+a)+.035*Math.sin(x*.0057+b)+.015*Math.sin(x*.017+c)}
+  baseF=new Float32Array(n).fill(.62);H=new Float32Array(n);V=new Float32Array(n);
+  grab=-1;rippleT=0;swellT=1;
   mems=Array.from({length:5},(_,m)=>({x:500+(m+.5)*(LEN-800)/5+(K.rand()-.5)*80,h:70+K.rand()*70,ph:K.rand()*6.3,got:false}));
-  enemies=Array.from({length:Math.min(9,1+stage*2)},()=>({x:700+K.rand()*(LEN-1100),fy:.14+K.rand()*.26,ph:K.rand()*6.3,t:1+K.rand()*ENEMY_RATE,alive:true}));
+  enemies=Array.from({length:Math.min(9,1+stage*2)},()=>({x:700+K.rand()*(LEN-1100),fy:.14+K.rand()*.26,ph:K.rand()*6.3,t:1+K.rand()*ENEMY_RATE,alive:true,fall:null}));
   shots=[];eshots=[];parts=[];
+  for(let s=0;s<240;s++)liquid(1/60);// the liquid is already moving when you arrive
   Object.assign(P,{x:120,vx:0,vy:0,ground:false,nx:0,ny:-1,jet:false,jetFloor:0,fuel:3,facing:1,shot:0,inv:0});
   P.y=surfY(P.x)-P.r;
-  cam=0;grab=-1;state='play';stateT=0;warnT=0;
+  cam=0;state='play';stateT=0;warnT=0;
 }
 
 function splash(wx,amt){const c=Math.round(wx/SP);for(let j=Math.max(0,c-2);j<=Math.min(n-1,c+2);j++)V[j]+=amt*(1-Math.abs(j-c)/3)}
 function burst(x,y){for(let i=0;i<14;i++){const a=K.rand()*K.TAU,s=60+K.rand()*200;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1})}}
 function hurt(){hp--;P.inv=1.2;if(hp<=0){state='dead';stateT=0;K.note('THE MEMORY IS LOST');burst(P.x,P.y)}else K.note('HIT / '+hp+' LEFT')}
-function jet(){if(state!=='play'||P.jet||P.fuel<=1e-3)return;P.jet=true;P.jetFloor=Math.max(0,Math.ceil(P.fuel-1e-6)-1)}
 
-// The liquid: a wave solver on top of the base profile, pushed by the tilt, the pointer and any shots.
+// Presets: 2 is within 20 degrees of vertical, 1 sits at least 10 degrees left of it, 3 at least 10 degrees right.
+function setPreset(i,a){
+  presets[i]=a;
+  presets[1]=K.clamp(presets[1],-PRESET_MAX,PRESET_MAX);
+  presets[0]=K.clamp(Math.min(presets[0],presets[1]-PRESET_GAP),-1.2,1.2);
+  presets[2]=K.clamp(Math.max(presets[2],presets[1]+PRESET_GAP),-1.2,1.2);
+}
+
+// Takeoff: pressing jump on the surface launches along the surface normal, then the jetpack lights.
+function jet(){
+  if(state!=='play')return;
+  if(P.ground){P.vx+=P.nx*JUMP;P.vy+=P.ny*JUMP;P.ground=false}
+  if(P.jet||P.fuel<=1e-3)return;
+  P.jet=true;P.jetFloor=Math.max(0,Math.ceil(P.fuel-1e-6)-1);
+}
+
+// The liquid: a wave solver that is always moving. Gravity pulls its level toward the low side of the tilted room.
 function liquid(dt){
-  const rate=(tilt-prevTilt)/Math.max(dt,1e-3);
-  if(Math.abs(rate)>.01)for(let i=0;i<n;i++)V[i]-=rate*(i/(n-1)-.5)*90*dt;
-  const p=K.pointer;
+  const p=K.pointer,tgtSlope=Math.tan(tilt)*.12;
+  rippleT-=dt;
+  if(rippleT<=0){rippleT=.3+K.rand()*.5;const j=Math.floor(K.rand()*n);V[j]+=(K.rand()-.5)*160}
+  swellT-=dt;
+  if(swellT<=0){swellT=2.5+K.rand()*2.5;const j=Math.floor(K.rand()*n);for(let s=-4;s<=4;s++){const q=j+s;if(q>=0&&q<n)V[q]+=500*(1-Math.abs(s)/5)}}
   if(grab>=0&&p.held){
     const tgt=K.clamp(p.y-K.h*baseF[grab],-240,240);
     for(let j=Math.max(0,grab-6);j<=Math.min(n-1,grab+6);j++){const w=1-Math.abs(j-grab)/7;H[j]+=(tgt*w-H[j])*Math.min(1,dt*10)}
@@ -49,7 +68,10 @@ function liquid(dt){
   }
   const sub=3,d=dt/sub;
   for(let s=0;s<sub;s++){
-    for(let i=0;i<n;i++){const l=H[Math.max(0,i-1)],r=H[Math.min(n-1,i+1)];V[i]+=((l+r-2*H[i])*WAVE-V[i]*DAMP-H[i]*SPRING)*d}
+    for(let i=0;i<n;i++){
+      const l=H[Math.max(0,i-1)],r=H[Math.min(n-1,i+1)],tgt=tgtSlope*(i*SP-LEN/2);
+      V[i]+=((l+r-2*H[i])*WAVE-V[i]*DAMP-(H[i]-tgt)*SPRING)*d;
+    }
     for(let i=0;i<n;i++)H[i]=K.clamp(H[i]+V[i]*d,-260,260);
   }
 }
@@ -67,29 +89,41 @@ function play(dt){
     if(P.fuel<=P.jetFloor+1e-6){P.jet=false;P.fuel=P.jetFloor}
     else{P.fuel=Math.max(P.jetFloor,P.fuel-dt/SEC);P.vx-=st*JET*dt;P.vy-=ct*JET*dt}
   }else if(P.ground)P.fuel=Math.min(3,P.fuel+REGEN*dt);
-  P.vx=K.clamp(P.vx,-maxV,maxV);
+  // Airborne, momentum is kept; the cap only stops runaway sideways gravity.
+  const cap=maxV*2.2;P.vx=K.clamp(P.vx,-cap,cap);
   P.x+=P.vx*dt;P.y+=P.vy*dt;
   if(P.x<10||P.x>LEN-10){P.x=K.clamp(P.x,10,LEN-10);P.vx=0}
-  // Ride the surface: pin to it and remove the velocity that drives into it.
+  // Contact: the surface only holds the player while it is pushing back. Leaving it with outward speed is a launch.
   const sy=surfY(P.x),sl=surfSlope(P.x),L=Math.hypot(sl,1),nx=sl/L,ny=-1/L;
-  P.ground=P.y+P.r>=sy-2;
-  if(P.ground){
-    P.y=sy-P.r;
-    const vn=P.vx*nx+P.vy*ny;
+  const gap=sy-(P.y+P.r),vn=P.vx*nx+P.vy*ny;
+  if(gap<3&&vn<=4){
+    P.ground=true;P.y=sy-P.r;
     if(vn<0){P.vx-=vn*nx;P.vy-=vn*ny}
-    P.nx=nx;P.ny=ny;
-  }else{P.nx=0;P.ny=-1}
+  }else{
+    P.ground=false;if(gap<0)P.y=sy-P.r;
+  }
+  P.nx=nx;P.ny=ny;
   if(P.y<P.r){P.y=P.r;if(P.vy<0)P.vy=0}
 
   P.shot-=dt;P.inv-=dt;
-  // Drones drift and fire at the memory.
+  // Falling drones sink into the liquid and are destroyed. Live drones drift, stomp, and fire.
   for(const en of enemies){
+    if(en.fall){
+      en.fall.vy+=G*dt;en.fall.y+=en.fall.vy*dt;
+      if(en.fall.y>=surfY(en.x)){burst(en.x,en.fall.y);splash(en.x,90);K.note('DRONE SUNK');en.fall=null}
+      continue;
+    }
     if(!en.alive)continue;
     en.ph+=dt*1.3;en.t-=dt;
+    const ey=eyOf(en),feet=P.y+P.r;
+    if(!P.ground&&P.vy>0&&Math.abs(P.x-en.x)<16&&feet>ey-14&&feet<ey+8){
+      en.alive=false;en.fall={y:ey,vy:0};score+=200;P.vy=STOMP;
+      K.note('STOMPED');continue;
+    }
     if(en.t<=0&&Math.abs(en.x-P.x)<K.w*.6){
       en.t=ENEMY_RATE*(.8+K.rand()*.5);
-      const dx=P.x-en.x,dy=P.y-eyOf(en),d=Math.hypot(dx,dy)||1;
-      eshots.push({x:en.x,y:eyOf(en),vx:dx/d*240,vy:dy/d*240,life:6});
+      const dx=P.x-en.x,dy=P.y-ey,d=Math.hypot(dx,dy)||1;
+      eshots.push({x:en.x,y:ey,vx:dx/d*240,vy:dy/d*240,life:6});
     }
   }
   eshots=eshots.filter(s=>{
@@ -125,15 +159,15 @@ function play(dt){
 function advance(){if(state==='clear')stage++;hp=3;build(K)}
 
 Salvage({id:'S007',title:'ENERGYRIDER',parent:'008 LIQUID MEMORY',bg:'#04070c',
- help:'<kbd>A</kbd><kbd>D</kbd> RUN &nbsp;<kbd>W</kbd> / <kbd>SPACE</kbd> JETPACK &nbsp;<kbd>S</kbd> FAST FALL &nbsp;<kbd>CTRL</kbd> GLIDE &nbsp;<kbd>F</kbd> FIRE<br><kbd>←</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>E</kbd> TILT GRAVITY &nbsp;<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> READ A PRESET &nbsp;<kbd>SHIFT</kbd>+# WRITE ONE / DRAG THE LIQUID WITH THE POINTER',
- aria:'A side-scrolling game on a tank of liquid. You are a glowing memory riding the surface while the room tilts. A and D run, W or Space fires a three-section jetpack that refills only while you touch the liquid, S falls faster in the air, Control glides, and F fires at drones above you. Arrow keys and Q and E tilt the gravity; keys 1 to 3 read a stored tilt and Shift with 1 to 3 stores the current one. Drag the liquid with the pointer to push waves under you. Collect all five memories, then reach the gate.',
- reset(k){K=k;stage=1;score=0;hp=3;tilt=tiltGoal=prevTilt=0;presets.splice(0,3,0,.4,-.4);build(K)},
+ help:'<kbd>A</kbd><kbd>D</kbd> RUN &nbsp;<kbd>W</kbd> / <kbd>SPACE</kbd> JUMP + JETPACK &nbsp;<kbd>S</kbd> FAST FALL &nbsp;<kbd>CTRL</kbd> GLIDE &nbsp;<kbd>F</kbd> FIRE<br><kbd>←</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>E</kbd> TILT GRAVITY &nbsp;<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> READ A PRESET &nbsp;<kbd>SHIFT</kbd>+# WRITE ONE / DRAG THE LIQUID WITH THE POINTER',
+ aria:'A side-scrolling game on a tank of liquid that is always rippling. You are a glowing memory riding the surface while the room tilts. A and D run. W or Space makes you jump off the surface, then fires a three-section jetpack that refills only while you touch the liquid. Land on a drone to stomp it; it sinks into the liquid and is destroyed. S falls faster in the air, Control glides, and F fires. Arrow keys and Q and E tilt the gravity; keys 1 to 3 read a stored tilt and Shift with 1 to 3 stores one. Drag the liquid with the pointer to push waves under you. Collect all five memories, then reach the gate.',
+ reset(k){K=k;stage=1;score=0;hp=3;tilt=tiltGoal=0;presets.splice(0,3,-25*D2R,0,25*D2R);build(K)},
  resize(k){K=k},
  step(k,dt){
   K=k;
   const turn=(held.has('ArrowRight')||held.has('ArrowUp')||held.has('KeyE')?1:0)-(held.has('ArrowLeft')||held.has('ArrowDown')||held.has('KeyQ')?1:0);
   tiltGoal=K.clamp(tiltGoal+turn*dt*1.1,-1.2,1.2);
-  prevTilt=tilt;tilt+=(tiltGoal-tilt)*Math.min(1,dt*8);
+  tilt+=(tiltGoal-tilt)*Math.min(1,dt*8);
   liquid(dt);
   if(state==='play')play(dt);else{stateT+=dt;if(stateT>2.4)advance()}
   parts=parts.filter(q=>{q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=260*dt;q.life-=dt*1.6;return q.life>0});
@@ -170,40 +204,41 @@ Salvage({id:'S007',title:'ENERGYRIDER',parent:'008 LIQUID MEMORY',bg:'#04070c',
     c.fillStyle=g;c.fillRect(sx-30,y-30,60,60);
     c.save();c.translate(sx,y);c.rotate(K.time*.8+m.ph);c.fillStyle='#fffde0';c.fillRect(-6,-6,12,12);c.restore();
   }
-  // Drones and their shots.
+  // Drones (falling ones fade) and their shots.
   for(const en of enemies){
-    if(!en.alive)continue;
+    if(!en.alive&&!en.fall)continue;
     const sx=en.x-cam;if(sx<-40||sx>w+40)continue;
-    const y=eyOf(en);
-    c.strokeStyle='#ed4e8c';c.fillStyle='#ed4e8c22';
+    const y=eyOf(en),falling=!!en.fall;
+    c.globalAlpha=falling?.6:1;c.strokeStyle='#ed4e8c';c.fillStyle='#ed4e8c22';
     c.beginPath();c.moveTo(sx-16,y);c.lineTo(sx-6,y-6);c.lineTo(sx+6,y-6);c.lineTo(sx+16,y);c.lineTo(sx+6,y+6);c.lineTo(sx-6,y+6);c.closePath();c.fill();c.stroke();
-    if(en.t<.5){c.fillStyle='#fe6741';c.beginPath();c.arc(sx,y,3+(.5-en.t)*10,0,TAU);c.fill()}
+    if(!falling&&en.t<.5){c.fillStyle='#fe6741';c.beginPath();c.arc(sx,y,3+(.5-en.t)*10,0,TAU);c.fill()}
   }
+  c.globalAlpha=1;
   c.fillStyle='#ed4e8c';for(const s of eshots){c.beginPath();c.arc(s.x-cam,s.y,3.5,0,TAU);c.fill()}
   c.strokeStyle='#faffdb';c.lineWidth=2;for(const s of shots){c.beginPath();c.moveTo(s.x-cam,s.y);c.lineTo(s.x-cam-s.vx*.03,s.y);c.stroke()}
   c.lineWidth=1;
   for(const q of parts){c.globalAlpha=Math.max(0,q.life);c.fillStyle='#fe6741';c.fillRect(q.x-cam,q.y,3,3)}
   c.globalAlpha=1;
-  // The player.
-  const ang=P.ground?Math.atan2(P.nx,-P.ny):P.vx*.0015;
+  // The player: aligned to the surface normal when on it, leaning with speed in the air, never past 50 degrees.
+  const lim=a=>K.clamp(a,-LIMIT,LIMIT),ang=P.ground?lim(Math.atan2(P.nx,-P.ny)):lim(P.vx*.0015);
   c.save();c.translate(P.x-cam,P.y);c.rotate(ang);
   if(P.jet){const fl=10+Math.sin(K.time*40)*3;c.fillStyle='#fe6741';c.beginPath();c.moveTo(-4,P.r);c.lineTo(0,P.r+fl);c.lineTo(4,P.r);c.fill()}
   if(!(P.inv>0&&Math.floor(K.time*18)%2===0)){c.fillStyle='#faffdb';c.fillRect(-7,-7,14,14);c.strokeStyle='#04070c';c.strokeRect(-3.5,-3.5,7,7)}
   c.restore();
+  // Jetpack and HP sit under the player.
+  const hx=P.x-cam,hy=P.y+P.r+22;
+  c.textAlign='center';c.font='9px monospace';c.fillStyle='#9fc4d6';
+  c.fillText('FUEL',hx,hy-6);
+  for(let s=0;s<3;s++){const x=hx-76+s*54;c.fillStyle='#ffffff18';c.fillRect(x,hy,48,10);c.fillStyle=P.jet?'#10f4cf':'#28e3f4';c.fillRect(x,hy,48*K.clamp(P.fuel-s,0,1),10);c.strokeStyle='#2a3d5e';c.strokeRect(x+.5,hy+.5,47,9)}
+  for(let s=0;s<3;s++){c.fillStyle=s<hp?'#ed4e8c':'#2a3d5e';c.fillRect(hx-18+s*18,hy+18,12,12)}
   // Gravity gauge: the needle is where gravity points, numbers mark the stored presets.
   const gcx=w/2,gcy=h*.12;
   c.strokeStyle='#9fc4d6';c.globalAlpha=.5;c.beginPath();c.arc(gcx,gcy,30,0,TAU);c.stroke();c.globalAlpha=1;
-  c.textAlign='center';c.font='9px monospace';
   presets.forEach((a,i)=>{c.fillStyle=Math.abs(a-tiltGoal)<.02?'#f4d84e':'#9fc4d6';c.fillText(String(i+1),gcx+Math.sin(a)*42,gcy+Math.cos(a)*42+3)});
   c.strokeStyle='#faffdb';c.beginPath();c.moveTo(gcx,gcy);c.lineTo(gcx+Math.sin(tilt)*26,gcy+Math.cos(tilt)*26);c.stroke();
   c.fillStyle='#9fc4d6';c.fillText('GRAVITY '+deg(tilt),gcx,gcy+56);
-  // HUD: fuel in three sections, hearts, memories.
   c.textAlign='left';c.font='9px monospace';c.fillStyle='#9fc4d6';
   c.fillText('MEMORIES '+(mems.length-memsLeft())+'/'+mems.length,22,h*.1);
-  c.fillText('FUEL',22,h-126);
-  for(let s=0;s<3;s++){const x=22+s*56;c.fillStyle='#ffffff18';c.fillRect(x,h-120,50,12);c.fillStyle=P.jet?'#10f4cf':'#28e3f4';c.fillRect(x,h-120,50*K.clamp(P.fuel-s,0,1),12);c.strokeStyle='#2a3d5e';c.strokeRect(x+.5,h-119.5,49,11)}
-  c.fillStyle='#9fc4d6';c.fillText('HP',22,h-160);
-  for(let s=0;s<3;s++){c.fillStyle=s<hp?'#ed4e8c':'#2a3d5e';c.fillRect(22+s*18,h-154,12,12)}
   // Pointer: a ring, and a line to the grabbed point while dragging.
   if(p.inside){
     if(grab>=0&&p.held){c.strokeStyle='#faffdb';c.beginPath();c.moveTo(grab*SP-cam,surfY(grab*SP));c.lineTo(p.x,p.y);c.stroke()}
@@ -234,7 +269,7 @@ window.addEventListener('keydown',e=>{
   const d=/^Digit([1-3])$/.exec(k);
   if(d){
     const i=+d[1]-1;
-    if(e.shiftKey){presets[i]=tiltGoal;K.note('STORED '+(i+1)+' AT '+deg(tiltGoal))}
+    if(e.shiftKey){setPreset(i,tiltGoal);K.note('STORED '+(i+1)+' AT '+deg(presets[i]))}
     else{tiltGoal=presets[i];K.note('READ '+(i+1)+' / '+deg(tiltGoal))}
   }
 });
