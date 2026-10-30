@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c0806"><title>S130 — PEG SOLITAIRE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Thirty-two pegs, one hole. Jump a peg over a neighbour into an empty space and remove what it jumped. One peg left is a clean finish.
+const N=7,ok=(r,c)=>r>=0&&c>=0&&r<N&&c<N&&!((r<2||r>4)&&(c<2||c>4));
+let b=null,cur={r:3,c:3},sel=null,moves=0,hist=[],wins=0,best=32,solved=0,stuck=0,cell=60,ox=0,oy=0,left=32,tries=0;
+const id=(r,c)=>r*N+c;
+function init(K){b=new Uint8Array(N*N);for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(ok(r,c))b[id(r,c)]=1;b[id(3,3)]=0;cur={r:3,c:3};sel=null;moves=0;hist=[];solved=0;stuck=0;left=32;cell=Math.min(K.w*.8/N,K.h*.72/N,80);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8}
+function jumps(r,c){const out=[];for(const [dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]){const a=r+dr,q=c+dc,a2=r+dr*2,q2=c+dc*2;if(ok(a2,q2)&&b[id(a,q)]&&!b[id(a2,q2)])out.push([a2,q2,a,q])}return out}
+function anyMove(){for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(ok(r,c)&&b[id(r,c)]&&jumps(r,c).length)return true;return false}
+function doJump(K,fr,fc,tr,tc){const j=jumps(fr,fc).find(m=>m[0]===tr&&m[1]===tc);if(!j)return false;hist.push(b.slice());b[id(fr,fc)]=0;b[id(j[2],j[3])]=0;b[id(tr,tc)]=1;moves++;left--;sel=null;cur={r:tr,c:tc};
+ if(left===1){wins++;best=1;solved=.001;K.note(b[id(3,3)]?'ONE PEG, IN THE CENTRE / PERFECT':'ONE PEG LEFT / '+K.pad(wins))}else if(!anyMove()){stuck=1;best=Math.min(best,left);K.note('NO MOVES / '+left+' PEGS LEFT / Z TO STEP BACK')}return true}
+function press(K,r,c){if(solved||!ok(r,c))return;cur={r,c};if(sel&&jumps(sel.r,sel.c).some(m=>m[0]===r&&m[1]===c)){doJump(K,sel.r,sel.c,r,c);return}if(b[id(r,c)]){sel=sel&&sel.r===r&&sel.c===c?null:{r,c}}else sel=null}
+const at=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);return r>=0&&c>=0&&r<N&&c<N&&ok(r,c)?{r,c}:null};
+Salvage({id:'S130',title:'PEG SOLITAIRE',parent:'031 SHEAR CRYSTALLIZATION',bg:'#0c0806',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> MOVE &nbsp;<kbd>SPACE</kbd> PICK UP A PEG, THEN SPACE ON A MARKED HOLE &nbsp;<kbd>Z</kbd> UNDO<br>LEAVE ONE PEG / HOVER A PEG TO SEE ITS JUMPS, CLICK A PEG THEN A HOLE',
+ aria:'A peg solitaire puzzle on a cross-shaped board of thirty-three holes with thirty-two pegs. Arrow keys move a cursor and Space picks up a peg and then, with the cursor on a highlighted empty hole two steps away, jumps it over the neighbouring peg, which is removed. Z undoes. The goal is to leave a single peg, ideally in the centre. Hovering a peg highlights where it could jump and clicking a peg then a hole plays the move.',
+ reset(K){wins=0;best=32;tries=0;init(K)},
+ resize(K){cell=Math.min(K.w*.8/N,K.h*.72/N,80);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh){if(solved||stuck&&false)return true;press(K,cur.r,cur.c)}return true}
+  if(e.code==='KeyZ'||e.code==='Backspace'){if(fresh&&hist.length&&!solved){b=hist.pop();moves=Math.max(0,moves-1);left++;sel=null;stuck=0}return true}
+  if(e.code==='KeyN'&&fresh){tries++;init(K);return true}
+  const d={ArrowLeft:[0,-1],KeyA:[0,-1],ArrowRight:[0,1],KeyD:[0,1],ArrowUp:[-1,0],KeyW:[-1,0],ArrowDown:[1,0],KeyS:[1,0]}[e.code];
+  if(d){if(fresh){let r=cur.r+d[0],c=cur.c+d[1];while(r>=0&&r<N&&c>=0&&c<N&&!ok(r,c)){r+=d[0];c+=d[1]}if(ok(r,c))cur={r,c}}return true}
+ },
+ down(K,x,y){const a=at(K,x,y);if(!a)return false;press(K,a.r,a.c);return true},
+ step(K,dt){if(solved){solved+=dt;if(solved>3){tries++;init(K)}}},
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#0c0806';c.fillRect(0,0,w,h);const hv=p.inside?at(K,p.x,p.y):null;
+  const targets=new Set((sel?jumps(sel.r,sel.c):(hv&&b[id(hv.r,hv.c)]?jumps(hv.r,hv.c):[])).map(m=>id(m[0],m[1])));
+  c.fillStyle='#3a2414';c.beginPath();for(let r=0;r<N;r++)for(let q=0;q<N;q++)if(ok(r,q))c.rect(ox+q*cell,oy+r*cell,cell,cell);c.fill();
+  for(let r=0;r<N;r++)for(let q=0;q<N;q++){if(!ok(r,q))continue;const x=ox+(q+.5)*cell,y=oy+(r+.5)*cell,v=b[id(r,q)];c.fillStyle='#120c08';c.beginPath();c.arc(x,y,cell*.2,0,TAU);c.fill();
+   if(targets.has(id(r,q))){c.strokeStyle='#10f4cf';c.lineWidth=2.5;c.beginPath();c.arc(x,y,cell*.28,0,TAU);c.stroke();c.lineWidth=1}
+   if(v){const on=sel&&sel.r===r&&sel.c===q;c.fillStyle=on?'#f4d84e':K.DAMAGE[(r+q)%6];c.beginPath();c.arc(x,y,cell*.34,0,TAU);c.fill();c.fillStyle='#ffffff55';c.beginPath();c.arc(x-cell*.1,y-cell*.1,cell*.1,0,TAU);c.fill();if(on){c.strokeStyle='#faffdb';c.lineWidth=3;c.stroke();c.lineWidth=1}}}
+  const cx=ox+cur.c*cell,cy=oy+cur.r*cell,bb=3+Math.sin(K.time*5);c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(cx+bb,cy+bb,cell-bb*2,cell-bb*2);c.lineWidth=1;
+  c.font='9px monospace';c.fillStyle='#d9c9a0';c.fillText('PEGS '+left+' / MOVES '+moves+' / '+(stuck?'NO MOVES LEFT':sel?'JUMP TO A GREEN RING':'PICK A PEG'),ox,oy-12);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.lineWidth=3;c.strokeRect(ox-4,oy-4,cell*N+8,cell*N+8);c.lineWidth=1;c.globalAlpha=1}
+ },
+ readout:K=>['PEGS '+K.pad(left,2),'MOVES '+K.pad(moves,2)+' / BEST '+K.pad(best,2)+' / CLEAN '+K.pad(wins)]
+});
+})();
+</script></body></html>

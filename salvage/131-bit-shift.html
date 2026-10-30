@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S131 — BIT SHIFT</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A byte, a goal byte and a handful of operations. Every puzzle was made by running some of the operations forward, so it can be solved in no more moves than you are given.
+const OPS=[['NOT',v=>~v&255],['SHL',v=>(v<<1)&255],['SHR',v=>v>>1],['ROL',v=>((v<<1)|(v>>7))&255],['ROR',v=>((v>>1)|((v&1)<<7))&255],['INC',v=>(v+1)&255],['DEC',v=>(v-1)&255],['XOR F0',v=>v^240],['XOR 0F',v=>v^15]];
+let avail=[],v=0,tg=0,limit=0,moves=0,hist=[],sel=0,wins=0,level=0,solved=0,fail=0,par=0,anim=[],best=0;
+function gen(K){const n=Math.min(9,5+Math.floor(level/2));avail=OPS.map((_,i)=>i).sort(()=>K.rand()-.5).slice(0,n);v=Math.floor(K.rand()*256);let cur=v;par=3+Math.min(5,level);let last=-1;for(let k=0;k<par;k++){let o;do{o=avail[Math.floor(K.rand()*avail.length)]}while(o===last&&K.rand()<.8);cur=OPS[o][1](cur);last=o}if(cur===v)cur^=85;tg=cur;limit=par+2;moves=0;hist=[];sel=0;solved=0;fail=0;anim=[]}
+function bits(x){return Array.from({length:8},(_,i)=>(x>>(7-i))&1)}
+function apply(K,i){if(solved||fail)return;const op=avail[i],old=v;hist.push(v);v=OPS[op][1](v);moves++;anim=bits(v).map((b,k)=>b!==bits(old)[k]?1:0);if(v===tg){wins++;solved=.001;best=best?Math.min(best,moves):moves;K.note('TARGET REACHED IN '+moves+' / PAR '+par)}else if(moves>=limit){fail=.001;K.note('OUT OF MOVES / THE BYTE RESETS')}}
+const geo=K=>{const n=avail.length,bw=Math.min(100,K.w/(n+1)),x0=(K.w-bw*n)/2;return{n,bw,x0,y:K.h*.66}};
+Salvage({id:'S131',title:'BIT SHIFT',parent:'005 BITPLANE DIVORCE',
+ help:'<kbd>←</kbd><kbd>→</kbd> CHOOSE AN OPERATION &nbsp;<kbd>SPACE</kbd> APPLY IT &nbsp;<kbd>Z</kbd> UNDO<br>TURN THE BYTE INTO THE TARGET BEFORE YOU RUN OUT OF MOVES / CLICK AN OPERATION TO APPLY IT',
+ aria:'A bitwise puzzle. An eight-bit byte is shown in binary and decimal alongside a target byte. A set of operations such as not, shift left, shift right, rotate, increment, decrement and exclusive-or with a constant is offered. Left and right arrows choose an operation, Space applies it, and Z undoes. Reach the target within the move limit. Each puzzle is built by applying some of the operations forwards, so it is always solvable. Clicking an operation button applies it.',
+ reset(K){level=0;wins=0;best=0;gen(K)},
+ key(K,e,fresh){
+  if(e.code==='Space'||e.code==='Enter'){if(fresh)apply(K,sel);return true}
+  if(e.code==='KeyZ'||e.code==='Backspace'){if(fresh&&hist.length&&!solved&&!fail){v=hist.pop();moves=Math.max(0,moves-1)}return true}
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){sel=(sel+avail.length-1)%avail.length;return true}if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){sel=(sel+1)%avail.length;return true}
+  if(/^Arrow|^Key[WS]$/.test(e.code))return true;
+ },
+ down(K,x,y){const g=geo(K);for(let i=0;i<g.n;i++){const bx=g.x0+i*g.bw;if(x>=bx+3&&x<=bx+g.bw-3&&y>=g.y&&y<=g.y+54){sel=i;apply(K,i);return true}}return false},
+ step(K,dt){anim=anim.map(a=>a>0?Math.max(0,a-dt*3):0);if(solved){solved+=dt;if(solved>2){level++;gen(K)}}if(fail){fail+=dt;if(fail>2)gen(K)}},
+ draw(K,c){
+  const {w,h,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  const row=(val,y,col,label)=>{const bw=Math.min(52,w/11),x0=(w-bw*8)/2;c.fillStyle='#9fc4d6';c.font='9px monospace';c.textAlign='left';c.fillText(label,x0,y-12);bits(val).forEach((b,i)=>{const x=x0+i*bw,fl=label==='YOUR BYTE'?anim[i]||0:0;c.fillStyle=b?col:'#0c1420';c.fillRect(x+2,y,bw-4,bw-4);c.strokeStyle=fl?'#fff':'#2a3d5e';c.lineWidth=fl?3:1;c.strokeRect(x+2.5,y+.5,bw-5,bw-5);c.lineWidth=1;c.fillStyle=b?'#05070e':'#2a3d5e';c.font='bold '+Math.round(bw*.4)+'px monospace';c.textAlign='center';c.fillText(b,x+bw/2,y+bw*.62)});c.textAlign='left';c.fillStyle='#faffdb';c.font='11px monospace';c.fillText('= '+val+'  (0x'+val.toString(16).toUpperCase().padStart(2,'0')+')',x0+bw*8+16,y+bw*.55)};
+  row(tg,h*.17,'#f4d84e','TARGET');row(v,h*.38,'#28e3f4','YOUR BYTE');
+  for(let i=0;i<g.n;i++){const bx=g.x0+i*g.bw,on=i===sel,nm=OPS[avail[i]][0];c.fillStyle=on?'#faffdb':'#0c1420';c.fillRect(bx+3,g.y,g.bw-6,54);c.strokeStyle='#2a3d5e';c.strokeRect(bx+3.5,g.y+.5,g.bw-7,53);c.fillStyle=on?'#05070e':'#c8d6e0';c.font='bold 11px monospace';c.textAlign='center';c.fillText(nm,bx+g.bw/2,g.y+22);c.font='9px monospace';c.fillStyle=on?'#05070e':'#7f97a5';c.fillText(OPS[avail[i]][1](v),bx+g.bw/2,g.y+40)}
+  c.textAlign='center';c.font='10px monospace';c.fillStyle=moves>=limit-1?'#ed4e8c':'#faffdb';c.fillText('MOVES '+moves+' / '+limit+' ALLOWED / PAR '+par,w/2,g.y+84);c.textAlign='left';
+  if(solved||fail){c.fillStyle='#05070ecc';c.fillRect(w/2-140,h*.5,280,40);c.fillStyle=solved?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText(solved?'TARGET REACHED':'OUT OF MOVES',w/2,h*.5+25);c.textAlign='left'}
+  if(p.inside){c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('CLICK AN OPERATION',p.x+12,p.y-8)}
+ },
+ readout:K=>['BYTE '+v+' → '+tg,'MOVES '+K.pad(moves)+'/'+K.pad(limit)+' / SOLVED '+K.pad(wins)+' / LEVEL '+K.pad(level+1)]
+});
+})();
+</script></body></html>

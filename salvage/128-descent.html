@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S128 — DESCENT</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A landscape of valleys. A ball rolls downhill with some momentum. Choose a step size and a stickiness that find the deepest one and stay.
+const GW=150,GH=96,CS=[[.5,.5,1],[.5,.5,1]];
+let wells=[],img=null,ic=null,ball=null,eta=.02,beta=.85,trail=[],state='idle',settleT=0,wins=0,tries=0,local=0,msg='',best=null,start={x:.1,y:.9},steps=0,deepest=0,pal=[];
+for(let i=0;i<64;i++){const t=i/63;pal.push([Math.round(8+t*70+t*t*120),Math.round(14+t*60+t*t*110),Math.round(50+t*120+Math.sin(t*3)*30)])}
+const f=(x,y)=>{let v=0;for(const w of wells)v-=w.a*Math.exp(-((x-w.x)**2+(y-w.y)**2)/(2*w.s*w.s));return v+.015*Math.sin(x*38)*Math.sin(y*38)};
+const grad=(x,y)=>{const h=.002;return[(f(x+h,y)-f(x-h,y))/(2*h),(f(x,y+h)-f(x,y-h))/(2*h)]};
+function gen(K){const n=4+Math.min(3,Math.floor(wins/2));wells=[];for(let i=0;i<n;i++){let x,y,t=0;do{x=.12+K.rand()*.76;y=.12+K.rand()*.76;t++}while(wells.some(w=>Math.hypot(w.x-x,w.y-y)<.2)&&t<50);wells.push({x,y,a:.45+K.rand()*.5,s:.05+K.rand()*.05})}
+ wells.sort((a,b)=>b.a-a.a);deepest=0;
+ // Render the landscape once.
+ ic=document.createElement('canvas');ic.width=GW;ic.height=GH;img=ic.getContext('2d').createImageData(GW,GH);const d=img.data;let mn=1e9,mx=-1e9;const vals=[];for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){const v=f(i/GW,j/GH);vals.push(v);mn=Math.min(mn,v);mx=Math.max(mx,v)}
+ for(let k=0;k<vals.length;k++){const t=(vals[k]-mn)/(mx-mn),band=Math.floor(t*14),edge=Math.abs(t*14-band-.5)>.46,q=pal[Math.floor((1-t)*63)],o=k*4;d[o]=edge?255:q[0];d[o+1]=edge?255:q[1];d[o+2]=edge?240:q[2];d[o+3]=255}
+ ic.getContext('2d').putImageData(img,0,0);launch(K,.1+K.rand()*.8,.75+K.rand()*.2)}
+function launch(K,x,y){start={x,y};ball={x,y,vx:0,vy:0};trail=[];state='roll';settleT=0;steps=0;msg=''}
+const area=K=>{const s=Math.min(K.w*.88/GW,K.h*.74/GH);return{x:(K.w-GW*s)/2,y:(K.h-GH*s)/2+8,w:GW*s,h:GH*s}};
+Salvage({id:'S128',title:'DESCENT',parent:'021 TOPOGRAPHY OF A DEAD PROCESS',
+ help:'<kbd>←</kbd><kbd>→</kbd> STEP SIZE &nbsp;<kbd>↑</kbd><kbd>↓</kbd> MOMENTUM &nbsp;<kbd>SPACE</kbd> ROLL AGAIN FROM A NEW PLACE<br>SETTLE IN THE DEEPEST VALLEY (THE DARKEST, MARKED ●) / CLICK ANYWHERE ON THE MAP TO START THERE',
+ aria:'An optimisation puzzle drawn as a contour map. A ball rolls downhill with momentum on a landscape of several valleys of different depths. Left and right arrows change the step size, up and down change the momentum, and Space restarts from a random place. The goal is to settle in the deepest valley, marked with a filled dot; settling in a shallower one counts as a local minimum, and too large a step makes the ball bounce wildly. Clicking the map starts the ball from that point.',
+ reset(K){wins=tries=local=0;eta=.02;beta=.85;gen(K)},
+ resize(K){},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh){tries++;launch(K,.08+K.rand()*.84,.08+K.rand()*.84)}return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K,x,y){const a=area(K),nx=(x-a.x)/a.w,ny=(y-a.y)/a.h;if(nx>=0&&nx<=1&&ny>=0&&ny<=1){tries++;launch(K,nx,ny);return true}return false},
+ step(K,dt){
+  const de=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),db=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0)-(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);
+  eta=K.clamp(eta*Math.exp(de*dt*1.2),.0005,.6);beta=K.clamp(beta+db*dt*.25,0,.99);
+  if(state!=='roll')return;
+  for(let s=0;s<3;s++){const [gx,gy]=grad(ball.x,ball.y);ball.vx=beta*ball.vx-eta*gx*.08;ball.vy=beta*ball.vy-eta*gy*.08;ball.x+=ball.vx;ball.y+=ball.vy;if(ball.x<0||ball.x>1){ball.x=K.clamp(ball.x,0,1);ball.vx*=-.5}if(ball.y<0||ball.y>1){ball.y=K.clamp(ball.y,0,1);ball.vy*=-.5}steps++}
+  trail.push([ball.x,ball.y]);if(trail.length>260)trail.shift();
+  const sp=Math.hypot(ball.vx,ball.vy);if(sp<.0004){settleT+=dt;if(settleT>.9){state='done';let bi=0,bd=1e9;wells.forEach((w,i)=>{const d=Math.hypot(w.x-ball.x,w.y-ball.y);if(d<bd){bd=d;bi=i}});if(bd<.08&&bi===0){wins++;msg='DEEPEST VALLEY / '+steps+' STEPS';K.note('SETTLED IN THE DEEPEST VALLEY / '+K.pad(wins));setTimeout(()=>{if(state==='done'){tries++;gen(K)}},1800)}else if(bd<.1){local++;msg='LOCAL MINIMUM';K.note('A LOCAL MINIMUM / THE DEEPEST ONE IS ELSEWHERE')}else{msg='STUCK ON A SLOPE';K.note('STUCK / TRY A SMALLER STEP')}}}else settleT=0;
+  if(steps>6000&&state==='roll'){state='done';msg='STILL MOVING / TOO WILD';K.note('IT NEVER SETTLED / LOWER THE STEP OR RAISE THE FRICTION')}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,a=area(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.imageSmoothingEnabled=true;c.drawImage(ic,a.x,a.y,a.w,a.h);c.strokeStyle='#2a3d5e';c.strokeRect(a.x-.5,a.y-.5,a.w+1,a.h+1);
+  wells.forEach((wl,i)=>{const x=a.x+wl.x*a.w,y=a.y+wl.y*a.h;c.strokeStyle=i===0?'#f4d84e':'#ffffff55';c.lineWidth=i===0?2:1;c.beginPath();c.arc(x,y,i===0?7:5,0,TAU);c.stroke();if(i===0){c.fillStyle='#f4d84e';c.beginPath();c.arc(x,y,3,0,TAU);c.fill()}});c.lineWidth=1;
+  c.strokeStyle='#faffdb';c.globalAlpha=.8;c.beginPath();trail.forEach(([x,y],i)=>{const px=a.x+x*a.w,py=a.y+y*a.h;i?c.lineTo(px,py):c.moveTo(px,py)});c.stroke();c.globalAlpha=1;
+  c.fillStyle='#fff';c.beginPath();c.arc(a.x+ball.x*a.w,a.y+ball.y*a.h,5,0,TAU);c.fill();c.strokeStyle='#05070e';c.stroke();
+  c.strokeStyle='#ffffff55';c.beginPath();c.arc(a.x+start.x*a.w,a.y+start.y*a.h,3,0,TAU);c.stroke();
+  c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('STEP '+eta.toFixed(4)+' / MOMENTUM '+beta.toFixed(2)+' / '+(state==='roll'?'ROLLING '+steps:msg||'READY'),a.x,a.y-10);
+  if(p.inside){const nx=(p.x-a.x)/a.w,ny=(p.y-a.y)/a.h;if(nx>=0&&nx<=1&&ny>=0&&ny<=1){const g=grad(nx,ny),m=Math.hypot(g[0],g[1])||1;c.strokeStyle='#ed4e8c';c.lineWidth=2;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p.x-g[0]/m*24,p.y-g[1]/m*24);c.stroke();c.lineWidth=1;c.fillStyle='#faffdb';c.fillText('HEIGHT '+f(nx,ny).toFixed(2)+' / CLICK TO START HERE',p.x+12,p.y-8)}}
+ },
+ readout:K=>['DEEPEST '+K.pad(wins),'ROLLS '+K.pad(tries)+' / LOCAL '+K.pad(local)+' / STEPS '+K.pad(steps,4)]
+});
+})();
+</script></body></html>

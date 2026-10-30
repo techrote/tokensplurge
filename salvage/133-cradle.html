@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S133 — CRADLE</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Five identical weights. Lift some, let go, and the same number leaves the other end. Keep it going.
+const NB=5,G=9.81;
+let th=[],om=[],Lp=1,lift=1,damp=.04,t0=0,running=false,swings=0,bestSw=0,stopT=0,drag=-1,lastDir=0,collisions=0,runT=0,trail=[];
+const geo=K=>{const m=Math.min(K.w,K.h),L=m*.42,r=m*.04,x0=K.w/2-(NB-1)*r,y0=K.h*.16;return{L,r,x0,y0}};
+function reset0(){th=new Array(NB).fill(0);om=new Array(NB).fill(0);running=false;runT=0;collisions=0;trail=[]}
+function release(K){if(running)return;th=new Array(NB).fill(0);for(let i=0;i<lift;i++)th[i]=-.78;om=new Array(NB).fill(0);running=true;runT=0;swings=0;collisions=0;trail=[]}
+Salvage({id:'S133',title:'CRADLE',parent:'018 CLOCK SECESSION',
+ help:'<kbd>←</kbd><kbd>→</kbd> HOW MANY TO LIFT (1–4) &nbsp;<kbd>SPACE</kbd> LET GO &nbsp;<kbd>↑</kbd><kbd>↓</kbd> AIR RESISTANCE &nbsp;<kbd>X</kbd> STOP<br>KEEP THE CLICKS GOING AS LONG AS YOU CAN / DRAG A WEIGHT SIDEWAYS WITH THE POINTER AND LET GO',
+ aria:'A Newton\'s cradle simulation with five weights on strings. Left and right arrows choose how many weights to lift from the left end, Space releases them and X stops everything. Up and down arrows change the air resistance. Each collision passes the motion along, so the same number of weights swing out of the other end. The score is the number of swings before it all comes to rest, and the longest run is remembered. Dragging a weight with the pointer and releasing it sets it swinging.',
+ reset(K){reset0();lift=1;damp=.04;bestSw=0;swings=0},
+ key(K,e,fresh){
+  if(e.code==='Space'){if(fresh){reset0();release(K)}return true}if(e.code==='KeyX'){if(fresh){reset0()}return true}
+  if(fresh&&(e.code==='ArrowLeft'||e.code==='KeyA')){lift=Math.max(1,lift-1);return true}if(fresh&&(e.code==='ArrowRight'||e.code==='KeyD')){lift=Math.min(NB-1,lift+1);return true}
+  if(e.code==='ArrowUp'||e.code==='KeyW'){damp=Math.min(.6,damp*1.4);return true}if(e.code==='ArrowDown'||e.code==='KeyS'){damp=Math.max(.002,damp/1.4);return true}
+ },
+ down(K,x,y){const g=geo(K);for(let i=0;i<NB;i++){const bx=g.x0+i*g.r*2+Math.sin(th[i])*g.L,by=g.y0+Math.cos(th[i])*g.L;if(Math.hypot(x-bx,y-by)<g.r*1.6){drag=i;running=false;return false}}return false},
+ up(K){if(drag>=0){const th0=th.slice();let i=drag;drag=-1;om=new Array(NB).fill(0);running=true;runT=0;swings=0;collisions=0}},
+ step(K,dt){
+  const g=geo(K),p=K.pointer;
+  if(drag>=0&&p.held&&p.inside){const ax=g.x0+drag*g.r*2;th[drag]=K.clamp(Math.asin(K.clamp((p.x-ax)/g.L,-.99,.99)),-1.1,1.1);for(let j=0;j<NB;j++)if(j!==drag){if(j<drag)th[j]=Math.min(th[j],th[drag]);else th[j]=Math.max(th[j],th[drag])}return}
+  if(!running)return;const n=6;
+  for(let s=0;s<n;s++){const h=dt/n;for(let i=0;i<NB;i++){om[i]+=(-(G/ (g.L/ (Math.min(K.w,K.h)*.0 +1)))*0)*0;om[i]+=(-G/1*Math.sin(th[i])*1.0)*h*1.6-om[i]*damp*h*3;th[i]+=om[i]*h}
+   for(let pass=0;pass<5;pass++)for(let i=0;i<NB-1;i++){const xi=Math.sin(th[i]),xj=Math.sin(th[i+1]),gap=(xj-xi)*g.L-2*g.r*0;const d=(g.r*2)/g.L;if(xj-xi<0.0||(xj-xi)<1e-6&&om[i]>om[i+1]){if(om[i]>om[i+1]){const tmp=om[i];om[i]=om[i+1];om[i+1]=tmp;collisions++}}}
+   // Keep the weights from passing through each other.
+   for(let pass=0;pass<3;pass++)for(let i=0;i<NB-1;i++){if(Math.sin(th[i])>Math.sin(th[i+1])){const m=(th[i]+th[i+1])/2;th[i]=m;th[i+1]=m}}}
+  runT+=dt;swings=Math.floor(collisions/2);trail.push([th[0],th[NB-1]]);if(trail.length>200)trail.shift();
+  const e=om.reduce((a,v,i)=>a+v*v+ (1-Math.cos(th[i]))*G*2,0);if(e<.02){stopT+=dt;if(stopT>.8){running=false;stopT=0;bestSw=Math.max(bestSw,swings);K.note('IT STOPPED AFTER '+swings+' SWINGS / '+runT.toFixed(0)+'s')}}else stopT=0;
+  bestSw=Math.max(bestSw,swings);
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K,g=geo(K);c.fillStyle='#05070e';c.fillRect(0,0,w,h);
+  c.fillStyle='#17283a';c.fillRect(g.x0-g.r*2.4,g.y0-8,(NB-1)*g.r*2+g.r*4.8,8);for(const x of [g.x0-g.r*2.4,g.x0+(NB-1)*g.r*2+g.r*2.2]){c.fillRect(x,g.y0,6,g.L*1.1)}
+  for(let i=0;i<NB;i++){const ax=g.x0+i*g.r*2,ay=g.y0,bx=ax+Math.sin(th[i])*g.L,by=ay+Math.cos(th[i])*g.L;c.strokeStyle='#9fc4d6';c.beginPath();c.moveTo(ax-g.r*.6,ay);c.lineTo(bx,by);c.moveTo(ax+g.r*.6,ay);c.lineTo(bx,by);c.stroke();
+   const lit=running&&Math.abs(om[i])>.4,gr=c.createRadialGradient(bx-g.r*.3,by-g.r*.3,2,bx,by,g.r);gr.addColorStop(0,'#fff');gr.addColorStop(1,lit?K.DAMAGE[i%6]:'#4f6b80');c.fillStyle=gr;c.beginPath();c.arc(bx,by,g.r,0,TAU);c.fill();c.strokeStyle='#05070e';c.stroke()}
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('LIFTING '+lift+' / AIR RESISTANCE '+(damp*100).toFixed(1)+' / '+(running?'RUNNING '+runT.toFixed(0)+'s':'READY')+' / COLLISIONS '+collisions,22,h*.1);
+  c.fillStyle='#ffffff22';c.fillRect(22,h*.1+8,200,4);c.fillStyle='#f4d84e';c.fillRect(22,h*.1+8,200*Math.min(1,swings/Math.max(40,bestSw)),4);
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,10,0,TAU);c.stroke();c.globalAlpha=1;c.fillStyle='#faffdb';c.fillText(drag>=0?'RELEASE TO LET GO':'DRAG A WEIGHT',p.x+14,p.y-8)}
+ },
+ readout:K=>['SWINGS '+K.pad(swings,3),'BEST '+K.pad(bestSw,3)+' / LIFT '+lift+' / DRAG '+(damp*100).toFixed(1)]
+});
+})();
+</script></body></html>

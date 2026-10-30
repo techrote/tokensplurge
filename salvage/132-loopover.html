@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#05070e"><title>S132 — LOOPOVER</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Every row and every column is a loop. Spin them until the picture is back. There are no walls, so anything that leaves one side returns on the other.
+let N=4,g=null,cur={r:0,c:0},moves=0,wins=0,level=0,solved=0,cell=70,ox=0,oy=0,anim=null,drag=null,best=0,scrambleN=0;
+const id=(r,c)=>r*N+c;
+function shiftRow(r,d){const row=[];for(let c=0;c<N;c++)row.push(g[id(r,c)]);for(let c=0;c<N;c++)g[id(r,(c+d+N)%N)]=row[c]}
+function shiftCol(c,d){const col=[];for(let r=0;r<N;r++)col.push(g[id(r,c)]);for(let r=0;r<N;r++)g[id((r+d+N)%N,c)]=col[r]}
+function gen(K){N=Math.min(7,4+Math.floor(level/2));g=new Int16Array(N*N);for(let i=0;i<g.length;i++)g[i]=i;scrambleN=N*N*2;for(let k=0;k<scrambleN;k++){const a=Math.floor(K.rand()*N),d=K.rand()<.5?1:-1;if(K.rand()<.5)shiftRow(a,d);else shiftCol(a,d)}if(g.every((v,i)=>v===i))shiftRow(0,1);cur={r:0,c:0};moves=0;solved=0;anim=null;cell=Math.min(K.w*.8/N,K.h*.7/N,92);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8}
+function done(){return g.every((v,i)=>v===i)}
+function spin(K,kind,idx,d){if(solved||anim)return;anim={kind,idx,d,t:0}}
+function finish(K){const a=anim;anim=null;if(a.kind==='r')shiftRow(a.idx,a.d);else shiftCol(a.idx,a.d);moves++;if(done()){wins++;solved=.001;best=best?Math.min(best,moves):moves;K.note('THE PICTURE IS BACK / '+moves+' MOVES')}}
+const at=(K,x,y)=>{const c=Math.floor((x-ox)/cell),r=Math.floor((y-oy)/cell);return r>=0&&c>=0&&r<N&&c<N?{r,c}:null};
+Salvage({id:'S132',title:'LOOPOVER',parent:'036 THE LAST INDEPENDENT AXIS',
+ help:'<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> SPIN THE CURSOR\'S COLUMN OR ROW &nbsp;<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> MOVE THE CURSOR<br>PUT EVERY TILE BACK IN ITS PLACE / DRAG A TILE ALONG ITS ROW OR COLUMN WITH THE POINTER',
+ aria:'A sliding-loops puzzle. A grid of coloured numbered tiles has been scrambled by spinning whole rows and columns, each of which wraps around. The arrow keys spin the row or column through the cursor, and W, A, S and D move the cursor. The goal is to restore the picture, with tiles in order and the colour gradient smooth. Dragging a tile with the pointer spins its row or column. Solved puzzles are followed by larger ones.',
+ reset(K){level=0;wins=0;best=0;gen(K)},
+ resize(K){cell=Math.min(K.w*.8/N,K.h*.7/N,92);ox=(K.w-cell*N)/2;oy=(K.h-cell*N)/2+8},
+ key(K,e,fresh){
+  if(!fresh)return /^Arrow|^Key[WASD]$/.test(e.code)||undefined;
+  const sp={ArrowLeft:['r',cur.r,-1],ArrowRight:['r',cur.r,1],ArrowUp:['c',cur.c,-1],ArrowDown:['c',cur.c,1]}[e.code];if(sp){spin(K,sp[0],sp[1],sp[2]);return true}
+  const mv={KeyA:[0,-1],KeyD:[0,1],KeyW:[-1,0],KeyS:[1,0]}[e.code];if(mv){cur.r=(cur.r+mv[0]+N)%N;cur.c=(cur.c+mv[1]+N)%N;return true}
+ },
+ down(K,x,y){const a=at(K,x,y);if(a){cur=a;drag={x,y}}return false},up(){drag=null},
+ step(K,dt){
+  const p=K.pointer;if(p.held&&drag&&p.inside&&!anim){const dx=p.x-drag.x,dy=p.y-drag.y;if(Math.abs(dx)>cell*.5&&Math.abs(dx)>Math.abs(dy)){spin(K,'r',cur.r,dx>0?1:-1);drag={x:p.x,y:p.y}}else if(Math.abs(dy)>cell*.5){spin(K,'c',cur.c,dy>0?1:-1);drag={x:p.x,y:p.y}}}
+  if(anim){anim.t+=dt*8;if(anim.t>=1)finish(K)}if(solved){solved+=dt;if(solved>2.2){level++;gen(K)}}
+ },
+ draw(K,c){
+  const {w,h,pointer:p}=K;c.fillStyle='#05070e';c.fillRect(0,0,w,h);c.fillStyle='#08111c';c.fillRect(ox,oy,cell*N,cell*N);
+  c.save();c.beginPath();c.rect(ox,oy,cell*N,cell*N);c.clip();
+  for(let r=0;r<N;r++)for(let q=0;q<N;q++){const v=g[id(r,q)],tr=Math.floor(v/N),tc=v%N;let dx=0,dy=0;if(anim){const e=anim.t<1?anim.t:1;if(anim.kind==='r'&&r===anim.idx)dx=anim.d*e*cell;if(anim.kind==='c'&&q===anim.idx)dy=anim.d*e*cell}
+   for(const [ox2,oy2] of [[0,0],[-N*cell,0],[N*cell,0],[0,-N*cell],[0,N*cell]]){const x=ox+q*cell+dx+ox2,y=oy+r*cell+dy+oy2;if(x>ox+cell*N||x+cell<ox||y>oy+cell*N||y+cell<oy)continue;
+    const hue=(tc/N*300+tr/N*60)%360,ok=v===id(r,q);c.fillStyle='hsl('+hue+',70%,'+(32+tr/N*22)+'%)';c.fillRect(x+2,y+2,cell-4,cell-4);c.fillStyle=ok?'#ffffff33':'#00000033';c.fillRect(x+2,y+2,cell-4,5);c.fillStyle='#fff';c.font='bold '+Math.round(cell*.3)+'px monospace';c.textAlign='center';c.fillText(v+1,x+cell/2,y+cell*.62)}}
+  c.restore();c.textAlign='left';
+  const hv=p.inside?at(K,p.x,p.y):null;if(hv){c.strokeStyle='#ed4e8c';c.strokeRect(ox+hv.c*cell+1.5,oy+hv.r*cell+1.5,cell-3,cell-3)}
+  c.strokeStyle='#faffdb';c.lineWidth=2;c.strokeRect(ox+cur.c*cell+1,oy+cur.r*cell+1,cell-2,cell-2);c.lineWidth=1;c.globalAlpha=.25;c.fillStyle='#faffdb';c.fillRect(ox,oy+cur.r*cell,cell*N,cell);c.fillRect(ox+cur.c*cell,oy,cell,cell*N);c.globalAlpha=1;
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText(N+'×'+N+' / MOVES '+moves+' / ROW '+(cur.r+1)+' COLUMN '+(cur.c+1),ox,oy-12);
+  if(solved){c.globalAlpha=.3+.2*Math.sin(K.time*8);c.strokeStyle='#faffdb';c.lineWidth=3;c.strokeRect(ox-4,oy-4,cell*N+8,cell*N+8);c.lineWidth=1;c.globalAlpha=1}
+  if(p.inside&&hv){c.fillStyle='#faffdb';c.fillText(p.held?'SPINNING':'DRAG A TILE',p.x+12,p.y-8)}
+ },
+ readout:K=>{let ok=0;for(let i=0;i<g.length;i++)ok+=g[i]===i;return['HOME '+K.pad(ok,2)+'/'+K.pad(N*N,2),'MOVES '+K.pad(moves,3)+' / SOLVED '+K.pad(wins)+' / '+N+'×'+N]}
+});
+})();
+</script></body></html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03050b"><title>S134 — DOCK</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// Nothing stops unless you stop it. Line up with the port, match its drift and touch it slowly.
+let ship=null,port={x:0,y:0,a:Math.PI,vx:0,vy:0},fuel=100,score=0,tries=0,docks=0,crashes=0,state='fly',stT=0,rcs=null,msg='',level=0,debris=[],assist=0,trail=[];
+function setup(K){const w=K.w,h=K.h;port={x:w*(.62+K.rand()*.25),y:h*(.25+K.rand()*.5),a:Math.PI+((K.rand()-.5)*.6)*Math.min(1,level*.3),vx:level>1?(K.rand()-.5)*14:0,vy:level>1?(K.rand()-.5)*14:0};ship={x:w*.14,y:h*(.2+K.rand()*.6),vx:20+K.rand()*20,vy:(K.rand()-.5)*40,a:0,w:0};fuel=100;state='fly';stT=0;msg='';debris=Array.from({length:Math.min(6,level)},()=>({x:K.w*(.3+K.rand()*.35),y:K.rand()*K.h,vx:(K.rand()-.5)*26,vy:(K.rand()-.5)*26,r:10+K.rand()*10}));trail=[];tries++}
+Salvage({id:'S134',title:'DOCK',parent:'029 ORPHANED BUS',bg:'#03050b',scanlines:false,
+ help:'<kbd>←</kbd><kbd>→</kbd> ROTATE &nbsp;<kbd>↑</kbd> THRUST FORWARD &nbsp;<kbd>↓</kbd> THRUST BACKWARD &nbsp;<kbd>SPACE</kbd> STOP THE SPIN<br>TOUCH THE PORT SLOWLY, SQUARE ON, WITH THE SAME DRIFT / HOLD THE POINTER FOR A LIMITED AUTOPILOT THAT BRAKES YOU',
+ aria:'A docking game in two dimensions with realistic momentum. A small ship drifts toward a docking port. Left and right arrows rotate it, up thrusts forward, down thrusts backward and Space cancels spin, all using limited fuel. To dock, arrive at the port with the ship pointing straight at it, matching the port\'s drift and moving slowly. Too fast or off-angle is a crash. Later levels add a moving port and drifting debris. Holding the pointer engages a short-lived autopilot that brakes the ship.',
+ reset(K){level=0;score=docks=crashes=tries=0;setup(K)},
+ resize(K){},
+ key(K,e,fresh){if(e.code==='KeyR'&&fresh)return;if(/^Arrow|^Key[WASD]$|^Space$/.test(e.code)){if((state!=='fly')&&e.code==='Space'&&stT>.8)setup(K);return true}},
+ down(K){if(state!=='fly'&&stT>.8){setup(K);return true}return false},
+ step(K,dt){
+  if(state!=='fly'){stT+=dt;return}
+  const p=K.pointer,L=K.keys.has('ArrowLeft')||K.keys.has('KeyA'),R=K.keys.has('ArrowRight')||K.keys.has('KeyD'),U=K.keys.has('ArrowUp')||K.keys.has('KeyW'),D=K.keys.has('ArrowDown')||K.keys.has('KeyS');rcs={L,R,U,D};
+  if(fuel>0){if(L){ship.w-=2.2*dt;fuel-=3*dt}if(R){ship.w+=2.2*dt;fuel-=3*dt}if(U){ship.vx+=Math.cos(ship.a)*55*dt;ship.vy+=Math.sin(ship.a)*55*dt;fuel-=6*dt}if(D){ship.vx-=Math.cos(ship.a)*40*dt;ship.vy-=Math.sin(ship.a)*40*dt;fuel-=5*dt}if(K.keys.has('Space')){ship.w*=Math.exp(-dt*5);fuel-=1.4*dt}}
+  assist=0;if(p.held&&p.inside&&fuel>0){assist=1;const rvx=ship.vx-port.vx,rvy=ship.vy-port.vy;ship.vx-=rvx*dt*1.6;ship.vy-=rvy*dt*1.6;ship.w*=Math.exp(-dt*2);fuel-=9*dt}
+  fuel=Math.max(0,fuel);ship.x+=ship.vx*dt;ship.y+=ship.vy*dt;ship.a+=ship.w*dt;port.x+=port.vx*dt;port.y+=port.vy*dt;if(port.x<K.w*.5||port.x>K.w*.95)port.vx*=-1;if(port.y<K.h*.1||port.y>K.h*.9)port.vy*=-1;
+  trail.push([ship.x,ship.y]);if(trail.length>160)trail.shift();
+  for(const d of debris){d.x+=d.vx*dt;d.y+=d.vy*dt;if(d.x<0||d.x>K.w)d.vx*=-1;if(d.y<0||d.y>K.h)d.vy*=-1;if(Math.hypot(ship.x-d.x,ship.y-d.y)<d.r+8){state='crash';stT=0;crashes++;msg='HIT DEBRIS';K.note('DEBRIS / SPACE TO TRY AGAIN')}}
+  const dx=ship.x-port.x,dy=ship.y-port.y,dist=Math.hypot(dx,dy);
+  if(dist<16){const rv=Math.hypot(ship.vx-port.vx,ship.vy-port.vy),ae=Math.abs(K.wrap(ship.a-(port.a+Math.PI)+Math.PI*0+0)),aErr=Math.abs(K.wrap(ship.a-(port.a+Math.PI))),offAx=Math.abs(K.wrap(Math.atan2(dy,dx)-port.a));
+   if(rv<24&&aErr<.22&&offAx<.5){state='ok';stT=0;docks++;score+=Math.round(100+fuel);msg='DOCKED / RELATIVE SPEED '+rv.toFixed(0);K.note(msg+' / FUEL '+fuel.toFixed(0));level++}else{state='crash';stT=0;crashes++;msg=rv>=24?'TOO FAST ('+rv.toFixed(0)+')':aErr>=.22?'NOT SQUARE ON':'WRONG SIDE OF THE PORT';K.note('CRASH / '+msg+' / SPACE')}}
+  if(ship.x<-80||ship.x>K.w+80||ship.y<-80||ship.y>K.h+80){state='crash';stT=0;crashes++;msg='LOST IN SPACE';K.note('LOST IN SPACE / SPACE')}
+ },
+ draw(K,c){
+  const {w,h,TAU,pointer:p}=K;c.fillStyle='#03050b';c.fillRect(0,0,w,h);for(let i=0;i<70;i++){c.globalAlpha=.15+K.hash(i)*.4;c.fillStyle='#b7f6ff';c.fillRect(K.hash(i*3.1)*w,K.hash(i*7.7)*h,1.3,1.3)}c.globalAlpha=1;
+  c.fillStyle='#2a3d5e';c.fillRect(port.x+4,port.y-80,40,160);c.strokeStyle='#4f6b80';c.strokeRect(port.x+4.5,port.y-79.5,39,159);
+  c.save();c.translate(port.x,port.y);c.rotate(port.a);c.strokeStyle='#f4d84e';c.lineWidth=2;c.strokeRect(-3,-14,10,28);c.beginPath();c.moveTo(-18,-20);c.lineTo(-4,-14);c.moveTo(-18,20);c.lineTo(-4,14);c.stroke();c.lineWidth=1;c.restore();
+  c.strokeStyle='#f4d84e44';c.setLineDash([3,6]);c.beginPath();c.moveTo(port.x,port.y);c.lineTo(port.x+Math.cos(port.a)*260,port.y+Math.sin(port.a)*260);c.stroke();c.setLineDash([]);
+  for(const d of debris){c.fillStyle='#4a4f58';c.beginPath();c.arc(d.x,d.y,d.r,0,TAU);c.fill();c.strokeStyle='#7f97a5';c.stroke()}
+  c.strokeStyle='#28e3f444';c.beginPath();trail.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();
+  const rvx=ship.vx-port.vx,rvy=ship.vy-port.vy;c.strokeStyle='#10f4cf';c.beginPath();c.moveTo(ship.x,ship.y);c.lineTo(ship.x+rvx*1.2,ship.y+rvy*1.2);c.stroke();c.fillStyle='#10f4cf';c.fillRect(ship.x+rvx*1.2-2,ship.y+rvy*1.2-2,4,4);
+  c.save();c.translate(ship.x,ship.y);c.rotate(ship.a);c.fillStyle=state==='crash'?'#ed4e8c':'#faffdb';c.beginPath();c.moveTo(12,0);c.lineTo(-8,8);c.lineTo(-4,0);c.lineTo(-8,-8);c.closePath();c.fill();
+  if(rcs&&state==='fly'){c.fillStyle='#fe6741';if(rcs.U)c.fillRect(-14,-2,8,4);if(rcs.D)c.fillRect(10,-2,6,4);if(rcs.L)c.fillRect(-6,9,4,5);if(rcs.R)c.fillRect(-6,-14,4,5)}c.restore();
+  const rv=Math.hypot(rvx,rvy),dist=Math.hypot(ship.x-port.x,ship.y-port.y),aErr=Math.abs(K.wrap(ship.a-(port.a+Math.PI)));
+  c.font='9px monospace';c.fillStyle='#9fc4d6';c.fillText('RELATIVE SPEED '+rv.toFixed(0)+(rv<24?' ✓':' (NEED < 24)')+' / ANGLE ERROR '+(aErr*57.3).toFixed(0)+'°'+(aErr<.22?' ✓':' (NEED < 13°)')+' / DISTANCE '+dist.toFixed(0),22,h*.1);
+  c.fillStyle='#ffffff22';c.fillRect(22,h*.1+8,160,4);c.fillStyle=fuel>25?'#faffdb':'#ed4e8c';c.fillRect(22,h*.1+8,160*fuel/100,4);c.fillStyle='#9fc4d6';c.fillText('FUEL',190,h*.1+14);
+  if(state!=='fly'){c.fillStyle='#03050bcc';c.fillRect(w/2-170,h*.45,340,50);c.fillStyle=state==='ok'?'#10f4cf':'#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText((state==='ok'?'DOCKED':'CRASHED')+' / '+msg,w/2,h*.45+22);c.font='9px monospace';c.fillText('SPACE OR CLICK FOR '+(state==='ok'?'THE NEXT PORT':'ANOTHER ATTEMPT'),w/2,h*.45+40);c.textAlign='left'}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,10,0,TAU);c.stroke();c.globalAlpha=1;c.fillText(p.held?'AUTOPILOT BRAKING':'HOLD FOR AUTOPILOT',p.x+14,p.y-8)}
+ },
+ readout:K=>['DOCKED '+K.pad(docks)+' / CRASHED '+K.pad(crashes),'FUEL '+K.pad(fuel)+' / SCORE '+K.pad(score,5)+' / LEVEL '+K.pad(level+1)]
+});
+})();
+</script></body></html>

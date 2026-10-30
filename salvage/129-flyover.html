@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#04060c"><title>S129 — FLYOVER</title><script src="kit.js"></script></head><body>
+<script>
+(()=>{'use strict';
+// A wireframe country with the sky cut out of it. Stay above the ground and through the rings.
+const SL=44,XS=64,FOV=1.0;
+let sx=0,sz=0,sy=1.4,vy=0,speed=1.6,rings=[],score=0,best=0,hull=3,over=0,flash=0,roll=0,passed=0,seedO=0,clock=0,tgtX=null;
+const H=(x,z)=>{const a=seedO;return Math.max(0,(noise2(x*.18+a,z*.18)-.42)*5.2+(noise2(x*.5+a,z*.5)-.5)*.5)};
+let K0=null;const noise2=(x,y)=>K0.noise(x,y);
+function nextRing(z){const x=sx+(K0.rand()-.5)*5;rings.push({x,z,y:Math.max(H(x,z),0)+1.4+K0.rand()*1.2,got:false})}
+function init(K){K0=K;seedO=K.rand()*40;sx=0;sz=0;sy=3;vy=0;speed=1.6;rings=[];score=passed=0;hull=3;over=0;flash=0;let z=10;for(let i=0;i<5;i++){nextRing(z);z+=9}}
+Salvage({id:'S129',title:'FLYOVER',parent:'022 READ ONLY GEOLOGY',bg:'#04060c',
+ help:'<kbd>←</kbd><kbd>→</kbd> STEER &nbsp;<kbd>↑</kbd><kbd>↓</kbd> CLIMB OR DIVE &nbsp;<kbd>SPACE</kbd> RESTART<br>FLY THROUGH THE RINGS AND DO NOT TOUCH THE GROUND / THE POINTER STEERS: THE SHIP LEANS TOWARD ITS POSITION',
+ aria:'A wireframe terrain flight game. The view is from behind and above a ship flying forward over procedurally generated hills drawn as horizontal line profiles. Left and right arrows steer, up and down climb or dive. Glowing rings hang in the air; flying through one scores. Touching the ground costs hull and bounces the ship back up. With the pointer, the ship steers toward the pointer\'s horizontal position and climbs or dives toward its vertical position.',
+ reset(K){best=0;init(K)},
+ key(K,e,fresh){if(e.code==='Space'){if(fresh&&over)init(K);return true}if(/^Arrow|^Key[WASD]$/.test(e.code))return true},
+ down(K){if(over)init(K);return false},
+ step(K,dt){
+  K0=K;clock+=dt;if(over)return;const p=K.pointer;let dx=(K.keys.has('ArrowRight')||K.keys.has('KeyD')?1:0)-(K.keys.has('ArrowLeft')||K.keys.has('KeyA')?1:0),dy=(K.keys.has('ArrowUp')||K.keys.has('KeyW')?1:0)-(K.keys.has('ArrowDown')||K.keys.has('KeyS')?1:0);
+  if(p.inside&&!dx&&!dy){dx=K.clamp((p.x/K.w-.5)*3,-1,1);dy=K.clamp(-(p.y/K.h-.5)*3,-1,1)}
+  roll+=(dx*.5-roll)*Math.min(1,dt*5);sx+=dx*dt*3.2;vy+=(dy*4-vy)*Math.min(1,dt*3);sy=K.clamp(sy+vy*dt,.1,9);speed=1.6+Math.min(2,passed*.04);sz+=speed*dt*2.2;
+  const g=H(sx,sz+.4);if(sy<g+.18){sy=g+.5;vy=2.5;hull--;flash=1;K.note('GROUND / HULL '+Math.max(0,hull));if(hull<=0){over=1;best=Math.max(best,score);K.note('HULL BREACHED / SPACE')}}
+  for(const r of rings){if(!r.got&&sz>=r.z-.3&&sz<=r.z+.3){if(Math.hypot(sx-r.x,(sy-r.y)*1.2)<1.1){r.got=true;score+=10+passed;passed++;flash=-1}else{r.got=true}}}
+  while(rings.length&&rings[0].z<sz-2)rings.shift();while(rings.length<5)nextRing((rings.length?rings[rings.length-1].z:sz)+9);
+  best=Math.max(best,score);flash=flash>0?Math.max(0,flash-dt*3):Math.min(0,flash+dt*3);
+ },
+ draw(K,c){
+  K0=K;const {w,h,TAU,pointer:p}=K,cx=w/2,hor=h*.34,f=h*.9;c.fillStyle='#04060c';c.fillRect(0,0,w,h);
+  const sky=c.createLinearGradient(0,0,0,hor);sky.addColorStop(0,'#04060c');sky.addColorStop(1,'#1b1030');c.fillStyle=sky;c.fillRect(0,0,w,hor);c.fillStyle='#f4d84e44';c.beginPath();c.arc(w*.72,hor*.62,h*.05,0,TAU);c.fill();
+  const camY=sy+.9;
+  for(let i=SL;i>=1;i--){const dz=.6+i*.5+((-(sz*2.2)%1)+1)%1*0,wz=Math.floor(sz)+i*.5,rz=wz-sz;if(rz<.3)continue;const pts=[];for(let k=0;k<=XS;k++){const wx=sx+(k/XS-.5)*16,hgt=H(wx,wz),scl=f/rz*.35,px=cx+(wx-sx)*scl,py=hor+(camY-hgt)*scl;pts.push([px,py])}
+   const fade=Math.max(0,1-i/SL);c.beginPath();pts.forEach(([x,y],k)=>k?c.lineTo(x,y):c.moveTo(x,y));c.lineTo(pts[XS][0],h);c.lineTo(pts[0][0],h);c.closePath();c.fillStyle='#04060c';c.fill();c.strokeStyle='hsl('+(165+(1-fade)*110)+',70%,'+(22+fade*40)+'%)';c.globalAlpha=.35+fade*.65;c.lineWidth=1.2;c.stroke();c.globalAlpha=1}
+  for(const r of rings){const rz=r.z-sz;if(rz<.3||rz>26)continue;const scl=f/rz*.35,x=cx+(r.x-sx)*scl,y=hor+(camY-r.y)*scl,rad=scl*1.1;c.strokeStyle=r.got?'#2a3d5e':'#f4d84e';c.lineWidth=Math.max(1,3*scl/60);c.beginPath();c.ellipse(x,y,rad,rad*1.2/1.2,0,0,TAU);c.stroke();c.lineWidth=1}
+  c.save();c.translate(cx,h*.72);c.rotate(roll);c.fillStyle=flash>0?'#ed4e8c':'#faffdb';c.beginPath();c.moveTo(0,-16);c.lineTo(20,12);c.lineTo(0,6);c.lineTo(-20,12);c.closePath();c.fill();c.restore();
+  if(flash>0){c.fillStyle='#ed4e8c';c.globalAlpha=flash*.12;c.fillRect(0,0,w,h);c.globalAlpha=1}
+  c.font='9px monospace';c.fillStyle='#faffdb';c.fillText('HULL '+'■'.repeat(Math.max(0,hull))+'□'.repeat(3-Math.max(0,hull))+' / ALT '+(sy-H(sx,sz)).toFixed(1)+' / RINGS '+passed,22,h-52);
+  if(over){c.fillStyle='#04060ccc';c.fillRect(w/2-140,h*.4,280,50);c.fillStyle='#ed4e8c';c.textAlign='center';c.font='13px monospace';c.fillText('HULL BREACHED / SPACE',w/2,h*.4+30);c.textAlign='left'}
+  if(p.inside){c.globalAlpha=.5;c.strokeStyle='#faffdb';c.beginPath();c.arc(p.x,p.y,10,0,TAU);c.stroke();c.globalAlpha=1;c.fillText('STEER HERE',p.x+14,p.y-8)}
+ },
+ readout:K=>['SCORE '+K.pad(score,4),'RINGS '+K.pad(passed)+' / BEST '+K.pad(best,4)+' / HULL '+Math.max(0,hull)]
+});
+})();
+</script></body></html>
