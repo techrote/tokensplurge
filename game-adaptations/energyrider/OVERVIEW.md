@@ -25,7 +25,7 @@ S007 was chosen as the first game because its mechanics were already there: a ti
 |---|---|
 | A / D | Run directly. Ctrl halves the run speed. |
 | W or Space | Jump off the surface along its normal. Hold for jetpack thrust, which follows the key. |
-| S (in the air) | Pulls down at three times gravity. Gravity is otherwise off in the air. |
+| S (in the air) | Triples gravity while held. |
 | Ctrl | Glide: halves gravity and horizontal speed while held. Stacks with S for 1.5× gravity. |
 | F | Fire. |
 | ← / → (also ↑ / ↓), Q / E | Tilt gravity. |
@@ -43,7 +43,7 @@ S007 was chosen as the first game because its mechanics were already there: a ti
 
 **Stomp rule.** Landing on a drone from above stomps it. It falls, and it is destroyed when it touches the liquid. You bounce up after the stomp.
 
-**Gravity rules.** Tilt changes the direction of gravity. The liquid's level tilts toward the low side of the room, and waves slosh around that level.
+**Gravity rules.** Tilt changes the direction of gravity. The player feels gravity at half the room's tilt, in the air and on the ground. The liquid's level tilts toward the low side of the room, and waves slosh around that level. The actual tilt random-walks within ±10% of the set tilt, so the physics never quite matches the gauge.
 
 **HUD.** Fuel and HP are drawn under the player, so they follow you.
 

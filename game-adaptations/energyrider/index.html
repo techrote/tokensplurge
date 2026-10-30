@@ -7,6 +7,7 @@ const D2R=Math.PI/180;
 const SP=24,G=900,RUN=260,MAXV=300,JET=1150,SEC=4,REGEN=1.8,JUMP=330,STOMP=-420,SHOT_CD=.16,ENEMY_RATE=2.1,WAVE=160,DAMP=1.2,SPRING=3;
 const LIMIT=60*D2R,PRESET_MAX=20*D2R,PRESET_GAP=10*D2R;
 let K=null,stage=1,score=0,hp=3,cam=0,LEN=0,n=0,state='play',stateT=0,grab=-1,warnT=0,tilt=0,tiltGoal=0,rippleT=0,swellT=0;
+let drift=0,real=0;// drift is the random walk on the set tilt; real is the tilt the physics actually sees
 const presets=[-25*D2R,0,25*D2R],held=new Set();
 let baseF=new Float32Array(0),H=new Float32Array(0),V=new Float32Array(0);
 let mems=[],enemies=[],shots=[],eshots=[],parts=[];
@@ -54,17 +55,17 @@ function takeoff(){
 
 // The liquid: a wave solver that is always moving. Gravity pulls its level toward the low side of the tilted room.
 function liquid(dt){
-  const p=K.pointer,tgtSlope=Math.tan(tilt)*.12;
+  const p=K.pointer,tgtSlope=Math.tan(real)*.12;
   rippleT-=dt;
   if(rippleT<=0){rippleT=.3+K.rand()*.5;const j=Math.floor(K.rand()*n);V[j]+=(K.rand()-.5)*160}
   swellT-=dt;
   if(swellT<=0){
-    swellT=2.5+K.rand()*2.5;
+    swellT=1.8+K.rand()*2.2;
     // Swells only start off screen, so they roll in from the edges rather than appearing.
     const lo=cam-120,hi=cam+K.w+120;
     let j=-1;
     for(let t=0;t<8&&j<0;t++){const c=Math.floor(K.rand()*n);if(c*SP<lo||c*SP>hi)j=c}
-    if(j>=0)for(let s=-4;s<=4;s++){const q=j+s;if(q>=0&&q<n)V[q]+=500*(1-Math.abs(s)/5)}
+    if(j>=0)for(let s=-5;s<=5;s++){const q=j+s;if(q>=0&&q<n)V[q]+=800*(1-Math.abs(s)/6)}
   }
   if(grab>=0&&p.held){
     const tgt=K.clamp(p.y-K.h*baseF[grab],-240,240);
@@ -88,8 +89,8 @@ function play(dt){
   if(dir)P.facing=dir;
   // A and D steer directly; Ctrl halves the run speed.
   if(dir||P.ground)P.vx+=(dir*RUN*(ctrl?.5:1)-P.vx)*Math.min(1,dt*(P.ground?9:3));
-  // Gravity acts on the ground only. In the air it is off unless S is held, which pulls at triple strength; Ctrl halves either.
-  const gm=(P.ground?1:(held.has('KeyS')?3:0))*(ctrl?.5:1),st=Math.sin(tilt),ct=Math.cos(tilt);
+  // The player feels gravity at half the room's tilt. S triples it in the air; Ctrl halves it.
+  const gm=(!P.ground&&held.has('KeyS')?3:1)*(ctrl?.5:1),st=Math.sin(real/2),ct=Math.cos(real/2);
   P.vx+=G*st*gm*dt;P.vy+=G*ct*gm*dt;
   // Jetpack follows the key: thrust and fuel burn only while W or Space is held. Fuel refills only on the liquid.
   P.jet=(held.has('Space')||held.has('KeyW'))&&P.fuel>0;
@@ -109,9 +110,9 @@ function play(dt){
     P.ground=false;if(gap<0)P.y=sy-P.r;
   }
   P.nx=nx;P.ny=ny;
-  // The body turns to the surface while grounded and keeps its angle in the air.
-  if(P.ground)P.ang+=(K.clamp(Math.atan2(nx,-ny),-LIMIT,LIMIT)-P.ang)*Math.min(1,dt*12);
-  P.ang=K.clamp(P.ang,-LIMIT,LIMIT);
+  // The body always eases toward its current pose: the surface normal on the ground, the lean of its motion in the air.
+  const want=P.ground?K.clamp(Math.atan2(nx,-ny),-LIMIT,LIMIT):K.clamp(P.vx*.0035,-LIMIT,LIMIT);
+  P.ang+=(want-P.ang)*Math.min(1,dt*(P.ground?12:4));
   if(P.y<P.r){P.y=P.r;if(P.vy<0)P.vy=0}
 
   P.shot-=dt;P.inv-=dt;
@@ -170,13 +171,16 @@ function advance(){if(state==='clear')stage++;hp=3;build(K)}
 Salvage({id:'S007',title:'ENERGYRIDER',parent:'008 LIQUID MEMORY',bg:'#04070c',
  help:'<kbd>A</kbd><kbd>D</kbd> RUN &nbsp;<kbd>W</kbd> / <kbd>SPACE</kbd> JUMP, HOLD FOR JETPACK &nbsp;<kbd>S</kbd> FAST FALL &nbsp;<kbd>CTRL</kbd> GLIDE &nbsp;<kbd>F</kbd> FIRE<br><kbd>←</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>E</kbd> TILT GRAVITY &nbsp;<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> READ A PRESET &nbsp;<kbd>SHIFT</kbd>+# WRITE ONE / DRAG THE LIQUID WITH THE POINTER',
  aria:'A side-scrolling game on a tank of liquid that is always rippling. You are a glowing memory riding the surface while the room tilts. A and D run. W or Space makes you jump off the surface, then fires a three-section jetpack that refills only while you touch the liquid. Land on a drone to stomp it; it sinks into the liquid and is destroyed. S falls faster in the air, Control glides, and F fires. Arrow keys and Q and E tilt the gravity; keys 1 to 3 read a stored tilt and Shift with 1 to 3 stores one. Drag the liquid with the pointer to push waves under you. Collect all five memories, then reach the gate.',
- reset(k){K=k;stage=1;score=0;hp=3;tilt=tiltGoal=0;presets.splice(0,3,-25*D2R,0,25*D2R);build(K)},
+ reset(k){K=k;stage=1;score=0;hp=3;tilt=tiltGoal=drift=real=0;presets.splice(0,3,-25*D2R,0,25*D2R);build(K)},
  resize(k){K=k},
  step(k,dt){
   K=k;
   const turn=(held.has('ArrowRight')||held.has('ArrowUp')||held.has('KeyE')?1:0)-(held.has('ArrowLeft')||held.has('ArrowDown')||held.has('KeyQ')?1:0);
   tiltGoal=K.clamp(tiltGoal+turn*dt*1.1,-1.2,1.2);
   tilt+=(tiltGoal-tilt)*Math.min(1,dt*8);
+  // The actual tilt wanders up to 10% either side of the set tilt.
+  drift=K.clamp(drift+(K.rand()-.5)*dt*1.5,-.1,.1);
+  real=tilt*(1+drift);
   liquid(dt);
   if(state==='play')play(dt);else{stateT+=dt;if(stateT>2.4)advance()}
   parts=parts.filter(q=>{q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=260*dt;q.life-=dt*1.6;return q.life>0});
@@ -243,8 +247,8 @@ Salvage({id:'S007',title:'ENERGYRIDER',parent:'008 LIQUID MEMORY',bg:'#04070c',
   const gcx=w/2,gcy=h*.12;
   c.strokeStyle='#9fc4d6';c.globalAlpha=.5;c.beginPath();c.arc(gcx,gcy,30,0,TAU);c.stroke();c.globalAlpha=1;
   presets.forEach((a,i)=>{c.fillStyle=Math.abs(a-tiltGoal)<.02?'#f4d84e':'#9fc4d6';c.fillText(String(i+1),gcx+Math.sin(a)*42,gcy+Math.cos(a)*42+3)});
-  c.strokeStyle='#faffdb';c.beginPath();c.moveTo(gcx,gcy);c.lineTo(gcx+Math.sin(tilt)*26,gcy+Math.cos(tilt)*26);c.stroke();
-  c.fillStyle='#9fc4d6';c.fillText('GRAVITY '+deg(tilt),gcx,gcy+56);
+  c.strokeStyle='#faffdb';c.beginPath();c.moveTo(gcx,gcy);c.lineTo(gcx+Math.sin(real)*26,gcy+Math.cos(real)*26);c.stroke();
+  c.fillStyle='#9fc4d6';c.fillText('GRAVITY '+deg(real),gcx,gcy+56);
   c.textAlign='left';c.font='9px monospace';c.fillStyle='#9fc4d6';
   c.fillText('MEMORIES '+(mems.length-memsLeft())+'/'+mems.length,22,h*.1);
   // Pointer: a ring, and a line to the grabbed point while dragging.
