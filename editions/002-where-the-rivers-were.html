@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111b1d">
+<title>Where the Rivers Were — an embroidered atlas</title>
+<style>
+:root{color-scheme:dark;--paper:#ded8be;--faded:#a7b2a7;--gold:#ceab78;--dark:#10191c;--ink:#0b1215;--hair:#456164}
+*{box-sizing:border-box}html{height:100%;background:#10191c}body{margin:0;min-height:100vh;color:var(--paper);background:radial-gradient(ellipse at 50% 37%,#233238 0%,#131e21 55%,#0e171a 100%);font-family:Georgia,serif;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.17;background-image:repeating-linear-gradient(90deg,transparent 0 3px,#d3c3a4 4px 4.3px,transparent 5px 12px),repeating-linear-gradient(0deg,transparent 0 3px,#b9ad89 4px 4.25px,transparent 5px 12px);mix-blend-mode:soft-light}
+.shell{width:min(1450px,96vw);margin:auto;padding:22px 20px 26px;position:relative}
+.kicker{display:flex;align-items:center;justify-content:space-between;gap:14px;font:10px/1.6 ui-monospace,Consolas,monospace;letter-spacing:.28em;color:#d0b18b;text-transform:uppercase;border-bottom:1px solid #72808266;padding:2px 4px 12px}
+.kicker span:last-child{text-align:right}.headline{text-align:center;padding:13px 0 14px;position:relative}.overline{font:10px/1.4 ui-monospace,Consolas,monospace;color:#dcb98e;letter-spacing:.44em;margin:3px 0 4px}.headline h1{font-weight:normal;line-height:1.03;font-size:clamp(45px,5.5vw,87px);margin:0;letter-spacing:-.052em;text-shadow:0 3px 20px #101315}.headline h1 em{font-weight:normal;color:#c99b7c}.deck{font-size:clamp(13px,1.15vw,18px);letter-spacing:.055em;color:#b5c3bd;font-style:italic;margin:9px 0 0}
+.diagram-head{display:flex;align-items:end;justify-content:space-between;gap:15px;max-width:1194px;margin:auto;padding:0 13px 9px;font:10px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.19em;color:#b99d77}.diagram-head span:last-child{text-align:right}
+.gallery{width:min(1194px,100%);margin:auto;position:relative;filter:drop-shadow(0 16px 18px #050b0bc0)}
+.gallery:before,.gallery:after{content:"";position:absolute;top:-16px;bottom:-18px;width:1px;background:linear-gradient(transparent,#c09866 15%,#a98564 80%,transparent);z-index:2}.gallery:before{left:3%}.gallery:after{right:3%}
+.toprail,.bottomrail{position:relative;height:12px;z-index:4;border:1px solid #ebc399;background:linear-gradient(#d3a470 0%,#744d31 35%,#cb9565 60%,#352823 100%);border-radius:10px;box-shadow:0 2px 8px #0008}
+.toprail:before,.toprail:after,.bottomrail:before,.bottomrail:after{content:"";position:absolute;width:13px;height:13px;background:radial-gradient(circle at 42% 38%,#2b2522 0 23%,#d8b37f 27% 54%,#6e4432 58%);border-radius:50%;top:-2px}.toprail:before,.bottomrail:before{left:-4px}.toprail:after,.bottomrail:after{right:-4px}
+.loom{border-left:15px solid #815e48;border-right:15px solid #815e48;background:#172c30;position:relative;overflow:hidden;box-shadow:inset 0 0 0 3px #ddac7f,0 0 0 1px #171717;touch-action:pan-y;cursor:crosshair}
+#art{width:100%;display:block;aspect-ratio:5/3}.loom:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 30px #090f0eaa,inset 0 0 0 2px #d5af8570}
+.tassels{position:absolute;left:4%;right:4%;bottom:-22px;display:flex;justify-content:space-between;pointer-events:none;z-index:1}.tassels i{height:24px;width:3px;background:linear-gradient(90deg,#5a4031,#cea574,#493327);border-radius:2px}.tassels i:nth-child(4n){height:19px}.tassels i:nth-child(5n){height:28px}
+.controls{max-width:1194px;margin:27px auto 0;display:grid;grid-template-columns:minmax(210px,1fr) auto;gap:20px;align-items:center;border-top:1px solid #8a85715b;padding:16px 6px 0}.plate-name{font:11px/1.7 ui-monospace,Consolas,monospace;letter-spacing:.18em;color:#e9b983}.plate-name b{font-weight:normal}.plate-name em{display:block;font:italic 16px/1.45 Georgia,serif;letter-spacing:0;color:#c5c7b5;margin-top:3px}
+.buttons{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}button{appearance:none;border:1px solid #76807d88;background:#1a272a;color:#d9d2be;padding:11px 14px;font:10px/1.1 ui-monospace,Consolas,monospace;letter-spacing:.14em;cursor:pointer;transition:background .18s,border-color .18s;min-height:40px}button:hover,button:focus-visible{border-color:#e2c09b;outline:none}button[aria-pressed="true"]{background:#ceae80;color:#1f2627;border-color:#edcca1}button.split{margin-left:10px}.foot{max-width:1194px;margin:16px auto 0;display:flex;justify-content:space-between;gap:20px;font:10px/1.6 ui-monospace,Consolas,monospace;letter-spacing:.12em;color:#859895}.foot span:last-child{text-align:right}
+@media(max-width:760px){.shell{width:100%;padding:13px 10px 28px}.kicker{letter-spacing:.1em;font-size:8px}.headline{padding:19px 0 23px}.headline h1{font-size:clamp(42px,10.3vw,66px);max-width:500px;margin:auto}.deck{font-size:13px}.diagram-head{font-size:8px;padding:0 2px 7px}.loom{border-left-width:7px;border-right-width:7px}#art{aspect-ratio:5/5}.toprail,.bottomrail{height:9px}.gallery:before,.gallery:after{top:-8px}.controls{display:block;margin-top:27px;padding-top:13px}.plate-name{margin-bottom:15px;font-size:10px}.plate-name em{font-size:15px}.buttons{justify-content:center;gap:6px}button{padding:11px 9px;font-size:9px;flex:1;min-width:28%}button.split{margin-left:0;min-width:40%}.foot{font-size:8px;display:block}.foot span{display:block;margin-top:6px}.foot span:last-child{text-align:left}.tassels{bottom:-21px}.tassels i{height:22px}.overline{letter-spacing:.21em}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+</style></head>
+<body><main class="shell">
+<div class="kicker"><span>ATELIER / UNMADE · EDITION 002</span><span>TEXTILE TOPOGRAPHIES — AN IMAGINARY CARTOGRAPHY</span></div>
+<header class="headline"><p class="overline">A CARTOGRAPHER'S WOVEN ELEGY</p><h1>Where the <em>Rivers</em> Were</h1><p class="deck">Three vanished watersheds, reconstructed stitch by stitch.</p></header>
+<div class="diagram-head"><span>ARCHIVE PLATE <span id="count">I / III</span> · WARP / WEFT / TIDE</span><span>THE MAP IS A MEMORY, NOT A TERRITORY</span></div>
+<div class="gallery" aria-label="Interactive woven topographic map"><div class="toprail"></div><div class="loom"><canvas id="art" width="1200" height="720" role="img" aria-label="Embroidered topographic river atlas; choose a plate with the controls below"></canvas></div><div class="bottomrail"></div><div class="tassels" aria-hidden="true" id="fringe"></div></div>
+<section class="controls" aria-label="Artwork controls"><div class="plate-name"><b id="plate">01 — THE SILT CATHEDRAL</b><em id="poem">A thousand tributaries learning the shape of a home.</em></div><nav class="buttons"><button class="select" data-plate="0" aria-pressed="true">I · DELTA</button><button class="select" data-plate="1" aria-pressed="false">II · SALT</button><button class="select" data-plate="2" aria-pressed="false">III · MOON</button><button id="stitches" class="split">RE-EMBROIDER</button><button id="motion">STILL</button><button id="export">COLLECT ↓</button></nav></section>
+<div class="foot"><span>MOVE THE POINTER ACROSS THE WATER TO STIR ITS SILVER THREADS · KEYS 1—3 / R / SPACE / E</span><span>AN EDITION AFTER “THE WEAVER'S AFTERIMAGE” · NO. 006</span></div>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('art'),ctx=canvas.getContext('2d',{alpha:false});
+const W=1200,H=720,TAU=Math.PI*2,far=document.createElement('canvas');far.width=W;far.height=H;const b=far.getContext('2d',{alpha:false});
+const palettes=[
+ {title:'01 — THE SILT CATHEDRAL',verse:'A thousand tributaries learning the shape of a home.',roman:'I / III',name:'THE SILT CATHEDRAL',field:'#1c3538',field2:'#273e3f',edge:'#11272c',earth:'#647268',gold:'#e1bd80',ink:'#dfd2ae',water:'#467d79',light:'#bbd9bf',route:'#dfa978',mode:0},
+ {title:'02 — THE SALT ARCHIVE',verse:'The roads remain; the water has become a name.',roman:'II / III',name:'THE SALT ARCHIVE',field:'#4c3432',field2:'#60453c',edge:'#302628',earth:'#8f6955',gold:'#ecc49a',ink:'#e7cfb2',water:'#967b62',light:'#f2b789',route:'#d9a98d',mode:1},
+ {title:'03 — THE MOON CROSSING',verse:'By night, the river remembers every traveller.',roman:'III / III',name:'THE MOON CROSSING',field:'#162c3b',field2:'#233749',edge:'#131e31',earth:'#485975',gold:'#dec48d',ink:'#cfd8d9',water:'#396782',light:'#a8dcdf',route:'#e7c996',mode:2}
+];
+let plate=0,seed=19,playing=!matchMedia('(prefers-reduced-motion:reduce)').matches,clock=0,last=0,mouse={x:-100,y:-100},baseDirty=true;
+const lerp=(a,c,t)=>a+(c-a)*t;const hash=(n)=>{let x=Math.sin(n*127.1+seed*71.7)*43758.5453123;return x-Math.floor(x)};
+const rnd=(i,a=0,z=1)=>a+(z-a)*hash(i);const rgba=(hex,a)=>{let s=hex.replace('#','');return `rgba(${parseInt(s.slice(0,2),16)},${parseInt(s.slice(2,4),16)},${parseInt(s.slice(4,6),16)},${a})`};
+function pathLine(c,pts){c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length-1;i++){let mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2;c.quadraticCurveTo(pts[i][0],pts[i][1],mx,my)}let p=pts[pts.length-1];c.lineTo(p[0],p[1])}
+function strokePath(c,pts,color,width){pathLine(c,pts);c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';c.stroke()}
+function fillEllipse(c,x,y,rx,ry,color){c.beginPath();c.ellipse(x,y,rx,ry,0,0,TAU);c.fillStyle=color;c.fill()}
+function drawField(p){
+let gr=b.createLinearGradient(0,0,W,H);gr.addColorStop(0,p.field);gr.addColorStop(.54,p.field2);gr.addColorStop(1,p.edge);b.fillStyle=gr;b.fillRect(0,0,W,H);
+// wide curving sediment layers and marsh shadows beneath the embroidery
+for(let j=0;j<13;j++){let top=42+j*49;b.beginPath();b.moveTo(-10,top);for(let x=0;x<=1210;x+=16){let y=top+17*Math.sin(x*.009+j*.8)+10*Math.sin(x*.027-j*.8);b.lineTo(x,y)}for(let x=1210;x>=-10;x-=16){let y=top+34+14*Math.sin(x*.009+j*.8)+10*Math.sin(x*.027-j*.8);b.lineTo(x,y)}b.closePath();b.fillStyle=j%2?rgba(p.earth,.105):rgba(p.edge,.20);b.fill()}
+// permanent islands of negative space
+for(let k=0;k<6;k++){let x=85+rnd(400+k,0,1020),y=70+rnd(500+k,0,600),r=40+rnd(600+k,10,110);let rg=b.createRadialGradient(x,y,10,x,y,r*1.8);rg.addColorStop(0,rgba(p.earth,.16));rg.addColorStop(1,rgba(p.earth,0));b.fillStyle=rg;fillEllipse(b,x,y,r*1.8,r*1.45,rg)}
+// thin, asymmetric contour rings: each ring is individually wavering
+const hills=[[230,295,245,188],[971,348,225,265],[535,626,240,153],[680,74,170,120]];
+for(let h=0;h<hills.length;h++){let [cx,cy,rx,ry]=hills[h];for(let ring=0;ring<15;ring++){let sc=1-ring*.053;if(sc<=0)continue;b.beginPath();for(let i=0;i<=240;i++){let a=i/240*TAU;let wob=1+.055*Math.sin(5*a+h)+.023*Math.sin(13*a+ring*.22);let x=cx+rx*sc*wob*Math.cos(a),y=cy+ry*sc*wob*Math.sin(a)+12*Math.sin(a*2+h);if(i===0)b.moveTo(x,y);else b.lineTo(x,y)}b.closePath();b.lineWidth=ring%4===0?1.6:.8;b.strokeStyle=rgba(ring%3?p.ink:p.gold,ring%4===0?.28:.11);b.stroke()}}
+}
+const river=[[230,-60],[306,90],[440,167],[554,241],[598,311],[528,402],[580,478],[754,551],[880,627],[936,770]];
+function translatePoints(pts,x=0,y=0){return pts.map(p=>[p[0]+x,p[1]+y])}
+function ribbon(p){const primary=p.mode!==1;
+// braided streams either join the estuary or peel away into the sea
+const branches=[[[50,122],[160,130],[250,177],[408,216],[557,288]],[[15,438],[157,401],[270,392],[430,412],[550,432]],[[920,4],[886,134],[761,195],[633,283],[571,310]],[[1185,265],[1074,275],[942,319],[779,387],[558,416]],[[1190,610],[1059,596],[947,554],[782,548],[694,535]],[[1120,735],[972,695],[850,630],[808,580]]];
+for(let i=0;i<branches.length;i++){let pts=branches[i];let wide=i===0||i===4?38:22;strokePath(b,pts,rgba(p.edge,.77),wide+15);strokePath(b,pts,rgba(p.gold,.37),wide+8);strokePath(b,pts,p.water,wide);strokePath(b,pts,rgba(p.light,.19),wide*.38);
+if(p.mode===0&&i>=2){let fan=translatePoints(pts,75,-60);strokePath(b,fan,rgba(p.edge,.55),15);strokePath(b,fan,p.water,10)}
+if(p.mode===2&&i>=2){strokePath(b,translatePoints(pts,-13,9),rgba(p.light,.48),1.9)}
+}
+// broad incised banks and spectral water
+strokePath(b,river,rgba(p.edge,.8),124);strokePath(b,river,rgba(p.gold,.58),106);strokePath(b,river,rgba(p.edge,.94),98);strokePath(b,river,p.water,83);
+let wg=b.createLinearGradient(260,0,900,H);wg.addColorStop(0,rgba(p.light,.30));wg.addColorStop(.46,rgba(p.light,.16));wg.addColorStop(1,rgba(p.edge,.04));strokePath(b,river,wg,62);
+if(p.mode===1){ // vanished channel: sand cuts across the dead water
+for(let i=0;i<28;i++){let y=24+i*26,x=520+215*Math.sin(y*.008+.45)+48*Math.sin(y*.022);strokePath(b,[[x-80,y-19],[x+82,y+12]],rgba(i%3?p.field2:p.earth,.5),5+rnd(i+88,0,5))}
+}
+// three finer current-lines are stitched over the broad central watercourse
+for(let offset of [-17,4,24]){b.beginPath();for(let j=0;j<230;j++){let t=j/229*(river.length-1),i=Math.min(river.length-2,Math.floor(t)),f=t-i;let x=lerp(river[i][0],river[i+1][0],f),y=lerp(river[i][1],river[i+1][1],f);let dx=river[i+1][0]-river[i][0],dy=river[i+1][1]-river[i][1],len=Math.hypot(dx,dy)||1;let a=x-offset*dy/len+4*Math.sin(t*4+offset),c=y+offset*dx/len+4*Math.sin(t*4+offset);if(j%3===0){b.moveTo(a,c)}else if(j%3!==2){b.lineTo(a,c)}}b.strokeStyle=rgba(p.light,p.mode===1?.055:.18);b.lineWidth=.9;b.stroke()}
+// finely embroidered running stitches along the banks and within tributaries
+for(let side of [-1,1])for(let j=0;j<=145;j++){let t=j/145, i=Math.min(Math.floor(t*(river.length-1)),river.length-2),f=t*(river.length-1)-i;let x=lerp(river[i][0],river[i+1][0],f),y=lerp(river[i][1],river[i+1][1],f);let dx=river[i+1][0]-river[i][0],dy=river[i+1][1]-river[i][1],len=Math.hypot(dx,dy)||1;let ax=x+side*dx/len*0 +side*(dy/len)*55,ay=y-side*dx/len*55;b.beginPath();b.moveTo(ax-3,ay-2);b.lineTo(ax+3,ay+2);b.strokeStyle=rgba(p.gold,.3+(j%5===0?.55:0));b.lineWidth=j%5===0?2:1;b.stroke()}
+if(primary){let main=translatePoints(river,-19,4);strokePath(b,main,rgba(p.light,.21),1.6);strokePath(b,translatePoints(river,23,-8),rgba(p.light,.12),1)}
+}
+function cartographicFurniture(p){
+// landmarks are symbolic diamonds inherited from the former jacquard medallions
+const sites=[[173,258,'LOW MARSH'],[990,196,'THE EAST KEEP'],[300,590,'THE OLD CAUSEWAY'],[1008,554,'LAST LANTERN']];
+for(let i=0;i<sites.length;i++){let [x,y,lab]=sites[i];b.save();b.translate(x,y);b.rotate(Math.PI/4);b.fillStyle=rgba(p.edge,.90);b.fillRect(-9,-9,18,18);b.strokeStyle=rgba(p.gold,.95);b.lineWidth=1.4;b.strokeRect(-9,-9,18,18);b.strokeRect(-4,-4,8,8);b.restore();b.strokeStyle=rgba(p.gold,.42);b.lineWidth=.8;b.beginPath();b.moveTo(x+14,y);b.lineTo(x+44,y-21);b.lineTo(x+95,y-21);b.stroke();b.font='11px ui-monospace,monospace';b.fillStyle=rgba(p.ink,.83);b.letterSpacing='1px';b.fillText(lab,x+48,y-27)}
+// small traditional woven cross stitches in clustered settlement formations
+for(let i=0;i<160;i++){let x=50+rnd(i+2000,0,1100),y=50+rnd(i+2300,0,615);if((x>220&&x<820&&y>100&&y<585)&&i%3===0)continue;let a=2.2+rnd(i+2600)*3;b.strokeStyle=rgba(p.gold,.3+rnd(i+2800)*.27);b.lineWidth=.8;b.beginPath();b.moveTo(x-a,y-a);b.lineTo(x+a,y+a);b.moveTo(x-a,y+a);b.lineTo(x+a,y-a);b.stroke()}
+// two cartouches, compass and river distance scale
+b.strokeStyle=rgba(p.gold,.76);b.lineWidth=1.2;b.strokeRect(33,27,170,63);b.strokeRect(991,604,171,80);b.font='10px ui-monospace,monospace';b.fillStyle=rgba(p.ink,.89);b.fillText('PLATE '+['I','II','III'][p.mode]+'  ·  1886 / ∞',50,50);b.fillText('WATERSHED MEMORY',50,71);
+b.textAlign='center';b.fillText('N',1075,622);b.beginPath();b.moveTo(1075,634);b.lineTo(1064,662);b.lineTo(1075,654);b.lineTo(1086,662);b.closePath();b.fillStyle=rgba(p.gold,.85);b.fill();b.beginPath();b.moveTo(1075,636);b.lineTo(1075,673);b.stroke();b.fillText('S',1075,678);b.textAlign='left';
+// delicate ticks of an antique map
+for(let x=40;x<1160;x+=24){let len=x%96===40?13:5;b.beginPath();b.moveTo(x,20);b.lineTo(x,20+len);b.moveTo(x,700);b.lineTo(x,700-len);b.strokeStyle=rgba(p.gold,.3);b.lineWidth=.9;b.stroke()}
+for(let y=22;y<700;y+=24){b.beginPath();b.moveTo(17,y);b.lineTo(24,y);b.moveTo(1183,y);b.lineTo(1176,y);b.stroke()}
+// mythic delta or strand-dependent additions
+if(p.mode===1){b.font='italic 41px Georgia,serif';b.textAlign='center';b.fillStyle=rgba(p.ink,.33);b.fillText('here the waters ceased',660,470);b.textAlign='left';for(let i=0;i<80;i++){let x=rnd(i+3000,85,1110),y=rnd(i+3050,80,640);b.beginPath();b.moveTo(x-10,y-3);b.lineTo(x+5,y+2);b.lineTo(x+16,y-4);b.strokeStyle=rgba(p.light,.12);b.lineWidth=1;b.stroke()}}
+if(p.mode===2){for(let i=0;i<210;i++){let x=rnd(i+4000,0,W),y=rnd(i+4200,0,H);fillEllipse(b,x,y,i%7===0?2:1,i%7===0?2:1,rgba(p.ink,rnd(i+4400,.15,.55)))}b.beginPath();b.arc(860,100,44,0,TAU);b.fillStyle=rgba(p.light,.50);b.fill();b.beginPath();b.arc(879,87,40,0,TAU);b.fillStyle=p.field2;b.fill()}
+}
+function weave(p){ // intersection-by-intersection warp and weft, not a flat texture image
+b.save();b.globalCompositeOperation='screen';for(let y=2;y<H;y+=6){b.strokeStyle=rgba(p.ink,.052);b.lineWidth=1;b.beginPath();b.moveTo(0,y);b.lineTo(W,y);b.stroke()}for(let x=2;x<W;x+=6){b.strokeStyle=rgba(p.gold,.066);b.lineWidth=1;b.beginPath();b.moveTo(x,0);b.lineTo(x,H);b.stroke()}
+for(let y=4;y<H;y+=9){for(let x=4;x<W;x+=9){let even=((x/9|0)+(y/9|0))%2;b.strokeStyle=even?rgba(p.ink,.16):rgba(p.gold,.085);b.lineWidth=even?1.2:1.5;b.beginPath();if(even){b.moveTo(x-2,y);b.lineTo(x+3,y)}else{b.moveTo(x,y-2);b.lineTo(x,y+3)}b.stroke()}}b.restore();
+// protective stitched selvedge, with separate internal line
+b.strokeStyle=rgba(p.gold,.64);b.lineWidth=3;b.strokeRect(15,15,W-30,H-30);b.strokeStyle=rgba(p.gold,.20);b.lineWidth=1;b.strokeRect(25,25,W-50,H-50);
+for(let y=24;y<696;y+=10){for(let xx of [7,1192]){b.strokeStyle=rgba(p.gold,.46);b.lineWidth=2;b.beginPath();b.moveTo(xx-3,y-2);b.lineTo(xx+3,y+4);b.stroke()}}
+}
+function redrawBase(){let p=palettes[plate];drawField(p);ribbon(p);cartographicFurniture(p);weave(p);baseDirty=false}
+function drawDynamic(t){ctx.drawImage(far,0,0);const p=palettes[plate];ctx.save();ctx.beginPath();ctx.rect(30,30,1140,660);ctx.clip();
+// ink and glass glimmers travel slowly along the embroidered waterways
+ctx.globalCompositeOperation='screen';for(let i=0;i<92;i++){let z=(i/92+t*.018*(1+i%4*.24))%1;let k=z*(river.length-1),j=Math.min(river.length-2,Math.floor(k)),f=k-j;let x=lerp(river[j][0],river[j+1][0],f),y=lerp(river[j][1],river[j+1][1],f);let phase=Math.sin(z*38+i*2.5+t*1.3);let size=1.1+(1+phase)*1.2;let near=1/(1+Math.hypot(mouse.x-x,mouse.y-y)/130);let pulse=(.2+.55*Math.max(0,phase))*(1+near*.75);if(p.mode===1)pulse*=.26;let gr=ctx.createRadialGradient(x,y,0,x,y,size*7);gr.addColorStop(0,rgba(p.light,pulse));gr.addColorStop(1,rgba(p.light,0));ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y,size*7,0,TAU);ctx.fill()}
+ctx.restore();
+}
+function render(ts){if(baseDirty)redrawBase();if(!last)last=ts;let dt=Math.min(.045,(ts-last)/1000);last=ts;if(playing)clock+=dt;drawDynamic(clock);requestAnimationFrame(render)}
+function choose(n){plate=n;document.querySelectorAll('[data-plate]').forEach((el,i)=>el.setAttribute('aria-pressed',String(i===n)));document.getElementById('count').textContent=palettes[n].roman;document.getElementById('plate').textContent=palettes[n].title;document.getElementById('poem').textContent=palettes[n].verse;baseDirty=true}
+function toggle(){playing=!playing;document.getElementById('motion').textContent=playing?'STILL':'BREATHE'}
+function exportImage(){if(baseDirty)redrawBase();drawDynamic(clock);let a=document.createElement('a');a.download='where-the-rivers-were-plate-'+(plate+1)+'.png';a.href=canvas.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()}
+document.querySelectorAll('[data-plate]').forEach(el=>el.addEventListener('click',()=>choose(Number(el.dataset.plate))));document.getElementById('stitches').addEventListener('click',()=>{seed++;baseDirty=true});document.getElementById('motion').addEventListener('click',toggle);document.getElementById('export').addEventListener('click',exportImage);
+document.addEventListener('keydown',e=>{if(['1','2','3'].includes(e.key))choose(Number(e.key)-1);if(e.key.toLowerCase()==='r'){seed++;baseDirty=true}if(e.key===' '){e.preventDefault();toggle()}if(e.key.toLowerCase()==='e')exportImage()});
+canvas.addEventListener('pointermove',e=>{let rect=canvas.getBoundingClientRect();mouse={x:(e.clientX-rect.left)*W/rect.width,y:(e.clientY-rect.top)*H/rect.height}});canvas.addEventListener('pointerleave',()=>{mouse={x:-100,y:-100}});
+let fringe=document.getElementById('fringe');for(let i=0;i<100;i++){let e=document.createElement('i');fringe.appendChild(e)}document.getElementById('motion').textContent=playing?'STILL':'BREATHE';requestAnimationFrame(render);
+})();
+</script>
+</body></html>
