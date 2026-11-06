@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101c29">
+<title>The Letter Foundry of Night — a living illuminated postal machine</title>
+<style>
+:root{color-scheme:dark;--ink:#101d28;--ivory:#f3e0bf;--gold:#d9bb8b}*{box-sizing:border-box}
+html{background:#08131d}body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 50% 6%,#293946,#101d29 67%,#080f19);color:var(--ivory);font-family:Georgia,'Times New Roman',serif}
+main{max-width:1780px;min-height:100svh;margin:auto;display:flex;flex-direction:column;gap:10px;padding:13px clamp(10px,2.1vw,33px) 15px}
+header{border-top:1px solid #c5a478a0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:10px;min-height:67px}.eyebrow,.issue,.tag,.footer,button,label,.counter{font-family:'Courier New',monospace;letter-spacing:.105em;text-transform:uppercase}.eyebrow{font-size:10px;color:#d2b794;margin-bottom:3px}h1{font-weight:normal;font-variant:small-caps;line-height:1.02;font-size:clamp(26px,2.7vw,44px);margin:0;letter-spacing:.023em}.issue{text-align:right;font-size:9px;line-height:1.6;color:#bcad99}
+.stage{flex:1;display:grid;place-items:center;min-height:0}.mat{padding:7px;background:#0b1721;border:1px solid #b4956d;box-shadow:0 0 0 7px #182732,0 0 0 8px #95794c55,0 25px 66px #000a;max-width:1560px;width:100%;position:relative}.mat:before,.mat:after{content:'◆';position:absolute;top:-10px;font-size:13px;color:#dfc292}.mat:before{left:17px}.mat:after{right:17px}canvas{display:block;width:100%;height:min(calc(100svh - 260px),800px);min-height:455px;background:#081727;touch-action:none;cursor:crosshair}
+.controls{display:grid;grid-template-columns:minmax(180px,1fr) minmax(210px,.8fr) minmax(330px,1.35fr);align-items:center;gap:15px;min-height:82px}.poem{font-size:13px;font-style:italic;line-height:1.43;color:#bbc3c0;max-width:410px}.poem em{font-style:normal;color:#f3d59d}.mix{display:flex;gap:13px}.field{min-width:95px;flex:1}label{font-size:10px;display:flex;justify-content:space-between;gap:4px;color:#cab28d}output{color:#f4dfa8}input[type=range]{width:100%;accent-color:#e8bd7e;cursor:pointer}.buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}button{font-size:9px;letter-spacing:.055em;min-height:33px;padding:7px 6px;background:#192b38;color:#e9d2b2;border:1px solid #a18562;cursor:pointer}button:hover,button[aria-pressed=true]{background:#e4c28b;color:#132735}button:focus-visible,canvas:focus-visible,input:focus-visible{outline:2px solid #fbe0a7;outline-offset:3px}
+.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid #bc9b706b;padding-top:8px;color:#bcb5a9;font-size:9px}.footer strong{color:#ffe4ad;font-weight:normal}.sr{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
+@media(max-width:1050px){.controls{grid-template-columns:1fr 1fr;gap:10px}.poem{grid-column:1/-1;max-width:none;text-align:center}}
+@media(max-width:660px){main{padding:9px 8px 13px;gap:8px}header{min-height:58px}.eyebrow,.issue{font-size:8px;letter-spacing:.01em}h1{font-size:21px}.issue{max-width:113px}.stage{flex:none}.mat{padding:3px}canvas{height:min(65svh,675px);min-height:385px}.controls{grid-template-columns:1fr;gap:9px}.poem{font-size:11px}.buttons{gap:4px}button{min-height:33px;padding:6px 1px;font-size:9px}.footer{justify-content:center;text-align:center;font-size:8px}}
+</style></head><body><main>
+<header><div><div class="eyebrow">Bureau of unreceived light · nocturnal folio VIII</div><h1>The Letter Foundry of Night</h1></div><div class="issue">One hundred and ninety-two relays<br>One impossible return address</div></header>
+<div class="stage"><div class="mat"><canvas id="art" role="img" tabindex="0" aria-label="A great Art Nouveau nocturnal letter-sorting machine in architectural cutaway, with eight illuminated terraces of stained-glass relays, a suspended golden envelope, copper postal tubes and tiny clerks. Touch the machine to send a luminous letter."></canvas></div></div>
+<section class="controls" aria-label="Artwork interaction"><div class="poem">A letter cannot cross a city in one leap. <em>It must be passed from window to window</em>, until it finds the room that was never built.</div><div class="mix"><div class="field"><label for="speed">Dispatch <output id="speedout">1.00</output></label><input id="speed" type="range" min=".25" max="2.5" step=".05" value="1"></div><div class="field"><label for="glaze">Gilding <output id="glazeout">1.00</output></label><input id="glaze" type="range" min=".3" max="1.5" step=".05" value="1"></div></div><nav class="buttons" aria-label="Choose an act or control the artwork"><button data-scene="0" aria-pressed="true">I · Unopened</button><button data-scene="1" aria-pressed="false">II · In transit</button><button data-scene="2" aria-pressed="false">III · Returned</button><button id="dispatch">Send letter</button><button id="trace" aria-pressed="false">Reveal routes</button><button id="still" aria-pressed="false">Stillness</button><button id="export">Collect PNG</button></nav></section>
+<footer class="footer"><span>LIVE MESSENGERS <strong id="live">000</strong> · LETTERS DISPATCHED <strong id="sent">0000</strong></span><span id="message">THE SORTING ROOM IS ASLEEP</span><span>PLATE VIII / GLASS, COPPER & THE UNDELIVERABLE</span></footer><div class="sr" id="a11y" role="status" aria-live="polite"></div>
+</main><script>
+(()=>{'use strict';
+const c=document.querySelector('#art'),g=c.getContext('2d',{alpha:false}),q=s=>document.querySelector(s),T=Math.PI*2,PI=Math.PI;
+const palette=[
+ {name:'I · THE UNOPENED',caption:'EVERY MESSAGE BEGINS AS A SMALL DARKNESS',sky:['#071725','#142d38','#34505a'],wall:'#1e3441',stone:'#506371',paper:'#f3dfb8',gold:'#d5af75',glass:['#0e5064','#205e72','#64848a','#aa8580','#c3a17b'],hot:'#cbffff',tail:'#e3a295',accent:'#71d8de',stamp:'#e9ae79'},
+ {name:'II · THE TRANSIT',caption:'THE HALL FILLS WITH UNDELIVERABLE STARS',sky:['#0d112a','#273452','#65516a'],wall:'#303651',stone:'#79738a',paper:'#f1d6d5',gold:'#e0aeb1',glass:['#3c477f','#7163a1','#9f75ad','#c48ca3','#78a2b9'],hot:'#e8fdff',tail:'#f4b0df',accent:'#b0e9fb',stamp:'#f7b4b4'},
+ {name:'III · THE RETURN',caption:'MORNING ARRIVES WITHOUT AN ADDRESS',sky:['#233f49','#9e7776','#e4ad85'],wall:'#51606a',stone:'#bd9f8c',paper:'#fff0ce',gold:'#f5d19a',glass:['#5d9196','#a6b4a5','#ecbe8e','#e9977b','#d9aeb0'],hot:'#fff8c2',tail:'#ffa880',accent:'#ffe8a0',stamp:'#f5b07c'}
+];
+let scene=0,W=1300,H=840,dpr=1,portrait=false,clock=0,prev=0,acc=0,speed=1,glaze=1,still=matchMedia('(prefers-reduced-motion: reduce)').matches,showRoutes=false,held=-1,hover=-1,packets=0,steps=0,signals=[],edges=[],stars=[],burst=[],lastHover=-1,raf=0;
+function noise(n){const v=Math.sin(n*127.135+78.37)*43758.5453;return v-Math.floor(v)}
+function A(x,y,r,fill,stroke,sw=1){g.beginPath();g.arc(x,y,r,0,T);if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=sw;g.stroke()}}
+function line(x,y,X,Y,col,w=1){g.beginPath();g.strokeStyle=col;g.lineWidth=w;g.moveTo(x,y);g.lineTo(X,Y);g.stroke()}
+function curve(x,y,cx,cy,X,Y,col,w=1){g.beginPath();g.strokeStyle=col;g.lineWidth=w;g.moveTo(x,y);g.quadraticCurveTo(cx,cy,X,Y);g.stroke()}
+function path(pts,fill,stroke,sw=1){g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=sw;g.stroke()}}
+function text(s,x,y,font,col,align='left'){g.textAlign=align;g.font=font;g.fillStyle=col;g.fillText(s,x,y)}
+function arch(x,y,w,h,fill,stroke,sw=1){g.beginPath();g.moveTo(x-w/2,y+h);g.lineTo(x-w/2,y+h*.26);g.quadraticCurveTo(x-w/2,y,x,y);g.quadraticCurveTo(x+w/2,y,x+w/2,y+h*.26);g.lineTo(x+w/2,y+h);g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=sw;g.stroke()}}
+function X(v){return portrait?v*.65+25:v}
+function Y(v){return portrait?v*1.24+100:v}
+function point(row,k){const f=k/23,a=f*PI,xx=207+886*f;const yy=275+row*53-54*Math.sin(a)-(row%2)*4;return {x:X(xx),y:Y(yy),row,k,i:row*24+k,v:1,pulse:0,adj:[],dim:noise(k*43+row*11)}}
+function wire(i,j){if(i===j||signals[i].adj.includes(j))return;signals[i].adj.push(j);signals[j].adj.push(i);edges.push([i,j])}
+function init(){signals=[];edges=[];burst=[];for(let r=0;r<8;r++)for(let k=0;k<24;k++)signals.push(point(r,k));for(let r=0;r<8;r++)for(let k=0;k<24;k++){const n=r*24+k;if(k<23)wire(n,n+1);if(r<7&&((k+r)%4===0||(k%7===0)||(scene===2&&k%3===1)))wire(n,n+24)}for(let i=0;i<4;i++)signals[(2+i)*24+(i*6+2)%24].v=2;packets=0;steps=0;acc=0;update()}
+function update(){const n=signals.filter(s=>s.v===2).length;q('#live').textContent=String(n).padStart(3,'0');q('#sent').textContent=String(packets).padStart(4,'0');q('#message').textContent=n>25?'THE NIGHT IS ALIVE WITH CORRESPONDENCE':n>4?'LETTERS ARE PASSING THROUGH THE GLASS':'THE SORTING ROOM IS ASLEEP'}
+function run(){const before=signals.map(n=>n.v);for(const n of signals){if(before[n.i]===2)n.v=3;else if(before[n.i]===3)n.v=1;else {let h=0;for(const j of n.adj)h+=before[j]===2?1:0;n.v=h===1||h===2?2:1}n.pulse=Math.max(n.pulse*.87,n.v===2?1:0)}steps++;if(steps%Math.max(4,Math.round(15/speed))===0){const k=(Math.floor(steps/9)*7+scene*5)%24;for(const r of [0,3,7])signals[r*24+k].v=2;packets++}if(steps%2===0)update()}
+function inject(i){if(i<0)return;const n=signals[i];n.v=2;n.pulse=1;for(const j of n.adj.slice(0,2)){signals[j].v=2;signals[j].pulse=1}packets++;burst.push({x:n.x,y:n.y,t:clock});update();q('#a11y').textContent='A letter entered relay '+(i+1)}
+function choose(n){scene=n;document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.scene===n)));init();q('#a11y').textContent=palette[n].name;draw()}
+function measure(){const r=c.getBoundingClientRect();dpr=Math.min(2,devicePixelRatio||1);c.width=Math.max(2,Math.round(r.width*dpr));c.height=Math.max(2,Math.round(r.height*dpr));portrait=r.height/r.width>1.23;W=portrait?900:1300;H=portrait?1200:840;stars=[];for(let i=0;i<210;i++)stars.push([noise(i*11)*W,noise(i*57+2)*H*.65,noise(i*13+8)]);init();draw()}
+function ground(p){const sky=g.createLinearGradient(0,0,0,H);p.sky.forEach((v,i)=>sky.addColorStop(i/2,v));g.fillStyle=sky;g.fillRect(0,0,W,H);
+ const moonx=portrait?730:1086,moony=portrait?168:152,mr=portrait?82:81;let glow=g.createRadialGradient(moonx,moony,3,moonx,moony,mr*5);glow.addColorStop(0,p.gold+'49');glow.addColorStop(1,p.gold+'00');g.fillStyle=glow;g.fillRect(0,0,W,H);A(moonx,moony,mr,p.paper+'ac');A(moonx+20,moony-10,mr-6,p.sky[1]+'9e');for(const s of stars)A(s[0],s[1],s[2]>.94?1.5:.65,p.paper+Math.round(40+s[2]*140).toString(16).padStart(2,'0'));
+ // City above the outer arch, a small memory of the source's urban skyline.
+ const horizon=portrait?1015:677;for(let layer=0;layer<3;layer++){const by=horizon+layer*20;g.fillStyle=[p.sky[1],p.wall,'#0a1725'][layer];g.beginPath();g.moveTo(0,by);for(let j=0;j<61;j++){const xx=j*W/60,roof=by-20-noise(j*23+layer*17)*95;g.lineTo(xx,by);g.lineTo(xx,roof);g.lineTo(xx+W/62,roof);g.lineTo(xx+W/62,by)}g.lineTo(W,H);g.lineTo(0,H);g.fill()}
+}
+function structure(p){const left=X(154),right=X(1145),top=Y(130),bottom=Y(725);const width=right-left;
+ // Contrasting stone silhouettes draw attention through the machine's central aperture.
+ path([[left-56, bottom],[left-56,top+150],[X(226),Y(112)],[X(640),Y(42)],[X(1050),Y(112)],[right+56,top+150],[right+56,bottom]],p.wall,p.gold+'b0',2.5);
+ path([[left-35,bottom],[left-35,top+180],[X(248),Y(134)],[X(640),Y(72)],[X(1036),Y(134)],[right+35,top+180],[right+35,bottom]],p.sky[0],p.stone,2.2);
+ // fan vault ribs and gilt voussoirs, a recurring architecture instead of a single round rose.
+ for(let k=0;k<=12;k++){const xx=left+k*width/12;curve(X(650),Y(83),xx,Y(133),xx,Y(252),p.gold+'4e',1.3);A(xx,Y(251),2,p.gold+'99')}
+ for(let k=0;k<5;k++){const yy=Y(120+k*30);curve(X(260),yy,X(650),yy-50,X(1025),yy,p.gold+'2e',1)}
+ // side organs hold thousands of undelivered post tubes.
+ for(const side of [-1,1]){const cx=side<0?X(172):X(1127),sgn=side;arch(cx,Y(230),115,465,p.wall,p.gold+'b8',2);arch(cx,Y(249),86,421,p.sky[0],p.stone,1.3);
+ for(let i=0;i<12;i++){const xx=cx+sgn*(i-5.5)*3.4,yy=Y(290+(i%5)*15);line(xx,yy,xx,Y(574+((i*3)%5)*12),p.gold+'a9',2.7);A(xx,yy,2.1,p.paper)}
+ for(let i=0;i<5;i++){const yy=Y(590+i*20);line(cx-31,yy,cx+31,yy,p.gold+'80',1.2)}A(cx,Y(652),17,p.sky[1],p.gold,1.4);A(cx,Y(652),5,p.paper)
+ }
+ // The eight cast-bronze terraces of the original circuit now become a true postal sorting machine.
+ for(let r=0;r<8;r++){const row=signals.slice(r*24,r*24+24),y=row[0].y;curve(row[0].x-10,y+17,X(650),y-60,row[23].x+10,y+17,p.gold+'80',r===0?3:2);curve(row[0].x-10,y+26,X(650),y-48,row[23].x+10,y+26,p.stone+'82',1);for(let k=0;k<6;k++){const i=k*4+2,x=row[i].x;line(x,y+28,x,y+43,p.gold+'78',.9);A(x,y+45,2.1,p.gold)}
+ }
+ // layered arcade columns; irregular details prevent graph-paper sameness.
+ for(let k=0;k<13;k++){const xx=X(214+k*73);line(xx,Y(241),xx,Y(704),p.stone+'58',k%3===0?2:1);for(let j=0;j<8;j++){const yy=Y(255+j*53);A(xx,yy,3.1,p.gold+'a0');line(xx-7,yy+5,xx+7,yy+5,p.gold+'46',.75)}}
+ // Foundry base inlaid with gigantic return-to-sender letter slots.
+ const by=Y(714);g.fillStyle=p.wall;g.fillRect(X(156),by,X(1145)-X(156),54);line(X(156),by,X(1145),by,p.gold,3);line(X(156),by+9,X(1145),by+9,p.gold+'5e');for(let i=0;i<16;i++){const xx=X(188+i*61);g.fillStyle=p.sky[0];g.fillRect(xx,by+22,37,11);g.strokeStyle=p.gold+'80';g.strokeRect(xx+.5,by+21.5,37,12)}
+}
+function envelope(p){const cx=X(654),cy=Y(199),w=portrait?155:165,h=100;let rad=g.createRadialGradient(cx,cy,5,cx,cy,162);rad.addColorStop(0,p.gold+'85');rad.addColorStop(1,p.gold+'00');g.fillStyle=rad;g.fillRect(cx-170,cy-170,340,340);
+ g.save();g.translate(cx,cy);g.rotate(.025*Math.sin(clock*.34));path([[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]],p.paper,p.gold,2.3);
+ path([[-w/2,-h/2],[0,18],[w/2,-h/2]],p.paper+'ef',p.wall+'88',1.3);line(-w/2,h/2,0,3,p.wall+'77',1.4);line(w/2,h/2,0,3,p.wall+'77',1.4);
+ A(0,9,14,p.stamp,p.wall,2);A(0,9,7,p.gold);text('✦',0,13,'16px Georgia',p.wall,'center');for(let k=0;k<4;k++){const x=-w/2+11+k*14;line(x,h/2-11,x+9,h/2-11,p.gold+'83',1)}g.restore();
+ // The envelope is more than a prop: copper lines join it to the first conduits.
+ curve(cx-w*.45,cy+h*.52,X(330),Y(244),signals[3].x,signals[3].y,p.gold+'a8',1.5);
+ curve(cx+w*.45,cy+h*.52,X(955),Y(244),signals[20].x,signals[20].y,p.gold+'a8',1.5);
+ text('RETURN ADDRESS UNKNOWN',cx,cy-h*.75,'11px Courier New',p.gold,'center')
+}
+function relays(p){ // Actual Wireworld vertices are fused with painted glass and copper graph contacts.
+ for(const n of signals){const w=19,h=17;const col=p.glass[(Math.floor(n.k/4)+n.row)%p.glass.length];g.save();g.translate(n.x,n.y);g.rotate((n.k-11.5)*.004);path([[-w,-h/2],[-w+4,-h],[w-4,-h],[w,h/2],[w-4,h],[-w+4,h]],col,p.gold+'8a',.8);g.fillStyle=p.paper+'18';g.fillRect(-w+4,-h+2,w*.9,2.5);g.restore();
+ if(n.v===2||n.v===3||n.pulse>.2){const a=(n.v===2?1:n.v===3?.48:n.pulse*.5)*glaze;let light=g.createRadialGradient(n.x,n.y,0,n.x,n.y,29);light.addColorStop(0,(n.v===3?p.tail:p.hot)+Math.round(Math.min(240,210*a)).toString(16).padStart(2,'0'));light.addColorStop(1,p.hot+'00');g.fillStyle=light;g.fillRect(n.x-30,n.y-30,60,60)}
+ }
+ for(const [i,j] of edges){const a=signals[i],b=signals[j],active=(a.v===2||b.v===2);line(a.x,a.y,b.x,b.y,active?p.hot+'f0':showRoutes?p.gold+'a0':p.stone+'63',active?2.5:1.05);if(active){let grad=g.createLinearGradient(a.x,a.y,b.x,b.y);grad.addColorStop(0,p.hot+'00');grad.addColorStop(.5,p.hot+'55');grad.addColorStop(1,p.hot+'00');line(a.x,a.y,b.x,b.y,grad,9)}}
+ for(const n of signals){let col=n.v===2?p.hot:n.v===3?p.tail:p.gold;A(n.x,n.y,n.v===2?3.8:2.5,col);if(showRoutes){text(String(n.i+1).padStart(3,'0'),n.x,n.y-17,'7px Courier New',p.gold+'b8','center')}if(n.i===hover)A(n.x,n.y,15,null,p.hot,1.8)}
+ for(const b of burst){const age=clock-b.t;if(age<1.4)A(b.x,b.y,age*66,null,p.hot+Math.round(190*(1-age/1.4)).toString(16).padStart(2,'0'),2)}burst=burst.filter(b=>clock-b.t<1.4)
+}
+function humanScale(p){const by=Y(718);for(let i=0;i<23;i++){const xx=X(225+noise(i*4)*850),height=8+noise(i*17)*14;A(xx,by-height,2.5,'#07131f');line(xx,by-height+3,xx,by,'#07131f',3);line(xx,by-height+6,xx-4,by-height+11,'#07131f',1.4);line(xx,by-height+6,xx+4,by-height+9,'#07131f',1.4)}
+ // A moving paper strip in a reading desk below the impossible sorting machine.
+ const xx=X(516),yy=Y(748);g.fillStyle=p.paper;g.fillRect(xx,yy,275,31);for(let i=0;i<10;i++)line(xx+12+i*23,yy+11,xx+24+i*23,yy+11,p.wall+'8c',.85);
+ text('SINE DESTINATIONE',xx+137,yy+25,'italic 12px Georgia',p.wall,'center');
+}
+function frameLabels(p){const left=portrait?35:31;const capy=portrait?81:73;text('THE ARCHIVE OF UNANSWERED CORRESPONDENCE',left,capy,'11px Courier New',p.gold);line(left,capy+13,left+336,capy+13,p.gold+'6d');text('PL. VIII     *    MACHINE FOR REMEMBERING',left,capy+34,'10px Courier New',p.paper+'97');
+ const y=portrait?1090:788;line(28,y-27,W-28,y-27,p.gold+'68');text(p.name,left,y,'italic 23px Georgia',p.paper);text(p.caption,left,y+22,'10px Courier New',p.gold);text('AFTER THE CATHEDRAL OF UNSENT MESSAGES',W-26,y,'10px Courier New',p.gold,'right');
+ // Gold ink border with precise register marks and etched age marks.
+ g.strokeStyle=p.gold+'75';g.lineWidth=1;g.strokeRect(13.5,13.5,W-27,H-27);g.strokeStyle=p.gold+'3b';g.strokeRect(20.5,20.5,W-41,H-41);for(let j=0;j<4;j++){const xx=j%2?W-26:26,yy=j>1?H-26:26;line(xx-9,yy,xx+9,yy,p.gold);line(xx,yy-9,xx,yy+9,p.gold)}
+ for(let i=0;i<650;i++){g.fillStyle=i%2?'#fff':'#07101a';g.globalAlpha=i%2?.025:.06;g.fillRect(noise(i*57)*W,noise(i*15+2)*H,.8,noise(i*8)>.95?2:.8)}g.globalAlpha=1
+}
+function draw(){const p=palette[scene];g.setTransform(c.width/W,0,0,c.height/H,0,0);ground(p);structure(p);relays(p);envelope(p);humanScale(p);frameLabels(p)}
+function animate(t){const dt=Math.min(.04,(t-prev)/1000||0);prev=t;if(!still){clock+=dt;acc+=dt;while(acc>.10){acc-=.10;run()}}draw();raf=requestAnimationFrame(animate)}
+function coord(e){const r=c.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;let dist=1e12,id=-1;for(const n of signals){const d=(x-n.x)**2+(y-n.y)**2;if(d<dist){dist=d;id=n.i}}return dist<35*35?id:-1}
+let drawing=false;c.addEventListener('pointerdown',e=>{drawing=true;c.setPointerCapture(e.pointerId);let v=coord(e);if(v>=0){inject(v);lastHover=v}});c.addEventListener('pointermove',e=>{hover=coord(e);if(drawing&&hover>=0&&hover!==lastHover){inject(hover);lastHover=hover}});['pointerup','pointercancel','pointerleave'].forEach(e=>c.addEventListener(e,()=>{drawing=false;lastHover=-1;hover=-1}));
+q('#speed').addEventListener('input',e=>{speed=+e.target.value;q('#speedout').textContent=speed.toFixed(2)});q('#glaze').addEventListener('input',e=>{glaze=+e.target.value;q('#glazeout').textContent=glaze.toFixed(2);draw()});document.querySelectorAll('[data-scene]').forEach(b=>b.addEventListener('click',()=>choose(+b.dataset.scene)));q('#dispatch').addEventListener('click',()=>{inject(((steps*7+scene*5)%24)+24*((Math.floor(steps/11))%8));draw()});q('#trace').addEventListener('click',()=>{showRoutes=!showRoutes;q('#trace').setAttribute('aria-pressed',String(showRoutes));q('#trace').textContent=showRoutes?'Hide routes':'Reveal routes';draw()});
+function toggle(){still=!still;q('#still').setAttribute('aria-pressed',String(still));q('#still').textContent=still?'Awaken':'Stillness';q('#a11y').textContent=still?'The foundry is still':'The foundry moves again'}q('#still').addEventListener('click',toggle);
+function save(){draw();const a=document.createElement('a');a.download='letter-foundry-of-night-'+(scene+1)+'.png';a.href=c.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()}q('#export').addEventListener('click',save);
+document.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;let ok=true;if(['Digit1','Digit2','Digit3'].includes(e.code))choose(+e.code.slice(-1)-1);else if(e.code==='Space')toggle();else if(e.code==='KeyS')q('#dispatch').click();else if(e.code==='KeyR')q('#trace').click();else if(e.code==='KeyE')save();else ok=false;if(ok)e.preventDefault()});
+new ResizeObserver(measure).observe(c);measure();raf=requestAnimationFrame(animate);window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
+})();
+</script></body></html>
