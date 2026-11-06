@@ -37,6 +37,8 @@ jobs:
         run: |
           node references/cybersand/tools/capture.cjs
           node references/cybersand/tools/verify.cjs --require-captures
+      - name: Browser-smoke the single-file moodboard and filters
+        run: node references/cybersand/tools/smoke-ui.cjs
       - name: Commit only capture assets to the isolated documentation branch
         run: |
           git config user.name "github-actions[bot]"
