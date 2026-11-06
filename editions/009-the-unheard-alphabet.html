@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#eee8d4"><meta name="description" content="The Unheard Alphabet — a three-plate acoustic letterpress, tracing underwater Chladni resonances into a kinetic alphabet of silt and silence."><title>The Unheard Alphabet — an acoustic letterpress</title>
+<style>
+:root{color-scheme:light;font-family:Georgia,serif}*{box-sizing:border-box}body{margin:0;background:#101e25;color:#fff;overflow:hidden}#press{display:block;width:100vw;height:100vh;touch-action:manipulation}body:after{content:"";position:fixed;inset:0;pointer-events:none;background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="144" height="144"%3E%3Cfilter id="a"%3E%3CfeTurbulence baseFrequency=".64" numOctaves="3" type="fractalNoise"/%3E%3C/filter%3E%3Crect width="144" height="144" opacity=".19" filter="url(%23a)"/%3E%3C/svg%3E');opacity:.22;mix-blend-mode:multiply}nav{position:fixed;bottom:clamp(10px,2.5vh,26px);left:50%;transform:translateX(-50%);max-width:calc(100% - 18px);display:flex;gap:5px;flex-wrap:wrap;justify-content:center;background:#101f28e8;border:1px solid #e2d1b65e;box-shadow:0 10px 45px #02060d70;padding:7px;z-index:5;backdrop-filter:blur(12px)}button{border:1px solid #ccb88d73;background:#0c1b26;color:#f5deb3;min-height:38px;padding:9px 12px;font:10px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.09em;cursor:pointer}button:hover{background:#9f4b38}button:focus-visible{outline:2px solid #fff;outline-offset:2px}button[aria-pressed="true"]{color:#0b2231;background:#f0d9a0;border-color:#fff0c2}.sr{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}@media(max-width:600px){nav{bottom:8px;left:9px;right:9px;transform:none;max-width:none;gap:3px;padding:5px}button{padding:8px 7px;font-size:8px;letter-spacing:0;min-height:33px;flex-grow:1}}@media(max-height:600px){nav{bottom:5px}button{min-height:30px;padding:7px 8px}}
+</style></head><body>
+<canvas id="press" role="img" aria-label="An animated acoustic letterpress in three visual compositions. Thousands of tiny letterforms settle onto standing-wave nodal lines, creating an alphabet out of silent resonance."></canvas>
+<nav aria-label="Artwork controls"><button data-act="0" aria-pressed="true">I · UNSAID</button><button data-act="1" aria-pressed="false">II · SALT</button><button data-act="2" aria-pressed="false">III · ECHO</button><button id="strike">STRIKE THE PLATE</button><button id="wire" aria-pressed="false">GEOMETRY</button><button id="pause" aria-pressed="false">STILL</button><button id="save">COLLECT PNG</button></nav><div class="sr" aria-live="polite" id="status"></div>
+<script>
+(()=>{'use strict';
+const canvas=document.querySelector('#press'),c=canvas.getContext('2d',{alpha:false});if(!c)return;
+const PI=Math.PI,TAU=2*PI,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const acts=[
+ {id:'01',title:'THE UNSAID',sub:'FIRST IMPRESSION / A WORD WITHOUT A MOUTH',n:3,m:5,paper:'#efead7',ink:'#192b32',deep:'#132a38',verm:'#bd4331',accent:'#d09a52',light:'#f8e5ae',dust:'#7fc1b3',phrase:'what the water could not pronounce',glyph:'A'},
+ {id:'02',title:'THE SALT SCRIPT',sub:'SECOND IMPRESSION / A COASTLINE OF VOWELS',n:4,m:6,paper:'#e6eee8',ink:'#1a3554',deep:'#0d3559',verm:'#e07a4c',accent:'#debc71',light:'#dff6ff',dust:'#8ac9de',phrase:'the alphabet of submerged weather',glyph:'O'},
+ {id:'03',title:'THE AFTERWORD',sub:'THIRD IMPRESSION / ALL SOUND BECOMES SEDIMENT',n:5,m:7,paper:'#e6d1ac',ink:'#322b37',deep:'#422a3f',verm:'#a13f57',accent:'#e5ab61',light:'#ffe2ba',dust:'#e2a7a9',phrase:'and silence learned to answer',glyph:'S'}
+];
+let act=0,t=0,shock=0,still=matchMedia('(prefers-reduced-motion:reduce)').matches,wires=false,mouse={x:.5,y:.5},last=0,frame=0,dW=1600,dH=980,panel={x:690,y:149,w:829,h:699},particles=[];
+const rng=(i)=>{const x=Math.sin(i*127.17+71.09)*43758.5453123;return x-Math.floor(x)};
+function color(hex,a=1){let q=hex.slice(1);return `rgba(${parseInt(q.slice(0,2),16)},${parseInt(q.slice(2,4),16)},${parseInt(q.slice(4,6),16)},${a})`}
+function line(x,y,X,Y,col,w=1){c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(x,y);c.lineTo(X,Y);c.stroke()}
+function rect(x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h)}
+function strokeRect(x,y,w,h,col,lw=1){c.strokeStyle=col;c.lineWidth=lw;c.strokeRect(x,y,w,h)}
+function circle(x,y,r,fill,stroke,lw=1){c.beginPath();c.arc(x,y,r,0,TAU);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.lineWidth=lw;c.strokeStyle=stroke;c.stroke()}}
+function type(text,x,y,size,color,weight='normal',align='left',family='Georgia'){c.fillStyle=color;c.font=`${weight} ${size}px ${family}`;c.textAlign=align;c.textBaseline='alphabetic';c.fillText(text,x,y);c.textAlign='left'}
+function spaced(text,x,y,size,color,gap=3,vertical=false){c.fillStyle=color;c.font=`${size}px ui-monospace,Consolas,monospace`;c.textBaseline='middle';for(let k=0;k<text.length;k++){c.fillText(text[k],x+(vertical?0:k*(size*.65+gap)),y+(vertical?k*(size+gap):0))}}
+function mode(u,v,n,m){return Math.cos(n*PI*u)*Math.cos(m*PI*v)-Math.cos(m*PI*u)*Math.cos(n*PI*v)}
+function field(u,v,p){return mode(u,v,p.n,p.m)}
+function select(i){act=i;shock=.35;document.querySelectorAll('[data-act]').forEach((b,k)=>b.setAttribute('aria-pressed',String(k===i)));document.querySelector('#status').textContent=acts[i].title;draw()}
+function strike(){shock=1.8;document.querySelector('#status').textContent='The silent letterpress has been struck.';draw()}
+function drawBackground(p,mobile){rect(0,0,dW,dH,p.paper);
+ let gr=c.createLinearGradient(0,0,dW,dH);gr.addColorStop(0,color(p.accent,.13));gr.addColorStop(.42,color(p.paper,0));gr.addColorStop(1,color(p.verm,.15));rect(0,0,dW,dH,gr);
+ // Deliberately restrained offset-ink register and hand-screened flecks.
+ for(let i=0;i<660;i++){const x=rng(i*3+31)*dW,y=rng(i*3+32)*dH,s=.3+rng(i*3+33)*1.5;rect(x,y,s,s,i%4?color(p.ink,.085):color(p.verm,.11))}
+ for(let k=0;k<11;k++){line(0,k*95+20,dW,k*95+20,color(p.ink,.025),1)}
+ const pad=mobile?41:52;strokeRect(pad,pad,dW-2*pad,dH-2*pad,color(p.ink,.55),2);strokeRect(pad+8,pad+8,dW-2*pad-16,dH-2*pad-16,color(p.ink,.17));
+ // Printer registration crosshairs and small numbering system.
+ const cr=[[pad+25,pad+25],[dW-pad-25,pad+25],[pad+25,dH-pad-25],[dW-pad-25,dH-pad-25]];
+ for(const [x,y] of cr){line(x-9,y,x+9,y,color(p.verm,.56));line(x,y-9,x,y+9,color(p.verm,.56));circle(x,y,3,null,color(p.verm,.7))}
+}
+function ornament(x,y,s,p){c.save();c.translate(x,y);c.rotate(-.12);for(let k=0;k<6;k++){c.rotate(PI/3);c.beginPath();c.ellipse(0,-s*.41,s*.13,s*.38,0,0,TAU);c.strokeStyle=color(p.verm,.5);c.lineWidth=1.5;c.stroke();}circle(0,0,s*.1,p.accent);c.restore()}
+function heading(p,mobile){const X=mobile?67:99;
+ spaced('THE SOCIETY OF UNRECORDED VOICES',X,mobile?105:113,mobile?13:15,p.verm,mobile?3:4);
+ spaced('ARCHIVE / MMXXVI',mobile?467:1317,mobile?105:113,mobile?12:13,p.ink,2);
+ if(mobile){
+  type('THE',X,208,90,p.ink,'bold');type('UNHEARD',X-3,314,93,p.ink,'bold');type('ALPHABET',X-3,418,89,p.ink,'bold');
+  rect(X,448,493,8,p.verm);type('A LETTERPRESS FOR SOUNDS THAT NEVER ARRIVED',X,487,16,p.verm,'normal','left','monospace');
+  type('The sea did not forget the bell.',X,537,27,p.ink,'italic');type('It simply began to spell.',X,575,27,p.ink,'italic');
+ }else{
+  rect(X,198,25,25,p.verm);type('THE',X,311,105,p.ink,'bold');
+  type('UNHEARD',X-7,427,103,p.ink,'bold');type('ALPHABET',X-7,542,93,p.ink,'bold');
+  rect(X,569,540,9,p.verm);type('A LETTERPRESS FOR SOUNDS',X,613,20,p.verm,'normal','left','monospace');type('THAT NEVER ARRIVED',X,643,20,p.verm,'normal','left','monospace');
+  type('The sea did not forget the bell.',X,711,26,p.ink,'italic');type('It simply began to spell.',X,750,26,p.ink,'italic');
+  spaced('A STUDY IN NODAL TYPOGRAPHY',X,819,13,color(p.ink,.75),2);
+ }
+}
+function margin(p,mobile){if(mobile){line(70,1254,647,1254,color(p.ink,.5));spaced('PLATE '+p.id+' / THE UNHEARD ARCHIVE',71,1375,9,p.ink,2)}else{
+ line(92,872,1518,872,color(p.ink,.47));spaced('THE LETTER IS THE GRAIN · THE WAVE IS THE PRESS',95,900,12,p.ink,3);
+ spaced('NO AUDIO / ONE IMPRESSION AT A TIME',1040,900,11,p.verm,2);
+ } }
+function configurePanel(mobile){panel=mobile?{x:60,y:604,w:600,h:619}:{x:687,y:147,w:836,h:699}}
+function drawPanelBack(p,mobile){const a=panel;rect(a.x+12,a.y+15,a.w,a.h,color(p.ink,.14));rect(a.x,a.y,a.w,a.h,p.deep);
+ const g=c.createLinearGradient(a.x,a.y,a.x+a.w,a.y+a.h);g.addColorStop(0,'#00000044');g.addColorStop(.45,color(p.dust,.16));g.addColorStop(1,'#0000005c');rect(a.x,a.y,a.w,a.h,g);
+ strokeRect(a.x,a.y,a.w,a.h,p.ink,4);strokeRect(a.x+12,a.y+12,a.w-24,a.h-24,color(p.light,.3));
+ // A strict modernist panel grid, subdivided like a proof sheet.
+ for(let i=1;i<12;i++)line(a.x+22+i*(a.w-44)/12,a.y+24,a.x+22+i*(a.w-44)/12,a.y+a.h-24,color(p.light,.07));
+ for(let i=1;i<10;i++)line(a.x+24,a.y+22+i*(a.h-44)/10,a.x+a.w-24,a.y+22+i*(a.h-44)/10,color(p.light,.07));
+ for(let i=0;i<4;i++){let x=i%2?a.x+a.w-22:a.x+22,y=i>1?a.y+a.h-22:a.y+22;circle(x,y,5,p.accent,p.light,1)}
+}
+function drawGlyphs(p){const a=panel,inside={x:a.x+55,y:a.y+57,w:a.w-110,h:a.h-120};
+ c.save();c.beginPath();c.rect(inside.x,inside.y,inside.w,inside.h);c.clip();
+ // A central lithographic letter, printed with a second, imperfectly registered ink layer.
+ const fs=Math.min(inside.w*1.05,inside.h*1.02);c.font=`bold ${fs}px Georgia`;c.textAlign='center';c.textBaseline='middle';
+ c.fillStyle=color(p.verm,.13);c.fillText(p.glyph,inside.x+inside.w*.505+10,inside.y+inside.h*.49+11);
+ c.fillStyle=color(p.light,.125);c.fillText(p.glyph,inside.x+inside.w*.5,inside.y+inside.h*.48);
+ c.textAlign='left';
+ // The same signed two-mode Chladni equation as the submerged original determines glyph deposits.
+ // Glyphs are not drawn on a decorative waveform: each typographic grain is admitted by local field magnitude.
+ const cols=90,rows=74,phi=shock*.36,letters='aeio●mnrs⊙·:t';
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+ const seed=i+j*cols,u=(i+.5+(rng(seed*7+9)-.5)*.54)/cols,v=(j+.5+(rng(seed*3+8)-.5)*.6)/rows;
+ const q=Math.abs(field(u,v,p));const thr=.135+.025*Math.sin(t*.31+u*8);
+ if(q>thr && rng(seed*17+4)>.012)continue;
+ const x=inside.x+u*inside.w+(rng(seed*5)-.5)*shock*18,y=inside.y+v*inside.h+(rng(seed*5+2)-.5)*shock*18;
+ const near=Math.min(1,Math.pow(Math.max(.001,thr-q)/thr,.52));const isGold=rng(seed*8+13)>.91;const s=(isGold?9:6)+rng(seed*3+21)*3.3;
+ c.font=`${Math.round(s)}px Georgia`;c.fillStyle=color(isGold?p.accent:p.light,.18+.78*near);c.fillText(letters[Math.floor(rng(seed*17+12)*letters.length)],x,y);
+ }
+ // Resonance traces: calibrated contour extraction (marching squares) of the signed field.
+ if(wires){for(const iso of [-1.0,-.7,-.4,-.2,0,.2,.4,.7,1.0])march(inside,p,iso)}else march(inside,p,0);
+ // Fine mechanical linework and frame annotations.
+ line(inside.x,inside.y+inside.h+9,inside.x+inside.w,inside.y+inside.h+9,color(p.accent,.52));
+ spaced('FREQUENCY PAIR  '+String(p.n).padStart(2,'0')+' : '+String(p.m).padStart(2,'0'),a.x+29,a.y+a.h-34,11,p.light,2);
+ spaced('NODAL TRANSCRIPT / '+p.id,a.x+a.w-255,a.y+a.h-34,10,p.accent,1);
+ c.restore();
+}
+function march(b,p,iso){const N=95,M=78;const values=new Float32Array((N+1)*(M+1));for(let j=0;j<=M;j++)for(let i=0;i<=N;i++)values[j*(N+1)+i]=field(i/N,j/M,p);
+ const point=(i,j)=>values[j*(N+1)+i],corners=[[0,0],[1,0],[1,1],[0,1]];
+ c.beginPath();for(let j=0;j<M;j++)for(let i=0;i<N;i++){
+ const vals=[point(i,j),point(i+1,j),point(i+1,j+1),point(i,j+1)],pts=[];
+ for(let k=0;k<4;k++){const z=(k+1)%4;if((vals[k]<iso)!==(vals[z]<iso)){
+ const h=(iso-vals[k])/(vals[z]-vals[k]);const x=i+lerp(corners[k][0],corners[z][0],h),y=j+lerp(corners[k][1],corners[z][1],h);pts.push([b.x+x/N*b.w,b.y+y/M*b.h]);}}
+ for(let k=0;k+1<pts.length;k+=2){c.moveTo(pts[k][0],pts[k][1]);c.lineTo(pts[k+1][0],pts[k+1][1]);}
+ }c.strokeStyle=iso===0?color(p.accent,.83):color(p.dust,.35);c.lineWidth=iso===0?1.35:.8;c.stroke();
+}
+function panelMarks(p,mobile){const a=panel;
+ // Motifs of the press's registration mechanism; bracket arms, date, dimensional bars.
+ for(let i=0;i<11;i++){const xx=a.x+40+i*20;line(xx,a.y+20,xx,a.y+20+(i%5===0?16:8),color(p.light,.63),i%5===0?2:1)}
+ spaced('FIG. '+p.id+' / STRUCK ALPHABET',a.x+29,a.y+48,mobile?11:12,p.light,2);
+ c.save();c.translate(a.x+a.w-20,a.y+a.h*.49);c.rotate(PI/2);spaced('THE SEA WRITES WITH STANDING WAVES',0,0,11,p.accent,2);c.restore();
+ for(let i=0;i<17;i++){let yy=a.y+90+i*(a.h-180)/16;line(a.x+18,yy,a.x+18+(i%4===0?12:5),yy,color(p.light,.58))}
+}
+function microText(p,mobile){if(mobile){type(p.title,72,1278,22,p.ink,'normal','left','Georgia');type('NODE PAIR '+String(p.n).padStart(2,'0')+' : '+String(p.m).padStart(2,'0')+' / LITHOGRAPHED SILENCE',76,1308,11,p.verm,'normal','left','monospace');}
+ else{
+ rect(100,775,500,2,color(p.ink,.25));type(p.sub,100,802,13,p.verm,'normal','left','monospace');
+ for(let i=0;i<9;i++){const x=118+i*53,y=846;circle(x,y,2.6,i%2?p.verm:p.accent);line(x,y-13,x,y-7,color(p.ink,.35))}
+ }
+}
+function draw(){const p=acts[act],cssw=innerWidth,cssh=innerHeight,mobile=cssw<700||cssw/cssh<.78;dW=mobile?720:1600;dH=mobile?1450:980;
+ const dd=Math.min(devicePixelRatio||1,2),px=Math.round(cssw*dd),py=Math.round(cssh*dd);if(canvas.width!==px||canvas.height!==py){canvas.width=px;canvas.height=py}
+ const s=Math.min(px/dW,py/dH),offX=(px-dW*s)/2,offY=(py-dH*s)/2;
+ c.setTransform(1,0,0,1,0,0);c.fillStyle=p.paper;c.fillRect(0,0,px,py);c.setTransform(s,0,0,s,offX,offY);
+ configurePanel(mobile);drawBackground(p,mobile);heading(p,mobile);drawPanelBack(p,mobile);drawGlyphs(p);panelMarks(p,mobile);microText(p,mobile);margin(p,mobile);
+ // Edition accent ink at the edge of the proof, a three-part index.
+ for(let i=0;i<3;i++)rect(mobile?435+i*70:1325+i*57,mobile?1368:821,44,7,i===act?p.verm:color(p.ink,.19));
+}
+function tick(now){const delta=Math.min(.06,(now-last)/1000||.016);last=now;if(!still){t+=delta;shock=Math.max(0,shock-delta*.65);if(frame++%2===0)draw()}requestAnimationFrame(tick)}
+document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>select(Number(b.dataset.act))));
+document.querySelector('#strike').addEventListener('click',strike);document.querySelector('#wire').addEventListener('click',()=>{wires=!wires;document.querySelector('#wire').setAttribute('aria-pressed',String(wires));draw()});
+document.querySelector('#pause').addEventListener('click',()=>{still=!still;document.querySelector('#pause').setAttribute('aria-pressed',String(still));document.querySelector('#pause').textContent=still?'BREATHE':'STILL';draw()});
+document.querySelector('#save').addEventListener('click',()=>{draw();const a=document.createElement('a');a.download=`unheard-alphabet-plate-${act+1}.png`;a.href=canvas.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()});
+canvas.addEventListener('pointerdown',strike);window.addEventListener('resize',draw);window.addEventListener('keydown',e=>{if(['1','2','3'].includes(e.key))select(Number(e.key)-1);if(e.key.toLowerCase()==='g')document.querySelector('#wire').click();if(e.code==='Space'){e.preventDefault();document.querySelector('#pause').click()}if(e.key.toLowerCase()==='e')document.querySelector('#save').click();if(e.key.toLowerCase()==='s')strike()});
+select(0);requestAnimationFrame(tick);
+})();
+</script></body></html>
