@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Throat of the Desert — an anemographic excavation</title><meta name="color-scheme" content="dark">
+<style>
+:root{--text:#f4e7cd;--line:#c6a77888;--panel:#0d1825dd}*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#101722;color:var(--text)}body{font-family:Georgia,'Times New Roman',serif}canvas{display:block;width:100vw;height:100vh;touch-action:none;cursor:crosshair}header{position:absolute;top:29px;left:36px;pointer-events:none;text-shadow:0 2px 12px #000b}header .sigil{font:11px/1.4 ui-monospace,monospace;letter-spacing:.24em;color:#d9b886}h1{font-size:clamp(32px,4.6vw,66px);line-height:.98;margin:10px 0 12px;font-weight:normal;letter-spacing:-.035em}header p{font-style:italic;max-width:440px;font-size:16px;line-height:1.4;color:#e2d4bce0;margin:0}.serial{position:absolute;right:31px;top:34px;text-align:right;font:10px/1.8 ui-monospace,monospace;letter-spacing:.14em;color:#e3d3b5bd;text-shadow:0 2px 6px #000}.serial strong{color:#ffd4a1;font-weight:normal}.frame{pointer-events:none;position:absolute;inset:17px;border:1px solid #e7c7973d}.frame:after{content:'';position:absolute;inset:7px;border:1px solid #f5dca21c}.toolbar{position:absolute;left:50%;bottom:25px;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 24px);display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:7px;padding:9px 12px;border:1px solid #e7c79760;background:#0b1523d9;backdrop-filter:blur(13px);box-shadow:0 6px 30px #0009}.toolbar button{background:#293344;border:1px solid #bda47b99;color:#eedbc0;padding:9px 12px;font:10px ui-monospace,monospace;letter-spacing:.1em;cursor:pointer}.toolbar button:focus-visible,.toolbar button:hover{outline:1px solid #f8dfae;background:#404452}.toolbar button[aria-pressed=true]{background:#746149;color:white}.toolbar label{display:flex;gap:8px;align-items:center;padding:0 5px;font:10px ui-monospace,monospace;letter-spacing:.05em;color:#e7ceaa}.toolbar input{accent-color:#e8b86c;width:88px}.footnote{position:absolute;left:36px;bottom:121px;pointer-events:none;max-width:400px;font:10px/1.6 ui-monospace,monospace;letter-spacing:.14em;color:#f3d9adbb;text-shadow:0 2px 5px #000}.footnote b{font-weight:normal;color:#f8d6a7}.rightnote{position:absolute;right:35px;bottom:123px;text-align:right;font:10px/1.7 ui-monospace,monospace;letter-spacing:.12em;color:#e5d0aabf;pointer-events:none;text-shadow:0 2px 5px #000}.corner{position:absolute;left:35px;top:220px;font:10px/1.5 ui-monospace,monospace;color:#e0c79b91;writing-mode:vertical-rl;letter-spacing:.28em;pointer-events:none}#announce{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:italic 30px Georgia,serif;color:#ffebc6;text-shadow:0 0 20px #fff,0 0 50px #fbd69b;pointer-events:none;opacity:0;transition:opacity .7s}@media(max-width:730px){header{left:21px;top:17px;background:linear-gradient(90deg,#101924b8,#10192400);padding:4px 9px 9px 0}header h1{font-size:36px;max-width:305px;margin:7px 0}header p{font-size:12px;max-width:280px}.serial,.corner,.rightnote{display:none}.frame{inset:9px}.footnote{left:20px;bottom:150px;font-size:9px;max-width:300px}.toolbar{bottom:12px;width:calc(100vw - 20px);padding:7px 5px;gap:5px}.toolbar button{padding:8px 7px;font-size:9px}.toolbar input{width:70px}.toolbar label{font-size:9px}}@media(prefers-reduced-motion:reduce){canvas{cursor:default}}
+</style></head><body>
+<canvas id="art" role="img" aria-label="An immense buried wind-organ, suspended by ropes inside a geologic amphitheatre. Living dust follows the moving wind through seventeen engraved copper pipes and salt terraces."></canvas><div class="frame" aria-hidden="true"></div>
+<header><div class="sigil">THE INSTITUTE OF IMPOSSIBLE CLIMATES · PLATE XIX</div><h1>The Throat<br>of the Desert</h1><p>The buried organ is played by winds which have forgotten where the ocean was.</p></header>
+<div class="serial">ANEMOGRAPHIC EXCAVATION · 019<br>37° 44′ N / ELEVATION − 702m<br><strong id="count">FLOW 0.00 · SEDIMENT 480</strong><br>SALT · COPPER · BASALT<br>1869 — NEVER</div><div class="corner">SURVEY OF THE UNINHABITED AIR / SPECIMEN 19</div>
+<div class="footnote">EXCAVATION <b id="sceneName">I · THE LIMINAL NOON</b><br>THE ORGAN'S BREATH: <b id="velocity">+0.42</b> / DRAG THE VOID TO STEER<br>CLICK THE STONE TO RELEASE A SEDIMENT MEMORY</div><div class="rightnote">17 RESONANT PIPES<br>48 SUSPENSION CABLES<br>480 TRAVELLING GRAINS<br>ARCHIVE: NONLINEAR</div>
+<div class="toolbar" aria-label="Artwork controls"><button id="one" aria-pressed="true">I · NOON</button><button id="two" aria-pressed="false">II · BLUE</button><button id="three" aria-pressed="false">III · CINDER</button><label>WIND <input id="wind" type="range" min="-100" max="100" value="42" aria-label="Wind force"></label><button id="storm">RELEASE DUST</button><button id="section" aria-pressed="false">SECTION</button><button id="pause">STILL</button><button id="save">SAVE PNG</button></div><div id="announce" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const cv=document.getElementById('art'),ctx=cv.getContext('2d',{alpha:false}),W=1500,H=970,TAU=Math.PI*2;
+const palettes=[{name:'I · THE LIMINAL NOON',top:'#172c39',haze:'#91816a',earth:'#a27d57',deep:'#261e29',copper:'#b78452',light:'#f4cb85',air:'#e9b873',mineral:'#ceb98f'},
+{name:'II · THE BLUE SILENCE',top:'#07162a',haze:'#304963',earth:'#375268',deep:'#07101f',copper:'#7eaaa7',light:'#b1f0de',air:'#82dccc',mineral:'#a6b3c6'},
+{name:'III · THE CINDER HOUR',top:'#291d31',haze:'#9c5f63',earth:'#815053',deep:'#210d1e',copper:'#d18f72',light:'#ffc4a1',air:'#ff9c86',mineral:'#d4a4ac'}];
+let scene=0,wind=.42,section=false,paused=false,last=0,clock=0,frame=0,drag=false,grain=[],bursts=[],flash=0;let dpr=1,s=1,ox=0,oy=0;
+const rnd=(seed)=>{let x=seed>>>0;return ()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}};const r=rnd(829166);
+const ground=Array.from({length:4},(_,i)=>Array.from({length:95},(_,j)=>{const x=j*W/94;return [x,598+i*93+Math.sin(x*.009+i*1.8)*17+Math.sin(x*.022+i*.7)*6+(r()-.5)*8]}));
+const flecks=Array.from({length:1800},()=>({x:r()*W,y:175+r()*750,alpha:.03+r()*.15,size:.25+r()*1.5}));
+const fossils=Array.from({length:48},(_,i)=>({x:60+r()*1380,y:665+r()*272,a:r()*TAU,r:3+r()*14}));
+function reset(){grain=Array.from({length:480},()=>({x:r()*W,y:180+r()*680,v:.15+r()*.9,phase:r()*TAU,r:r()*.95+.25}));bursts=[];clock=0;flash=0};reset();
+const path=(pts)=>{ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1])};
+function stroke(col,w=1){ctx.strokeStyle=col;ctx.lineWidth=w;ctx.stroke()}
+function line(x,y,x2,y2,c,w=1){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);stroke(c,w)}
+function ellipse(x,y,rx,ry,col,w=1){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);stroke(col,w)}
+function arc(x,y,rad,start,end,col,w=1){ctx.beginPath();ctx.arc(x,y,rad,start,end);stroke(col,w)}
+function text(t,x,y,size,col,align='left',font='Georgia'){ctx.textAlign=align;ctx.textBaseline='middle';ctx.font=`${size}px ${font}`;ctx.fillStyle=col;ctx.fillText(t,x,y)}
+function shade(x1,y1,x2,y2,stops){const g=ctx.createLinearGradient(x1,y1,x2,y2);stops.forEach(a=>g.addColorStop(a[0],a[1]));return g}
+function fillPoly(points,color){path(points);ctx.closePath();ctx.fillStyle=color;ctx.fill()}
+function setting(){const p=palettes[scene];const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,p.top);sky.addColorStop(.60,p.haze);sky.addColorStop(1,p.deep);ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ const h=ctx.createRadialGradient(770,530,30,770,530,680);h.addColorStop(0,p.light+'33');h.addColorStop(1,p.light+'00');ctx.fillStyle=h;ctx.fillRect(0,0,W,H);
+ for(let k=0;k<11;k++){ctx.beginPath();ctx.moveTo(0,280+k*19);for(let x=0;x<=W;x+=11)ctx.lineTo(x,280+k*19+Math.sin(x*.005+k*.6)*17);stroke(p.mineral+'12',.7)}
+ // stratified terraces, variable contour offsets, tapered fracture
+ ground.forEach((pts,i)=>{const lower=pts.map(q=>[q[0],q[1]+170]);fillPoly([...pts,...lower.reverse()],['#664e42','#584347','#3b3039','#1e1c2c'][i]);path(pts);stroke(p.light+(i?'36':'8a'),i===0?2.5:1.4);for(let n=1;n<11;n++){let p2=pts.map(q=>[q[0],q[1]+n*12+2*Math.sin(q[0]*.02+n*.7)]);path(p2);stroke(p.mineral+(n%3===0?'37':'16'),n%3===0?1.2:.55)} });
+ // fractures and diagonal fault, no symmetry
+ fillPoly([[1140,580],[1194,608],[1020,967],[912,967]],'#090f1d88');for(let k=0;k<10;k++)line(1145+k*5,582,921+k*4,959,p.light+'16',.7);
+ for(let i=0;i<flecks.length;i++){let f=flecks[i];ctx.fillStyle=p.mineral+Math.round(f.alpha*255).toString(16).padStart(2,'0');ctx.fillRect(f.x,f.y,f.size,f.size)}
+ fossils.forEach(f=>{ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.a);ellipse(0,0,f.r,f.r*.45,p.light+'42',.7);for(let j=0;j<5;j++)line(-f.r+j*f.r*.4,-2,f.r-j*f.r*.4,2,p.light+'2d',.6);ctx.restore()});
+ // geological borehole cross-section
+ ctx.fillStyle='#070e19a9';ctx.beginPath();ctx.moveTo(500,950);ctx.bezierCurveTo(570,720,538,480,603,300);ctx.bezierCurveTo(670,230,878,230,946,308);ctx.bezierCurveTo(1025,480,973,718,1086,950);ctx.closePath();ctx.fill();
+ for(let k=0;k<12;k++){const f=k/11;ctx.beginPath();ctx.moveTo(515+f*52,970);ctx.bezierCurveTo(574+f*38,720,548+f*50,492,612+f*25,326);stroke(p.light+'16',.8);ctx.beginPath();ctx.moveTo(1060-f*35,970);ctx.bezierCurveTo(955-f*20,713,999-f*45,495,936-f*25,326);stroke(p.light+'1e',.8)}
+ // upper open sky over cave with bridging silhouetted galleries
+ for(let y of [305,491,735]){line(465,y,1090,y,p.light+'25',2);for(let x=470;x<1090;x+=32){line(x,y-8,x,y+5,p.light+'24',.8)}}
+}
+function ornament(x,y,r,p){ctx.save();ctx.translate(x,y);for(let k=0;k<12;k++){ctx.rotate(TAU/12);ctx.beginPath();ctx.ellipse(0,r*.62,r*.13,r*.48,0,0,TAU);stroke(p.light+'43',.85)}ellipse(0,0,r*.35,r*.35,p.light+'78',1);ellipse(0,0,r*.18,r*.18,p.light+'76',1);ctx.restore()}
+function organ(){const p=palettes[scene];const center=780; // distinct vertical pipe organ, NOT the source's radial wind lens
+ // ground plinth and cut-stone pilasters
+ ctx.fillStyle=shade(560,0,1008,0,[[0,'#1b2631'],[.5,p.earth],[1,'#171b27']]);ctx.fillRect(560,715,447,26);ctx.fillRect(591,754,380,19);ctx.fillStyle='#171821';ctx.fillRect(595,742,375,13);
+ for(let i=0;i<14;i++){let x=585+i*31;line(x,716,x,766,p.light+'4e',1);ctx.fillStyle=p.light+'77';ctx.fillRect(x-3,724,6,3)}
+ // hanging supporting cables from distant overhead stone, 48 braided strands
+ for(let i=0;i<24;i++){const x=575+i*17.4,anchor=280+(i%5)*5;ctx.beginPath();ctx.moveTo(x,anchor);ctx.bezierCurveTo(x-38,365,x+24,540,x+Math.sin(i)*7,712);stroke(i%3===0?p.light+'58':p.mineral+'24',i%5===0?1.35:.7)}
+ // axial fascia and seventeen individual resonator pipes
+ let heights=[];for(let i=0;i<17;i++){const d=Math.abs(i-8)/8;heights.push(350+(1-d*d)*225)}
+ for(let i=0;i<17;i++){let x=582+i*24.2,h=heights[i],top=714-h,w=20.6,shine=(i%4)/4;
+ ctx.fillStyle=shade(x,0,x+w,0,[[0,'#181923'],[.16,p.copper],[.35,p.light+'b0'],[.56,p.copper],[.78,'#3c363b'],[1,p.light+'94']]);ctx.fillRect(x,top,w,h);
+ ctx.fillStyle='#171a25e0';ctx.fillRect(x+3,top+9,w-6,8);ctx.fillStyle=p.light+'66';ctx.fillRect(x+7,top+12,w-14,2);
+ for(let j=0;j<7;j++){let yy=top+55+j*(h-89)/7;line(x+2,yy,x+w-2,yy,p.light+'66',.7);if(j%2===0){ctx.fillStyle='#111725cc';ctx.fillRect(x+5,yy+4,w-10,2)}}
+ for(let q=0;q<4;q++)line(x+2+q*5,top+22,x+2+q*5,714,p.light+(q===1?'43':'1b'),.7);
+ ctx.fillStyle='#18222c';ctx.fillRect(x-2,top-8,w+4,9);line(x-2,top-8,x+w+2,top-8,p.light+'ba',1.4);
+ if(i%2===0){ellipse(x+w/2,711,4,4,p.light+'a6',1.3)}
+ }
+ // gothic external masonry trusses
+ for(let side of [-1,1]){const x=center+side*226;ctx.beginPath();ctx.moveTo(x,722);ctx.lineTo(x,400);ctx.quadraticCurveTo(x,263,center,232);stroke(p.copper,6);ctx.beginPath();ctx.moveTo(x+side*9,710);ctx.lineTo(x+side*9,397);ctx.quadraticCurveTo(x+side*6,275,center,244);stroke(p.light+'9d',1.8);
+ for(let y=440;y<735;y+=34)line(x-14,y,x+14,y,p.light+'4f',1.2);
+ for(let y=400;y<700;y+=92){ornament(x,y,15,p);ctx.fillStyle=p.light;ctx.fillRect(x-2,y-2,4,4)} }
+ // fascia: vaulted frieze, three medallions, crown
+ arc(center,245,119,Math.PI*1.04,Math.PI*1.96,p.light+'ad',2);arc(center,248,129,Math.PI*1.04,Math.PI*1.96,p.light+'7d',1);for(let k=0;k<35;k++){let a=Math.PI*(1.05+k*.90/34),x=center+125*Math.cos(a),y=245+125*Math.sin(a);line(x,y,x+9*Math.cos(a),y+9*Math.sin(a),p.light+'84',1)}
+ ornament(center,244,34,p);ornament(center-170,395,20,p);ornament(center+170,395,20,p);
+ // trussed strings tying pipe ends, should show structural load
+ for(let i=0;i<11;i++){let x=602+i*35;line(x,284,x+10,714,p.light+'37',.8)}
+ // earthen musical notation tick marks and stained instrument panels
+ for(let i=0;i<15;i++){let x=611+i*24.2;line(x,767,x,783,p.light+'85',.8);if(i%3===0)text(String(i+1).padStart(2,'0'),x,795,9,p.light+'9e','center','monospace')}
+ // pendulum vane under cliff
+ line(center,767,center,855,p.light+'83',2);arc(center,821,46,.1,Math.PI-.1,p.light+'5f',1.4);const a=Math.sin(clock*.22)*.5*wind;line(center,791,center+Math.sin(a)*43,837,p.light,2);ellipse(center+Math.sin(a)*43,837,6,6,p.light,1.6);
+ text('ANEMOCHORD · XVI',780,875,17,p.light+'c4','center');text('FIELD LISTENER / PRESSURE ORGAN',780,892,10,p.light+'82','center','monospace');
+}
+function resonances(){const p=palettes[scene];
+ // Seventeen thin streams of illuminated pressure, oscillating within each bore.
+ ctx.save();ctx.globalCompositeOperation='screen';
+ for(let i=0;i<17;i++){
+   const d=Math.abs(i-8)/8,h=350+(1-d*d)*225,top=714-h,x=592+i*24.2;
+   const a=.35+Math.abs(wind)*.38+Math.sin(clock*.7+i*.75)*.18;
+   ctx.beginPath();for(let j=0;j<=48;j++){
+      let q=j/48,y=top+28+(h-48)*q;
+      let sw=Math.sin(q*8.2-clock*(.45+Math.abs(wind)) + i*.68)*1.9*wind;
+      if(j===0)ctx.moveTo(x+sw,y);else ctx.lineTo(x+sw,y)
+   }
+   stroke(p.light+Math.max(12,Math.floor(a*105)).toString(16).padStart(2,'0'),i%3===0?1.35:.7);
+   const beadY=top+22+(h-48)*((clock*.13+i*.171)%1);ellipse(x,beadY,1.2,2.7,p.light+'9c',.9);
+ }
+ // Three suspended coherent streamlines that follow the wind and bend around the arch.
+ for(let j=0;j<3;j++){
+   const y=330+j*137,shift=clock*(9+Math.abs(wind)*12);
+   ctx.beginPath();for(let k=0;k<=110;k++){
+     const x=310+k*8.3;
+     const bow=Math.exp(-(((x-780)/230)**2))*((j===1?-1:1)*22);
+     const v=y+bow+Math.sin(x*.012+clock*.7+j)*5+Math.sin(x*.027-shift*.08)*2;
+     if(k===0)ctx.moveTo(x,v);else ctx.lineTo(x,v)
+   }stroke(p.air+'28',.7);
+ }
+ ctx.restore()
+}
+function site(){const p=palettes[scene]; // survey platforms, figures and architectural scale markers
+ for(let [x,y,w] of [[171,753,175],[1115,699,175],[225,865,132],[1114,832,110]]){ctx.fillStyle='#161922';ctx.fillRect(x,y,w,10);for(let k=0;k<5;k++){let xx=x+k*w/4;line(xx,y+10,xx+9,y+67,p.light+'6c',1);line(xx,y+10,xx+28,y+28,p.light+'46',1)}line(x,y-25,x+w,y-25,p.light+'42',1);for(let j=0;j<11;j++)line(x+j*w/10,y-25,x+j*w/10,y,p.light+'43',.65)}
+ for(let [x,y,sc] of [[283,745,1.0],[1180,691,.8],[1195,827,1.15]]){ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.fillStyle='#090f1a';ctx.beginPath();ctx.arc(0,-13,5,0,TAU);ctx.fill();line(0,-7,0,13,'#0a111a',4);line(0,5,-8,17,'#0a111a',2);line(0,5,8,17,'#0a111a',2);line(0,-3,11,2,'#0a111a',2);ctx.restore()}
+ // worn survey slates and wheel-driven recorder
+ ctx.save();ctx.translate(1290,583);ellipse(0,0,42,42,p.light+'98',2);ellipse(0,0,31,31,p.light+'8c',1);for(let i=0;i<24;i++){let a=i*TAU/24;line(37*Math.cos(a),37*Math.sin(a),44*Math.cos(a),44*Math.sin(a),p.light+'a8',1)}ctx.save();ctx.rotate(clock*.04);line(0,0,22,12,p.light,2);ctx.restore();ctx.restore();
+ // suspended lamps at different elevations
+ for(let [x,y] of [[487,442],[1097,480],[565,683],[1007,667]]){line(x,220,x,y-18,p.light+'39',.85);ctx.fillStyle=p.light+'6d';ctx.beginPath();ctx.moveTo(x-13,y-6);ctx.lineTo(x+13,y-6);ctx.lineTo(x+6,y+13);ctx.lineTo(x-6,y+13);ctx.closePath();ctx.fill();let g=ctx.createRadialGradient(x,y,1,x,y,70);g.addColorStop(0,p.light+'48');g.addColorStop(1,p.light+'00');ctx.fillStyle=g;ctx.fillRect(x-70,y-70,140,140)}
+ for(let i=0;i<24;i++){let x=70+i*58;line(x,928,x,930+((i%5)*4),p.light+'76',1);if(i%4===0)text(String(i*3).padStart(3,'0'),x,946,10,p.light+'89','center','monospace')}
+}
+function currents(dt){const p=palettes[scene],t=clock;for(let g of grain){if(!paused){const dx=(wind*1.1+.32*Math.sin(g.y*.012+t*.29+g.phase)+.3*Math.sin((g.x-780)*.019+t*.4))*(dt*40)*g.v;const lift=Math.sin(g.x*.011+t*.21+g.phase)*.5-(Math.exp(-Math.abs(g.x-780)/260)*.16);g.x+=dx;g.y+=(lift+Math.cos(g.x*.025+t*.4)*.11)*(dt*28)*g.v;if(g.x>1510)g.x=-10;if(g.x<-10)g.x=1510;if(g.y<160)g.y=865;if(g.y>940)g.y=175}
+ let g2=ctx.createRadialGradient(g.x,g.y,0,g.x,g.y,g.r*8);g2.addColorStop(0,p.air+'6d');g2.addColorStop(1,p.air+'00');ctx.fillStyle=g2;ctx.fillRect(g.x-g.r*8,g.y-g.r*8,g.r*16,g.r*16);
+ line(g.x,g.y,g.x-(wind*8+2*Math.sin(g.y*.011+t*.3)),g.y+.6,p.air+'51',g.r*.64);
+ }
+ bursts=bursts.filter(b=>b.life>0);for(let b of bursts){for(let i=0;i<105;i++){let a=i*2.399963+Math.sin(i)*.1,rr=(1-b.life)*Math.sqrt(i/105)*130;const x=b.x+Math.cos(a)*rr+wind*rr*.52,y=b.y+Math.sin(a)*rr*.42;ctx.fillStyle=p.light+Math.round(Math.min(.55,b.life*.8)*255).toString(16).padStart(2,'0');ctx.fillRect(x,y,1.3,1.3)}if(!paused)b.life-=dt*.42}
+}
+function finish(){const p=palettes[scene];ctx.fillStyle=shade(0,0,0,H,[[0,p.top+'00'],[.90,p.deep+'14'],[1,p.deep+'df']]);ctx.fillRect(0,0,W,H);
+ for(let k=0;k<18;k++){const q=k/17;ctx.fillStyle=p.mineral+'12';ctx.fillRect(85,110+k*2.2,1350,1)}
+ // a hand-engraved cartographic compass and tiny marginal readings
+ ctx.save();ctx.translate(1311,219);ellipse(0,0,59,59,p.light+'75',1);ellipse(0,0,50,50,p.light+'36',.8);for(let k=0;k<48;k++){let a=k*TAU/48;line(53*Math.cos(a),53*Math.sin(a),(k%4===0?62:57)*Math.cos(a),(k%4===0?62:57)*Math.sin(a),p.light+'74',.7)}ctx.rotate(clock*.05);ctx.beginPath();ctx.moveTo(0,-42);ctx.lineTo(5,0);ctx.lineTo(0,42);ctx.lineTo(-5,0);ctx.closePath();ctx.fillStyle=p.light+'a2';ctx.fill();ctx.restore();text('W',1311,295,9,p.light+'9e','center','monospace');
+ for(let i=0;i<70;i++){let y=250+i*8.5;if(i%5===0)text(String(i*10),1380,y,8,p.light+'9c','left','monospace');line(1358,y,1358+(i%5===0?14:5),y,p.light+'4c',.65)}
+ // thin frame within art, segmented border
+ ctx.strokeStyle=p.light+'75';ctx.lineWidth=1;ctx.strokeRect(42,40,W-84,H-80);ctx.strokeStyle=p.light+'30';ctx.strokeRect(49,47,W-98,H-94);
+ for(let x of [58,1442])for(let y of [56,915]){line(x-9,y,x+9,y,p.light+'ad',1.4);line(x,y-9,x,y+9,p.light+'ad',1.4)}
+ if(section){ctx.save();ctx.setLineDash([4,7]);line(780,165,780,918,p.light+'a6',1);line(528,715,1028,715,p.light+'a6',1);ctx.restore();for(let j=0;j<17;j++)text(String(j+1).padStart(2,'0'),582+j*24.2,330-(1-(Math.abs(j-8)/8)**2)*110,10,p.light,'center','monospace');text('SECTION A—A',1078,376,13,p.light+'c6');text('BEARING / 083',1080,397,10,p.light+'a9','left','monospace');}
+}
+function sizing(){dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(innerWidth*dpr);cv.height=Math.round(innerHeight*dpr);s=Math.max(cv.width/W,cv.height/H);ox=(cv.width-W*s)/2;oy=(cv.height-H*s)/2}
+function render(now){let dt=Math.min(.055,Math.max(0,(now-last)/1000||.016));last=now;if(!paused){clock+=dt;flash=Math.max(0,flash-dt)}ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#090e18';ctx.fillRect(0,0,cv.width,cv.height);ctx.setTransform(s,0,0,s,ox,oy);setting();site();organ();resonances();currents(dt);finish();if(flash>0){ctx.fillStyle=palettes[scene].light+Math.round(flash*50).toString(16).padStart(2,'0');ctx.fillRect(0,0,W,H)}frame++;if(frame%24===0)document.getElementById('count').textContent='FLOW '+Math.abs(wind).toFixed(2)+' · SEDIMENT '+grain.length;requestAnimationFrame(render)}
+function announce(v){let el=document.getElementById('announce');el.textContent=v;el.style.opacity='1';setTimeout(()=>{el.style.opacity='0'},1000)}
+function choose(i){scene=i;document.getElementById('sceneName').textContent=palettes[i].name;['one','two','three'].forEach((id,k)=>document.getElementById(id).setAttribute('aria-pressed',String(i===k)));flash=.7}
+['one','two','three'].forEach((id,i)=>document.getElementById(id).addEventListener('click',()=>choose(i)));
+const windEl=document.getElementById('wind');windEl.addEventListener('input',()=>{wind=Number(windEl.value)/100;document.getElementById('velocity').textContent=(wind>=0?'+':'')+wind.toFixed(2)});
+function storm(x=780,y=560){bursts.push({x,y,life:1});if(bursts.length>9)bursts.shift();announce('A STRATUM REMEMBERS')}
+document.getElementById('storm').addEventListener('click',()=>storm());document.getElementById('section').addEventListener('click',e=>{section=!section;e.currentTarget.setAttribute('aria-pressed',String(section))});document.getElementById('pause').addEventListener('click',e=>{paused=!paused;e.currentTarget.textContent=paused?'RESUME':'STILL'});document.getElementById('save').addEventListener('click',()=>{const a=document.createElement('a');a.download='the-throat-of-the-desert-'+(scene+1)+'.png';a.href=cv.toDataURL('image/png');a.click()});
+function position(e){return {x:(e.clientX*dpr-ox)/s,y:(e.clientY*dpr-oy)/s}}
+cv.addEventListener('pointerdown',e=>{drag=true;cv.setPointerCapture(e.pointerId);const q=position(e);storm(q.x,q.y)});cv.addEventListener('pointermove',e=>{if(!drag)return;wind=Math.max(-1,Math.min(1,wind+(e.movementX/innerWidth)*2.5));windEl.value=Math.round(wind*100);document.getElementById('velocity').textContent=(wind>=0?'+':'')+wind.toFixed(2)});cv.addEventListener('pointerup',()=>drag=false);cv.addEventListener('pointercancel',()=>drag=false);
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key===' '){e.preventDefault();document.getElementById('pause').click()}if(e.key.toLowerCase()==='s')document.getElementById('save').click();if(e.key>='1'&&e.key<='3')choose(Number(e.key)-1)});
+if(matchMedia('(prefers-reduced-motion:reduce)').matches){paused=true;document.getElementById('pause').textContent='RESUME'}
+window.addEventListener('resize',sizing);sizing();requestAnimationFrame(render);
+window.__DESERT_DEBUG__=()=>({frame,scene,wind,paused,section,grains:grain.length,bursts:bursts.length,canvas:[cv.width,cv.height]});
+})();
+</script></body></html>
