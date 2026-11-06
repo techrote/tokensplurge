@@ -33,10 +33,14 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Capture exact-revision artwork and verify PNGs
+      - name: Capture or reuse exact-revision artwork and verify PNGs
         run: |
-          node references/cybersand/tools/capture.cjs
-          node references/cybersand/tools/verify.cjs --require-captures
+          if node references/cybersand/tools/verify.cjs --require-captures; then
+            echo "Source-pinned captures already verified; no nondeterministic recapture needed."
+          else
+            node references/cybersand/tools/capture.cjs
+            node references/cybersand/tools/verify.cjs --require-captures
+          fi
       - name: Browser-smoke the single-file moodboard and filters
         run: node references/cybersand/tools/smoke-ui.cjs
       - name: Commit only capture assets to the isolated documentation branch
