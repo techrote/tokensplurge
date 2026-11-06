@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#120c19"><title>The Paper Theatre of the Sun Eater — a kinetic shadow play</title>
+<style>
+:root{color-scheme:dark;--paper:#f5deb0;--gold:#e6bb78}*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden}body{background:#100b16;color:var(--paper);font-family:Georgia,serif}canvas{display:block;width:100%;height:100%;touch-action:none}body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,#0503080b 4px 5px);mix-blend-mode:multiply}header,footer{position:fixed;z-index:2;left:clamp(16px,4.5vw,75px);right:clamp(16px,4.5vw,75px);display:flex;justify-content:space-between;align-items:center;gap:15px;pointer-events:none}header{top:clamp(14px,3.5vh,40px);align-items:start}footer{bottom:clamp(18px,3.5vh,42px);align-items:end}.eyebrow{font:10px/1.5 monospace;letter-spacing:.22em;color:#dfb883;text-transform:uppercase}.brand{font:small-caps 700 clamp(14px,2vw,25px)/1.15 Georgia,serif;letter-spacing:.13em;color:#ffe1a2;text-shadow:0 2px 20px #000}.issue{text-align:right}.title{position:fixed;left:50%;top:13%;transform:translateX(-50%);z-index:2;text-align:center;pointer-events:none;width:86vw;text-shadow:0 2px 24px #13070a}.title .minor{display:block;font:11px/1.6 monospace;letter-spacing:.4em;color:#f5bd7e}.title h1{font-size:clamp(34px,5.6vw,80px);line-height:.84;font-variant:small-caps;letter-spacing:.06em;font-weight:400;margin:13px 0 12px;color:#ffdc9c}.title p{margin:0;font-style:italic;font-size:clamp(12px,1.2vw,16px);color:#ffe0b6}.controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end;pointer-events:auto}.controls button{border:1px solid #e5b97967;background:#180b17db;backdrop-filter:blur(12px);color:#f3c988;cursor:pointer;min-height:39px;padding:10px 14px;letter-spacing:.09em;text-transform:uppercase;font:10px/1.2 monospace;transition:background .2s,border-color .2s}.controls button:hover,.controls button[aria-pressed="true"]{background:#b96b42;color:#160916;border-color:#fbd28a}.controls button:focus-visible{outline:2px solid white;outline-offset:3px}.notes{max-width:285px;color:#f1cfa0;font:11px/1.6 Georgia,serif;letter-spacing:.06em}.notes em{font-style:italic;color:#e1ab75}.meta{margin-top:8px;color:#cda4778e;font:9px monospace;letter-spacing:.15em}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:770px){header{top:13px}.issue{max-width:135px}.brand{font-size:15px}.eyebrow{font-size:8px}.title{top:19%}.title h1{font-size:clamp(33px,8vw,62px);line-height:.95}.title p{font-size:12px}.title .minor{font-size:8px}.notes{max-width:230px;font-size:10px}.footer{bottom:12px}footer{flex-direction:column;align-items:stretch;bottom:15px}.controls{justify-content:center;gap:4px}.controls button{padding:10px 9px;font-size:9px;flex:1;min-width:55px}.notes{text-align:center;max-width:none}.meta{display:none}}@media(max-height:600px){.title{top:9%}.title h1{font-size:36px}.title p{display:none}.notes{display:none}}
+</style>
+</head>
+<body>
+<canvas id="stage" role="img" aria-label="An animated cut-paper puppet theatre. A giant clockwork moth moves before a burning sun on a crimson stage with a brass proscenium, hanging strings, engraved mountains and layers of torn paper. Choose one of three dramatic acts to change the scene."></canvas>
+<header><div><div class="eyebrow">An impossible performance, in three acts</div><div class="brand">The Theatre of Small Catastrophes</div></div><div class="issue eyebrow">Cabinet of shadows<br>No. 001 / A sun-eating machine</div></header>
+<div class="title"><span class="minor" id="actLabel">ACT I · THE SUMMONING</span><h1>The Sun Eater</h1><p id="verse">Before the first shadow, all the clocks agreed.</p></div>
+<footer><div class="notes">An opera for paper, brass, and borrowed light.<br><em>Move your hand to sway the marionette.</em><div class="meta">HAND-OPERATED / NO SOUND / ONE NIGHT ONLY</div></div><nav class="controls" aria-label="Performance controls"><button data-act="0" aria-pressed="true">I · Summon</button><button data-act="1" aria-pressed="false">II · Eclipse</button><button data-act="2" aria-pressed="false">III · After</button><button id="pause" aria-pressed="false">Still</button><button id="save">Collect ↓</button></nav></footer>
+<div class="sr-only" id="announcer" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const cvs=document.getElementById('stage'),c=cvs.getContext('2d',{alpha:false});if(!c)return;
+const TAU=2*Math.PI, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), mix=(a,b,t)=>a+(b-a)*t;
+const palettes=[{sky:'#5f2234',bottom:'#e15f3a',halo:'#f6b14f',rim:'#ffd58a',hill:'#39283e',front:'#0d1926'}, {sky:'#23152b',bottom:'#ad343a',halo:'#f67f47',rim:'#ffba69',hill:'#2a273f',front:'#0a1720'}, {sky:'#0e1d37',bottom:'#355274',halo:'#b5a5e1',rim:'#e6c5e8',hill:'#242f50',front:'#0b2030'}];
+const labels=['ACT I · THE SUMMONING','ACT II · THE DEVOURING','ACT III · THE AFTERLIGHT'];
+const verses=['Before the first shadow, all the clocks agreed.','The little god of gears forgot to be afraid.','What remained was not darkness, but an invitation.'];
+const state={act:0,from:0,transition:1,t:0,paused:matchMedia('(prefers-reduced-motion: reduce)').matches,px:0,py:0,mx:0,my:0,last:0,frame:0,dpr:1,w:0,h:0};
+function rng(n){const a=Math.sin(n*73.17+19.37)*12753.143;return a-Math.floor(a)}
+function path(points,close=false){c.beginPath();points.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));if(close)c.closePath()}
+function ellipse(x,y,rx,ry,fill,stroke,lw=1){c.beginPath();c.ellipse(x,y,rx,ry,0,0,TAU);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.lineWidth=lw;c.strokeStyle=stroke;c.stroke()}}
+function line(x,y,X,Y,col,w=1){c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(x,y);c.lineTo(X,Y);c.stroke()}
+function poly(points,fill,stroke,w=1){path(points,true);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.lineWidth=w;c.stroke()}}
+function star(x,y,r,color,turn=0){c.save();c.translate(x,y);c.rotate(turn);c.strokeStyle=color;c.lineWidth=1;c.beginPath();c.moveTo(-r,0);c.lineTo(r,0);c.moveTo(0,-r);c.lineTo(0,r);c.stroke();ellipse(0,0,r*.13,r*.13,color);c.restore()}
+function gradient(y1,y2,stops){const g=c.createLinearGradient(0,y1,0,y2);for(const [t,col] of stops)g.addColorStop(t,col);return g}
+function drape(x,flip,t){c.save();c.translate(x,0);c.scale(flip,1);const g=c.createLinearGradient(0,0,250,0);g.addColorStop(0,'#2c0d22');g.addColorStop(.25,'#52172c');g.addColorStop(.5,'#8e2839');g.addColorStop(.72,'#3a1328');g.addColorStop(1,'#220b1e');c.fillStyle=g;c.beginPath();c.moveTo(0,0);c.lineTo(255,0);c.bezierCurveTo(240,100,252,140,223,195);c.bezierCurveTo(174,234,200,292,163,330);c.bezierCurveTo(105,269,100,134,0,65);c.closePath();c.fill();for(let j=0;j<7;j++){const xx=18+j*27;c.strokeStyle=j%2?'#dfa56838':'#14051188';c.lineWidth=j%2?2:8;c.beginPath();c.moveTo(xx,0);c.bezierCurveTo(xx+45,85,xx+30,175,xx+143,308);c.stroke()}c.strokeStyle='#e6ad6c';c.lineWidth=4;c.beginPath();c.moveTo(0,82);c.bezierCurveTo(65,83,104,205,167,248);c.stroke();c.restore()}
+function mountains(t,p){c.fillStyle=p.hill;c.beginPath();c.moveTo(0,595);for(let i=0;i<=45;i++){const x=i*1200/45,y=510+Math.sin(i*.72+1)*26+Math.cos(i*.29)*42;c.lineTo(x,y)}c.lineTo(1200,770);c.lineTo(0,770);c.fill();c.fillStyle=p.front;c.beginPath();c.moveTo(0,675);for(let i=0;i<=70;i++){const x=i*1200/70,y=615+Math.sin(i*.58+2)*32+Math.sin(i*.14)*32;c.lineTo(x,y)}c.lineTo(1200,770);c.lineTo(0,770);c.fill();c.strokeStyle='#ecaa673b';c.lineWidth=1;for(let i=0;i<20;i++){const x=i*73-70,y=630+Math.sin(i*.49+2)*24;c.beginPath();c.moveTo(x,y);c.lineTo(x+25,y-12);c.lineTo(x+60,y+16);c.stroke()}
+// An invented town of bell towers, seen as perforations in black paper.
+for(let i=0;i<23;i++){const x=20+i*54+Math.sin(i*11)*12,h=31+rng(i)*45;c.fillStyle=i%3?'#0b101d':'#111827';c.fillRect(x,660-h,24,108);if(i%3===0){c.fillRect(x+6,647-h,12,20);poly([[x+6,647-h],[x+12,630-h],[x+18,647-h]],'#0b101d')}for(let yy=0;yy<3;yy++)for(let xx=0;xx<2;xx++)if(rng(i*23+xx*3+yy)>.5)c.fillStyle='#ffca7450',c.fillRect(x+6+xx*9,667-h+yy*14,3,5)}
+}
+function sun(t,p,act){const x=600+state.mx*12,y=368+state.my*8,r=157;const s=act===2?.84:1;const ray=r+60;
+const g=c.createRadialGradient(x,y,r*.19,x,y,ray+100);g.addColorStop(0,p.halo+'b8');g.addColorStop(.4,p.halo+'48');g.addColorStop(1,p.halo+'00');c.fillStyle=g;c.fillRect(250,20,700,700);
+c.save();c.translate(x,y);c.rotate(t*.017);for(let i=0;i<72;i++){const a=i*TAU/72,from=r+12+(i%3)*7,to=ray+(i%4)*13;line(Math.cos(a)*from,Math.sin(a)*from,Math.cos(a)*to,Math.sin(a)*to,p.rim+(i%3?'50':'91'),i%8===0?2.5:1)}c.restore();
+for(let k=4;k>=0;k--){ellipse(x,y,r*s+k*13,r*s+k*13,null,p.rim+(k%2?'16':'35'),k%2?1:2)}
+const disk=c.createRadialGradient(x-45,y-60,5,x,y,r*s);disk.addColorStop(0,act===2?'#fff2df':'#ffe6a0');disk.addColorStop(.6,act===2?'#c4c9e2':'#e9ac60');disk.addColorStop(1,act===2?'#717ab2':'#a3443a');ellipse(x,y,r*s,r*s,disk);
+for(let i=0;i<25;i++){const a=i*2.4,rr=r*(.14+.78*rng(i+7));ellipse(x+Math.cos(a)*rr,y+Math.sin(a)*rr,1+rng(i+29)*3,1+rng(i+3)*3,act===2?'#627fa365':'#a64c3942')}
+if(act===1){ellipse(x+26,y+4,r*.94,r*.94,'#190e21','#ffb06e',2);ellipse(x+16,y-16,r*.69,r*.69,null,'#ffdf9d52',1.5)}
+}
+function papercutWing(side,t,act){c.save();c.scale(side,1);let flap=Math.sin(t*.72+side*.25)*.025+state.my*.03;c.rotate(flap);c.fillStyle='#140c1a';c.strokeStyle='#f1b871';c.lineWidth=2.5;
+// Outer wing is a layered cut-paper plate, traced with brass wire.
+c.beginPath();c.moveTo(0,-51);c.bezierCurveTo(75,-163,161,-207,240,-190);c.bezierCurveTo(278,-178,270,-96,224,-44);c.bezierCurveTo(285,11,250,97,173,117);c.bezierCurveTo(110,136,52,80,0,35);c.closePath();c.fill();c.stroke();
+c.strokeStyle='#bb764d';c.lineWidth=2;c.beginPath();c.moveTo(5,-28);c.quadraticCurveTo(145,-102,240,-186);c.moveTo(16,2);c.quadraticCurveTo(152,-1,237,60);c.moveTo(20,18);c.quadraticCurveTo(113,58,166,109);c.stroke();
+// Filigree apertures reveal the bright sun below (cutout effect).
+c.globalCompositeOperation='destination-out';ellipse(143,-106,48,36,'#000');ellipse(194,-24,25,38,'#000');ellipse(109,66,32,20,'#000');ellipse(72,-39,19,15,'#000');c.globalCompositeOperation='source-over';
+for(let i=0;i<12;i++){const a=i*.51+1.5,x=137+Math.cos(a)*73,y=-49+Math.sin(a)*57;ellipse(x,y,3.3,3.3,i%2?'#be723c':'#e4ac70')}
+for(const [x,y,rx,ry] of [[143,-106,48,36],[194,-24,25,38],[109,66,32,20],[72,-39,19,15]]){ellipse(x,y,rx+5,ry+5,null,'#e6ab6e',1.6);ellipse(x,y,rx-3,ry-3,null,'#f0c58a66',1)}
+for(let i=0;i<7;i++){const x=35+i*28,y=-127+Math.sin(i*.81)*21;star(x,y,4,'#eec38b9b',i)}
+c.restore()}
+function moth(t,act){const tilt=state.mx*.09+Math.sin(t*.25)*.014,shift=(act===0?-38:act===2?18:0),lift=Math.sin(t*.8)*10;
+c.save();c.translate(600+shift+state.mx*28,371+lift+state.my*20);c.rotate(tilt);
+// Dangling puppet's segmented hind wing fringes.
+for(let side of [-1,1]){c.save();c.scale(side,1);poly([[0,8],[82,35],[102,142],[50,198],[18,140]],'#1a0c1d','#de8a5e',1.5);for(let i=0;i<7;i++)line(32+i*7,70+i*9,58+i*3,159+i*4,'#c06c4d7c');c.restore()}
+// Moth cut-outs are composited onto the backdrop, with pierced translucent wings.
+c.save();c.globalCompositeOperation='source-over';papercutWing(-1,t,act);papercutWing(1,t,act);c.restore();
+// Incised body, brass joints, and tiny cabochon eyes.
+ellipse(0,20,25,97,'#100b17','#c18b5e',3);for(let i=-3;i<=5;i++){const y=i*19;ellipse(0,y,14+4*Math.cos(i*.5),11,null,'#d4a269',1.5);ellipse(0,y,3,3,'#d3a36a')}
+ellipse(0,-70,35,35,'#150d1a','#e3a76c',3);ellipse(-11,-77,5.5,5.5,'#eea66d');ellipse(11,-77,5.5,5.5,'#eea66d');
+for(let side of [-1,1]){c.beginPath();c.moveTo(side*14,-96);c.bezierCurveTo(side*55,-133,side*37,-172,side*81,-195);c.strokeStyle='#e8b57d';c.lineWidth=3;c.stroke();ellipse(side*81,-195,4,4,'#edb674');ellipse(side*27,-31,10,10,'#d29a65','#54202c',2)}
+c.restore();
+// The strings go all the way to a pinned theatre rack; their angle matches the puppet.
+const px=600+shift+state.mx*28,py=371+lift+state.my*20;
+for(let [x,dx,dy] of [[340,-205,-66],[470,-101,77],[600,0,-77],[730,101,77],[860,205,-66]]){line(x,120,px+dx,py+dy,'#ffdfa7a1',1);ellipse(x,120,4,4,'#d09b64');ellipse(px+dx,py+dy,5,5,'#b57950','#f2c68a',1)}
+}
+function backdrop(t,p,act){c.fillStyle=gradient(0,770,[[0,p.sky],[.48,p.bottom],[1,'#150e23']]);c.fillRect(0,0,1200,770);
+// A printed field of microscopic engraving dots.
+for(let i=0;i<800;i++){const x=rng(i*2)*1200,y=rng(i*2+11)*770;c.fillStyle=act===2?'#bed4ee24':'#fff4c921';c.fillRect(x,y,rng(i+93)>.91?2:.75,.75)}
+for(let i=0;i<65;i++){const x=rng(i*5+13)*1200,y=rng(i*7+19)*620,r=(1+rng(i)*2.4);star(x,y,r,act===2?'#d5d1fc88':'#efb77762',i)}
+sun(t,p,act);mountains(t,p);
+// Slowly falling confetti of illuminated parchment.
+for(let i=0;i<52;i++){const xx=(rng(i+113)*1200+Math.sin(t*.35+i)*30+1200)%1200,yy=(rng(i+101)*770+t*(3+rng(i)*8))%770;c.fillStyle=i%3===0?'#f3bd7895':'#fed7a360';c.save();c.translate(xx,yy);c.rotate(i*.3+t*.07);c.fillRect(-1,-3,2,6);c.restore()}
+}
+function frame(t){const brass='#c4955b';c.strokeStyle='#f7c98b';c.lineWidth=3;c.strokeRect(31,46,1138,677);c.strokeStyle='#623a40';c.lineWidth=21;c.strokeRect(17,32,1166,706);c.strokeStyle=brass;c.lineWidth=4;c.strokeRect(18,33,1164,704);c.strokeStyle='#d5a162';c.lineWidth=1;c.strokeRect(43,57,1114,656);
+for(let k=0;k<52;k++){const x=61+k*21;c.strokeStyle=k%2?'#d6a76d65':'#f2cb8a97';line(x,37,x+9,48,c.strokeStyle,1);line(x,724,x+9,737,c.strokeStyle,1)}
+for(let y=74;y<713;y+=22){line(22,y,43,y+11,'#e2b57a80');line(1156,y,1178,y+11,'#e2b57a80')}
+for(let x of [37,1163])for(let y of [50,720]){ellipse(x,y,11,11,'#301b2a','#f3c58c',2);star(x,y,5,'#f6d797')}
+// Carved proscenium scallops, deep upper arch and side curtains.
+c.fillStyle='#2b1326';c.beginPath();c.moveTo(44,57);c.quadraticCurveTo(600,30,1156,57);c.lineTo(1156,103);c.bezierCurveTo(900,70,840,102,600,116);c.bezierCurveTo(360,102,300,70,44,103);c.closePath();c.fill();c.strokeStyle='#e9af6b';c.lineWidth=2;c.stroke();
+for(let i=0;i<41;i++){const x=115+i*24;ellipse(x,86+9*Math.sin(i*.11),2.5,2.5,'#dcad69')}
+drape(39,1,t);drape(1161,-1,t);
+// Footlights and numbered mechanical housings.
+c.fillStyle='#260e21';c.fillRect(0,710,1200,60);c.strokeStyle='#b47b53';c.lineWidth=3;line(0,710,1200,710,'#d9a46b',4);for(let i=0;i<29;i++){const x=34+i*41;ellipse(x,721,8,5,'#eec78d');ellipse(x,720,3,3,'#fff6c4')}
+}
+function render(){const {w,h,dpr}=state;if(!w||!h)return;c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle='#100b16';c.fillRect(0,0,w,h);const scale=Math.max(w/1200,h/770);c.translate(w/2-600*scale,h/2-385*scale);c.scale(scale,scale);
+const act=state.act,p=palettes[act];backdrop(state.t,p,act);moth(state.t,act);frame(state.t);
+// Cross-dissolve hint: a black border flashes at the act change; never edits the drawn scene.
+if(state.transition<1){c.fillStyle=`rgba(14,8,20,${(1-state.transition)*.64})`;c.fillRect(0,0,1200,770)}
+}
+function resize(){state.w=innerWidth;state.h=innerHeight;state.dpr=Math.min(devicePixelRatio||1,2);cvs.width=Math.round(state.w*state.dpr);cvs.height=Math.round(state.h*state.dpr);render()}
+function loop(now){state.frame=0;const dt=state.last?Math.min((now-state.last)/1000,.04):0;state.last=now;if(!state.paused){state.t+=dt;state.mx+=(state.px-state.mx)*Math.min(1,dt*2.6);state.my+=(state.py-state.my)*Math.min(1,dt*2.6);state.transition=Math.min(1,state.transition+dt*.72);render();schedule()}}
+function schedule(){if(!state.paused&&!document.hidden&&!state.frame)state.frame=requestAnimationFrame(loop)}
+function act(n){state.act=n;state.transition=.26;document.getElementById('actLabel').textContent=labels[n];document.getElementById('verse').textContent=verses[n];document.querySelectorAll('[data-act]').forEach((b,i)=>b.setAttribute('aria-pressed',String(n===i)));document.getElementById('announcer').textContent=labels[n]+'. '+verses[n];render();schedule()}
+function setPause(v){state.paused=v;document.getElementById('pause').setAttribute('aria-pressed',String(v));document.getElementById('pause').textContent=v?'Move':'Still';if(state.frame){cancelAnimationFrame(state.frame);state.frame=0}state.last=0;render();schedule()}
+cvs.addEventListener('pointermove',e=>{state.px=clamp((e.clientX/innerWidth-.5)*2,-1,1);state.py=clamp((e.clientY/innerHeight-.5)*2,-1,1);if(state.paused){state.mx=state.px;state.my=state.py;render()}});
+cvs.addEventListener('pointerleave',()=>{state.px=state.py=0});document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>act(Number(b.dataset.act))));document.getElementById('pause').addEventListener('click',()=>setPause(!state.paused));document.getElementById('save').addEventListener('click',()=>{render();const a=document.createElement('a');a.download='the-sun-eater-act-'+(state.act+1)+'.png';a.href=cvs.toDataURL('image/png');a.click()});window.addEventListener('keydown',e=>{if(e.target.tagName==='BUTTON')return;const n=Number(e.key);if(n>=1&&n<=3)act(n-1);if(e.code==='Space'){e.preventDefault();setPause(!state.paused)}});
+window.addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{state.last=0;if(!document.hidden)schedule()});resize();setPause(state.paused);if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.getElementById('announcer').textContent='Motion reduced by system preference';
+})();
+</script>
+</body></html>
