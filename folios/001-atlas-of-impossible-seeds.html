@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111d20">
+<title>ATLAS / Of Impossible Seeds — Specimens 001–003</title>
+<style>
+:root{color-scheme:dark;--ink:#f5e6c7;--muted:#a6aba2;--line:#b7a88d66}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;min-height:480px;overflow:hidden}body{background:#111d20;color:var(--ink);font-family:Georgia,'Times New Roman',serif}
+#plate{position:fixed;inset:0;width:100%;height:100%;touch-action:pan-y;cursor:crosshair}
+.top,.bottom{position:fixed;left:4.5vw;right:4.5vw;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:16px;pointer-events:none}
+.top{top:23px;border-top:1px solid #e8d4aa68;padding-top:13px}.bottom{bottom:23px;border-top:1px solid #e8d4aa68;padding-top:13px}
+.mast{font-size:11px;letter-spacing:.24em;text-transform:uppercase;font-weight:bold;line-height:1.5}.mast small{display:block;letter-spacing:.11em;font-size:9px;font-weight:normal;opacity:.6;margin-top:4px}
+.topnote,.lowernote{font:10px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;text-align:right;color:#c1baa9}
+.lowernote{text-align:left;max-width:260px}.buttons{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;pointer-events:auto}
+button{border:1px solid #bdb19780;color:#efe6d2;background:#1b292ad9;font:10px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.07em;text-transform:uppercase;padding:11px 15px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+button:hover,button.active{background:#e9d8b6;color:#1b292a}button:focus-visible{outline:2px solid #f5b74c;outline-offset:3px}button:disabled{opacity:.4}
+#live{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.mobileOnly{display:none}
+@media(max-width:720px){.top,.bottom{left:19px;right:19px}.top{top:16px}.bottom{bottom:14px;align-items:flex-end}.mast{font-size:10px;letter-spacing:.13em}.mast small{font-size:8px}.topnote{font-size:9px}.lowernote{display:none}button{font-size:9px;padding:10px 9px}.buttons{max-width:100%;gap:5px}.mobileOnly{display:inline-block}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="plate" role="img" aria-label="An original hand-drawn interactive botanical engraving of three impossible flowers on an antique scientific folio. Change the light, bloom the flowers, select specimens or save the drawing."></canvas>
+<div class="top"><div class="mast">ATLAS <span style="color:#bd9e73">/</span> IMPOSSIBLE SEEDS<small>HERBARIUM OF THE UNOBSERVED · 2026</small></div><div class="topnote">PLATE No. 001<br>THREE SPECIES · NO KNOWN HABITAT</div></div>
+<div class="bottom"><div class="lowernote">INTERACT WITH THE SPECIMENS<br>1 · 2 · 3 TO ISOLATE / SPACE TO FREEZE</div><nav class="buttons" aria-label="Artwork controls"><button type="button" class="mobileOnly" id="prev" aria-label="Previous specimen">◀</button><button type="button" class="mobileOnly" id="next" aria-label="Next specimen">▶</button><button type="button" id="light">NOCTURNE</button><button type="button" class="active" id="bloom">IN FLOWER</button><button type="button" id="still">FREEZE</button><button type="button" id="save">SAVE PLATE ↓</button></nav></div>
+<div id="live" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const cvs=document.getElementById('plate'),ctx=cvs.getContext('2d',{alpha:false});if(!ctx)return;
+const TAU=Math.PI*2,PI=Math.PI;const ivory='#f0e5c9',ink='#2f3938',gold='#ad8252';
+let w=1,h=1,dpr=1,mobile=false,night=false,flowers=true,frozen=false,active=1,pointer=-1,elapsed=0,last=0,layout=null,invalid=true;
+const names=['ASTER NOCTILUCA','COROLLA FERRATA','LUMEN VESPERTINUM'];
+const common=['The star of distant water','The engine of spring','The blue-hour lantern'];
+const epigraph=['Blooms only when the tide forgets the moon.','Its iron petals ring in an unheard wind.','Each lantern contains an unfinished dawn.'];
+const descriptions=['TIDAL ASTER / CHROMATIC HYDROPHYTE','FERRIC ROSE / UNCLASSIFIED PERENNIAL','VESPER LANTERN / AERIAL SEEDBEARER'];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+function hash(n){let x=Math.sin(n*127.1+78.231)*43758.5453;return x-Math.floor(x)}
+function r(a,b,n){return lerp(a,b,hash(n))}
+function setLine(c,width=1,alpha=1){ctx.strokeStyle=c;ctx.lineWidth=width;ctx.globalAlpha=alpha}
+function line(x1,y1,x2,y2){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function ellipse(x,y,rx,ry,fill,stroke,width=1){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){setLine(stroke,width);ctx.stroke()}}
+function txt(s,x,y,size=12,color=ink,align='left',font='Georgia',spacing){ctx.save();ctx.fillStyle=color;ctx.font=size+'px '+font;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(s,x,y);ctx.restore()}
+function curve(points,color,width=1,alpha=1){ctx.beginPath();ctx.moveTo(...points[0]);for(let i=1;i<points.length;i++)ctx.lineTo(...points[i]);setLine(color,width,alpha);ctx.stroke();ctx.globalAlpha=1}
+function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,2);cvs.width=Math.max(1,Math.round(w*dpr));cvs.height=Math.max(1,Math.round(h*dpr));cvs.style.width=w+'px';cvs.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0);mobile=w<720;
+ let x,y,pw,ph;if(mobile){x=13;y=108;pw=w-26;ph=Math.max(235,h-206)}else{x=Math.max(68,w*.095);y=Math.max(96,h*.131);pw=w-2*x;ph=h*.685}
+ layout={x,y,w:pw,h:ph};invalid=true;}
+function paper(x,y,pw,ph){ctx.save();ctx.shadowColor='#0009';ctx.shadowBlur=42;ctx.shadowOffsetY=15;ctx.fillStyle=night?'#b0ada0':ivory;ctx.fillRect(x,y,pw,ph);ctx.restore();
+ ctx.save();ctx.beginPath();ctx.rect(x,y,pw,ph);ctx.clip();
+ let g=ctx.createLinearGradient(x,y,x+pw,y+ph);g.addColorStop(0,night?'#b5b9b6':'#f6ead0');g.addColorStop(.56,night?'#aeb4ad':'#f0e5ca');g.addColorStop(1,night?'#8b9d9c':'#ddceae');ctx.fillStyle=g;ctx.fillRect(x,y,pw,ph);
+ // archival grain: stippling with a stable fixed field
+ for(let i=0;i<3300;i++){let u=hash(i*73+1),v=hash(i*151+2);ctx.fillStyle=night?(i%5===0?'#243d4933':'#e1e8cb22'):(i%5===0?'#684c1c16':'#ffffff3d');ctx.fillRect(x+u*pw,y+v*ph,r(.35,1.35,i+4),r(.35,1.35,i+7));}
+ let vg=ctx.createRadialGradient(x+pw*.5,y+ph*.5,ph*.15,x+pw*.5,y+ph*.5,pw*.65);vg.addColorStop(0,'#ffffff00');vg.addColorStop(1,night?'#1b364b37':'#7049161d');ctx.fillStyle=vg;ctx.fillRect(x,y,pw,ph);
+ ctx.restore();ctx.strokeStyle=night?'#364747':'#896f4d';ctx.lineWidth=1;ctx.strokeRect(x+8,y+8,pw-16,ph-16);ctx.strokeStyle=night?'#5b6862':'#ac9772';ctx.lineWidth=.55;ctx.strokeRect(x+14,y+14,pw-28,ph-28);
+ for(let s of [-1,1])for(let t of [-1,1]){let bx=x+(s===-1?23:pw-23),by=y+(t===-1?23:ph-23);ctx.save();ctx.translate(bx,by);ctx.rotate((s===-1?0:PI)+(t===-1?0:PI/2));setLine(night?'#647468':'#927752',1);ctx.beginPath();ctx.arc(0,0,7,PI,1.5*PI);ctx.stroke();line(0,-11,0,-2);line(-11,0,-2,0);ctx.restore();}
+}
+function backdrop(t){let grad=ctx.createRadialGradient(w*.48,h*.45,0,w*.48,h*.45,Math.max(w,h)*.8);grad.addColorStop(0,night?'#304248':'#243336');grad.addColorStop(1,'#0e191d');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+ ctx.fillStyle='#eac89422';for(let i=0;i<120;i++){let x=hash(i*24+6)*w,y=hash(i*45+9)*h;ctx.fillRect(x,y,1.2,1.2)}
+ ctx.save();ctx.globalAlpha=.14;setLine('#b5c3bc',1);for(let j=0;j<12;j++){let z=20+j*27;line(z,0,z-35,h);line(w-z,0,w-z+35,h);}ctx.restore();}
+function compass(x,y,R){ctx.save();ctx.translate(x,y);setLine(night?'#77857d':'#b3a27e',.7,.8);ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.stroke();for(let i=0;i<24;i++){let a=i*TAU/24;line(Math.cos(a)*(R-2),Math.sin(a)*(R-2),Math.cos(a)*(R-(i%6===0?11:6)),Math.sin(a)*(R-(i%6===0?11:6)))}txt('N',0,-R-9,8,ink,'center');ctx.restore();}
+function guide(x,y,len,label){setLine(night?'#4d5b55':'#8b8068',.7,.66);line(x,y,x+len,y);line(x,y-4,x,y+4);line(x+len,y-4,x+len,y+4);txt(label,x+len/2,y-9,8,night?'#445451':'#686251','center','monospace');}
+function stemPath(a,b,c,d,stroke,width){ctx.beginPath();ctx.moveTo(...a);ctx.bezierCurveTo(...b,...c,...d);setLine(stroke,width);ctx.stroke()}
+function leaf(x,y,angle,length,width,hue,index){ctx.save();ctx.translate(x,y);ctx.rotate(angle);let p=ctx.createLinearGradient(-length*.2,-width,length*.7,width);p.addColorStop(0,night?'#344c53':'#244d47');p.addColorStop(.52,night?'#4d727a':hue);p.addColorStop(1,night?'#6f9995':'#b59a6a');
+ ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(length*.19,-width*1.15,length*.83,-width*.74,length,0);ctx.bezierCurveTo(length*.79,width*.9,length*.19,width*.83,0,0);ctx.closePath();ctx.fillStyle=p;ctx.fill();setLine(night?'#183f46':'#284a43',1.35);ctx.stroke();
+ setLine(night?'#9bd1d58b':'#e1cba180',.85);ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(length*.55,-width*.12,length,0);ctx.stroke();for(let j=1;j<8;j++){let u=j/9,bend=Math.sin(u*PI);line(length*u,0,length*(u+.08),width*bend*.64);line(length*u,0,length*(u+.07),-width*bend*.64)}ctx.restore();}
+function rootSystem(cx,cy,s){ctx.save();setLine(night?'#405153':'#6b604a',.85,.7);for(let j=0;j<18;j++){let a=(-.9+j/17*1.8),len=s*r(.20,.43,j*3+10),dx=Math.sin(a)*len;ctx.beginPath();ctx.moveTo(cx,cy);ctx.bezierCurveTo(cx+dx*.12,cy+s*.12,cx+dx*.83,cy+len*.75,cx+dx,cy+len);ctx.stroke();for(let k=0;k<3;k++){let f=.25+k*.23,px=cx+dx*f,py=cy+len*f;line(px,py,px+dx*.12,py+len*.16)}}ctx.restore();}
+function petal(cx,cy,a,len,width,fill1,fill2,edge,inkWeight=1){ctx.save();ctx.translate(cx,cy);ctx.rotate(a);
+ ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(-width*.42,-len*.18,-width*.93,-len*.71,-width*.12,-len);
+ ctx.quadraticCurveTo(0,-len*1.035,width*.12,-len);
+ ctx.bezierCurveTo(width*.95,-len*.7,width*.43,-len*.17,0,0);ctx.closePath();
+ let g=ctx.createLinearGradient(-width,-len*.7,width*.7,-len*.05);g.addColorStop(0,fill1);g.addColorStop(.55,fill2);g.addColorStop(1,fill1);ctx.fillStyle=g;ctx.fill();setLine(edge,inkWeight);ctx.stroke();
+ setLine(edge,.6,.45);ctx.beginPath();ctx.moveTo(0,-len*.055);ctx.quadraticCurveTo(width*.08,-len*.5,0,-len*.91);ctx.stroke();for(let k=1;k<=4;k++){let f=k/5;ctx.beginPath();ctx.moveTo(0,-len*f);ctx.quadraticCurveTo(width*.25,-len*(f+.06),width*.35,-len*(f+.13));ctx.stroke();}
+ ctx.globalAlpha=1;ctx.restore();}
+function stipple(cx,cy,n,R,col){ctx.save();ctx.fillStyle=col;for(let i=0;i<n;i++){let a=TAU*hash(i*17+5),u=Math.sqrt(hash(i*13+10))*R;ctx.beginPath();ctx.arc(cx+u*Math.cos(a),cy+u*Math.sin(a),r(.3,1.7,i*11+23),0,TAU);ctx.fill()}ctx.restore();}
+function starflower(x,y,S,t,bloom){let col=night?['#557fa1','#adc9d2','#203e59']:['#7c9cbc','#ccdee2','#365878'];
+ const opening=lerp(.24,1,bloom),wave=Math.sin(t*.6)*.035;
+ ctx.save();ctx.translate(x,y);ctx.rotate(wave);
+ // sepals in offset tier
+ for(let i=0;i<13;i++){let a=i*TAU/13;petal(0,0,a,S*.81*opening,S*.21,col[2],col[0],col[2],.85)}
+ for(let i=0;i<11;i++){let a=i*TAU/11+PI/11;petal(0,0,a,S*opening,S*.30,col[0],col[1],col[2],1.05)}
+ for(let i=0;i<7;i++){let a=i*TAU/7;petal(0,0,a,S*.61*opening,S*.22,night?'#607c9c':'#92b0c2',night?'#c2cdd2':'#f2e3cf',col[2],.7)}
+ ellipse(0,0,S*.18,S*.18,night?'#947952':'#b18443',col[2],1);for(let i=0;i<36;i++){let a=i*TAU/36,R=S*(.1+.08*hash(i*7));ellipse(R*Math.cos(a),R*Math.sin(a),S*.018,S*.019,i%4===0?'#f4d0a3':'#f8ead0',null)}
+ stipple(0,0,110,S*.18,night?'#e7d29e88':'#4d4d4d55');ctx.restore();}
+function fern(x,y,angle,S){ctx.save();ctx.translate(x,y);ctx.rotate(angle);setLine(night?'#5d786b':'#507267',1.2);ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(S*.1,-S*.55,0,-S);ctx.stroke();for(let i=0;i<11;i++){let f=.12+i*.077;let yy=-S*f;let wid=S*.31*Math.pow(1-f,.75);for(let side of [-1,1]){ctx.save();ctx.translate(0,yy);ctx.scale(side,1);ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(wid*.8,-S*.085,wid,-S*.105);ctx.quadraticCurveTo(wid*.4,S*.015,0,0);ctx.fillStyle=night?'#708b7a':'#64876b';ctx.fill();setLine(night?'#30474b':'#35594a',.55);ctx.stroke();ctx.restore()}}ctx.restore()}
+function spiralPetal(cx,cy,rot,S,i){let a=i*.68+rot;ctx.save();ctx.translate(cx,cy);ctx.rotate(a);let R=S*(.19+i*.045);ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(-R*.7,-R*.5,-R*1.3,-R*1.2,-R*.3,-R*1.85);ctx.bezierCurveTo(R*.55,-R*2.15,R*1.65,-R*1.1,R*.9,-R*.28);ctx.quadraticCurveTo(R*.4,-R*.01,0,0);ctx.closePath();let g=ctx.createLinearGradient(-R,-R*2,R,R);g.addColorStop(0,night?'#8b6667':'#9c5d56');g.addColorStop(.35,night?'#ba8a7a':'#c57861');g.addColorStop(.66,night?'#ead2ad':'#edb38c');g.addColorStop(1,night?'#5d4b50':'#81483e');ctx.fillStyle=g;ctx.fill();setLine(night?'#594847':'#683d37',.9);ctx.stroke();setLine('#f7d5ae',.7,.5);ctx.beginPath();ctx.moveTo(0,-R*.1);ctx.bezierCurveTo(-R*.3,-R,-R*.7,-R*1.4,-R*.2,-R*1.7);ctx.stroke();ctx.restore()}
+function ironRose(x,y,S,t,bloom){ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t*.51)*.027);if(bloom<.5){for(let i=0;i<7;i++)petal(0,0,i*TAU/7,S*.65,S*.27,'#a24d46','#cd7b61','#623d38');}
+ else {for(let j=0;j<4;j++)for(let i=0;i<11;i++){let a=i*TAU/11+j*.21;let q=1-j*.15;petal(0,0,a,S*q,S*.31*q, j===0?'#9e4b45':'#b8685b',j===0?'#e5a283':'#f6c39e','#653d3b',1.05)}
+ for(let i=0;i<18;i++)spiralPetal(0,0,t*.007,S*.7,i);}
+ ellipse(0,0,S*.09,S*.09,'#7e4b35','#d7a66c',2);
+ for(let i=0;i<40;i++){let a=TAU*i/40,R=S*.08;ellipse(Math.cos(a)*R,Math.sin(a)*R,1.5,1.5,'#e5d18b',null)}ctx.restore();}
+function bellPod(x,y,S,angle,open){ctx.save();ctx.translate(x,y);ctx.rotate(angle);let g=ctx.createRadialGradient(-S*.22,-S*.18,S*.05,0,S*.25,S*.91);g.addColorStop(0,night?'#e8dfaf':'#ffefb5');g.addColorStop(.4,night?'#aeb293':'#d4a56b');g.addColorStop(1,night?'#53777d':'#788d70');
+ ctx.beginPath();ctx.moveTo(0,-S*.74);ctx.bezierCurveTo(-S*.9,-S*.4,-S*.82,S*.5,-S*.08,S*.9);ctx.quadraticCurveTo(0,S*(1.05+.18*open),S*.08,S*.9);ctx.bezierCurveTo(S*.82,S*.5,S*.9,-S*.4,0,-S*.74);ctx.closePath();ctx.fillStyle=g;ctx.fill();setLine('#4e6b61',1.25);ctx.stroke();
+ ctx.save();ctx.clip();for(let i=-6;i<=6;i++){let sx=i*S*.19;setLine('#f8e2ac',.75,.32);ctx.beginPath();ctx.moveTo(0,-S*.6);ctx.quadraticCurveTo(sx*1.8,S*.12,sx,S*.87);ctx.stroke()}for(let i=0;i<12;i++){let a=i*TAU/12;let xx=Math.cos(a)*S*.34,yy=Math.sin(a)*S*.34+.1*S;ellipse(xx,yy,S*.028,S*.028,i%2?'#fff2c4':'#b6aa78',null)}ctx.restore();
+ setLine('#e8d9a3',1.1,.9);ctx.beginPath();ctx.moveTo(-S*.08,S*.77);ctx.lineTo(0,S*(1.03+.24*open));ctx.lineTo(S*.08,S*.77);ctx.stroke();ctx.restore();}
+function drawnPlant(idx,cx,base,scale,t,flowerAmount){const sway=Math.sin(t*.7+idx*3)*scale*.024;ctx.save();ctx.translate(cx,base);ctx.scale(scale,scale);let localT=t;const nightStem=night?'#2c5254':'#45644c';
+ // land mark, root crown and filigreed ground
+ setLine(night?'#496063':'#9e8661',.75,.8);ctx.beginPath();ctx.moveTo(-110,0);ctx.bezierCurveTo(-64,-3,-34,-7,0,-4);ctx.bezierCurveTo(45,-2,74,-6,111,0);ctx.stroke();rootSystem(0,0,78);
+ if(idx===0){
+ stemPath([0,-4],[-24,-125],[39,-244],[sway,-316],nightStem,4.3);
+ for(let j=0;j<7;j++){let f=j/6,cy=-26-210*f,cx2=Math.sin(f*3.8)*21;leaf(cx2,cy,(-.91+f*.22)*(j%2?1:-1)-PI/2+(j%2?1:-1)*.75,65+(j%3)*11,19,'#487b65',j)}
+ fern(-47,-53,-.29,122);fern(34,-42,.19,117);
+ stemPath([2,-128],[-55,-194],[-76,-251],[-73,-254],nightStem,2);starflower(-73,-254,39,localT,flowerAmount);
+ stemPath([3,-188],[70,-255],[73,-257],[87,-268],nightStem,2);starflower(87,-268,27,localT,flowerAmount);
+ starflower(sway,-316,83,localT,flowerAmount);
+ } else if(idx===1){
+ stemPath([0,0],[-42,-140],[24,-259],[sway,-315],nightStem,5);
+ for(let j=0;j<8;j++){let cy=-25-j*35,cx2=Math.sin(j*.72)*13,side=j%2?-1:1;leaf(cx2,cy,-PI/2+side*(.82+j*.025),70+(j%4)*11,21, j%2?'#55745a':'#4a8161',j);}
+ for(let j=0;j<8;j++){let xx=-56+j*16;setLine('#775344',.85);line(xx,-15,xx+(j%2?11:-12),-21);ellipse(xx+(j%2?11:-12),-21,2,2,'#754f47',null)}
+ stemPath([-12,-161],[-72,-204],[-96,-233],[-102,-256],nightStem,1.5);ironRose(-104,-255,34,localT,flowerAmount);
+ ironRose(sway,-321,74,localT,flowerAmount);
+ } else {
+ stemPath([0,-5],[7,-150],[-45,-262],[11,-358],nightStem,4);
+ stemPath([4,-153],[104,-183],[114,-251],[97,-282],nightStem,2.5);
+ stemPath([-4,-187],[-112,-227],[-131,-274],[-112,-299],nightStem,2);
+ for(let j=0;j<9;j++){let f=j/9,cy=-12-j*31,cx2=Math.sin(j*.6)*9,side=j%2?-1:1;leaf(cx2,cy,-PI/2+side*.82,55+(j%3)*11,13,night?'#608184':'#65866c',j)}
+ for(let i=0;i<3;i++){let x=[9,97,-112][i],y=[-358,-282,-299][i],ss=[57,43,36][i];setLine('#3a6257',2);line(x,y-13,x,y);bellPod(x,y+ss*.58,ss,[-.07,.25,-.31][i],flowerAmount)}
+ for(let i=0;i<48;i++){let x=r(-80,95,i*71+3),y=r(-340,-90,i*23+4);ellipse(x,y,r(.65,1.9,i+4),r(.65,1.9,i+7),night?'#fcda8c88':'#a07b3985',null)}
+ }
+ ctx.restore();}
+function plateDecor(p,dt){const {x,y,w:pw,h:ph}=p;ctx.save();ctx.beginPath();ctx.rect(x+15,y+15,pw-30,ph-30);ctx.clip();
+ let head=y+ph*.13,foot=y+ph*.835;
+ setLine(night?'#65766f':'#9c8766',.8);line(x+pw*.047,head,x+pw*.953,head);line(x+pw*.047,foot,x+pw*.953,foot);
+ txt('ARCHIVUM BOTANICUM',x+pw*.055,y+ph*.069,Math.max(10,Math.min(15,pw*.015)),night?'#283f44':'#48453a','left','Georgia');
+ txt('TABULA  I  /  NATURAE IMPOSSIBILIS',x+pw*.945,y+ph*.069,Math.max(8,Math.min(12,pw*.012)),night?'#33474a':'#71634e','right','monospace');
+ if(mobile){txt('No. 00'+(active+1)+'    '+names[active],x+pw*.08,y+ph*.885,Math.min(11,pw*.025),ink,'left','monospace');txt(common[active],x+pw*.08,y+ph*.926,Math.min(16,pw*.046),'#6b4d43','left','Georgia');txt(epigraph[active],x+pw*.08,y+ph*.966,Math.min(8,pw*.021),night?'#314a4e':'#807160','left','Georgia');}
+ else {
+ for(let i=0;i<3;i++){let xx=x+pw*(.19+i*.31),ww=pw*.29;txt('FIG. 0'+(i+1),xx,y+ph*.165,10,ink,'center','monospace');txt(names[i],xx,y+ph*.883,Math.min(14,pw*.012),ink,'center','Georgia');txt(descriptions[i],xx,y+ph*.921,Math.min(9,pw*.008),night?'#304c50':'#7a6953','center','monospace');
+ if(i<2){setLine(night?'#5d7272':'#b9a788',.7,.65);line(x+pw*(.344+i*.31),y+ph*.18,x+pw*(.344+i*.31),y+ph*.79);}}
+ }
+ ctx.restore();}
+function drawArt(t){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=1;backdrop(t);const p=layout;paper(p.x,p.y,p.w,p.h);
+ ctx.save();ctx.beginPath();ctx.rect(p.x+15,p.y+15,p.w-30,p.h-30);ctx.clip();
+ const baseline=p.y+p.h*.792;const maxScale=mobile?Math.min(p.w/255,p.h/535):Math.min(p.w/1130,p.h/605);const scale=mobile?maxScale*.83:maxScale*.95;
+ if(mobile){drawnPlant(active,p.x+p.w*.5,baseline,scale,t,flowers?1:.22);guide(p.x+p.w*.18,p.y+p.h*.81,p.w*.64,'SCALE  /  1 : ∞');}
+ else {
+ const centers=[.19,.5,.81];for(let i=0;i<3;i++){let sx=p.x+p.w*centers[i],sel=(pointer===i);ctx.save();if(sel){let g=ctx.createRadialGradient(sx,baseline-p.h*.32,10,sx,baseline-p.h*.32,p.w*.18);g.addColorStop(0,night?'#e5d8a11d':'#fff8d44b');g.addColorStop(1,'#fff8d400');ctx.fillStyle=g;ctx.fillRect(sx-p.w*.18,p.y+30,p.w*.36,p.h*.78)}ctx.restore();
+ drawnPlant(i,sx,baseline,scale,t,flowers?1:.22);guide(sx-p.w*.115,p.y+p.h*.807,p.w*.23,'1 : ∞');}
+ }
+ ctx.restore();plateDecor(p,t);
+ if(!mobile){txt('The flora of places never found',w*.5,p.y-25,Math.min(14,w*.012),'#d3c5a9','center','Georgia');txt('EXAMINE · ILLUMINATE · PRESERVE',w*.5,p.y+p.h+26,11,'#b7a98d','center','monospace');}
+ else txt('VOLUME I  /  THREE IMPOSSIBLE GENERA',w*.5,p.y-12,Math.min(10,w*.025),'#d6c3a7','center','monospace');
+}
+function render(now){let dt=last?Math.min(.04,(now-last)/1000):0;last=now;if(!frozen)elapsed+=dt;if(!frozen||invalid){drawArt(elapsed);invalid=false}requestAnimationFrame(render)}
+function status(s){document.getElementById('live').textContent=s}
+function toggleNight(){night=!night;document.getElementById('light').textContent=night?'DAYLIGHT':'NOCTURNE';status(night?'Moonlight edition':'Daylight edition');invalid=true}
+function toggleBloom(){flowers=!flowers;document.getElementById('bloom').textContent=flowers?'IN FLOWER':'DORMANT';document.getElementById('bloom').classList.toggle('active',flowers);status(flowers?'Specimens in flower':'Specimens dormant');invalid=true}
+function changeActive(n){active=(n+3)%3;status(names[active]+' — '+common[active]);invalid=true}
+function save(){drawArt(elapsed);let a=document.createElement('a');a.download='atlas-impossible-seeds-'+(night?'nocturne':'daylight')+'.png';a.href=cvs.toDataURL('image/png');a.click();status('Plate saved as PNG')}
+document.getElementById('light').onclick=toggleNight;document.getElementById('bloom').onclick=toggleBloom;
+document.getElementById('still').onclick=()=>{frozen=!frozen;document.getElementById('still').textContent=frozen?'RESUME':'FREEZE';status(frozen?'Motion frozen':'Motion resumed');invalid=true};
+document.getElementById('save').onclick=save;document.getElementById('prev').onclick=()=>changeActive(active-1);document.getElementById('next').onclick=()=>changeActive(active+1);
+cvs.addEventListener('pointermove',ev=>{if(mobile)return;const p=layout;let ii=Math.floor((ev.clientX-(p.x+p.w*.035))/(p.w*.31));let next=(ev.clientX>=p.x&&ev.clientX<=p.x+p.w&&ev.clientY>=p.y&&ev.clientY<=p.y+p.h)?clamp(ii,0,2):-1;if(next!==pointer){pointer=next;invalid=true}});
+cvs.addEventListener('pointerleave',()=>{pointer=-1;invalid=true});
+cvs.addEventListener('pointerdown',ev=>{if(!mobile&&pointer>=0)changeActive(pointer);else if(mobile)changeActive(active+1)});
+window.addEventListener('keydown',ev=>{if(ev.key==='1'||ev.key==='2'||ev.key==='3')changeActive(+ev.key-1);if(ev.code==='Space'){ev.preventDefault();document.getElementById('still').click()}if(ev.key==='ArrowRight'&&mobile)changeActive(active+1);if(ev.key==='ArrowLeft'&&mobile)changeActive(active-1)});
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');if(reduced.matches){frozen=true;document.getElementById('still').textContent='RESUME'}
+window.addEventListener('resize',resize);resize();requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
