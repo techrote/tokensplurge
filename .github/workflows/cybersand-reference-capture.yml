@@ -53,6 +53,12 @@ jobs:
             exit 0
           fi
           git commit -m "docs: add source-pinned Chromium reference captures [skip ci]"
+          git fetch origin "+refs/heads/${GITHUB_REF_NAME}:refs/remotes/origin/${GITHUB_REF_NAME}"
+          if ! git rebase "origin/${GITHUB_REF_NAME}"; then
+            git rebase --abort
+            echo "Docs branch advanced with conflicting capture changes; leave it untouched and retry from a fresh head." >&2
+            exit 1
+          fi
           git push origin "HEAD:${GITHUB_REF_NAME}"
       - name: Preserve capture report on failure
         if: failure()
