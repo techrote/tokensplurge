@@ -1,0 +1,473 @@
+{
+  "schema_version": 1,
+  "edition": "2026-11-06-initial",
+  "pin": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+  "engine": "Chromium via Playwright",
+  "playwright_version": "1.56.1",
+  "generated_utc": "2026-11-06T17:00:29.503Z",
+  "limitations": "Not Godot/native, not cross-browser and not hosted HTMLPreview evidence.",
+  "results": [
+    {
+      "id": "rivers",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/002-where-the-rivers-were.html",
+      "blob_sha": "73f05e26fdc0273dbfa1da227f27d48298efcc44",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 137.984375,
+        "y": 247.578125,
+        "width": 1164,
+        "height": 698.390625
+      },
+      "detail_clip": {
+        "x": 359.264375,
+        "y": 377.72515625000005,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/rivers-desktop.png",
+          "bytes": 1364521,
+          "sha256": "f3d9744027ce894f13331745323ef4ae285054bbe78d3cf38f055c3d0817e25c"
+        },
+        {
+          "path": "captures/rivers-detail.png",
+          "bytes": 501371,
+          "sha256": "c5b4cc3861cc22aefc2c59791d310e1f4c97c3471dab210fc6cecf95562b6d39"
+        }
+      ]
+    },
+    {
+      "id": "estuary",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/002-the-estuary-that-learns.html",
+      "blob_sha": "4be7a384d1ab4009667940c31c3093f1476917d6",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 122,
+        "y": 257.5,
+        "width": 1196,
+        "height": 747.5
+      },
+      "detail_clip": {
+        "x": 359.9200000000001,
+        "y": 413.67499999999995,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/estuary-desktop.png",
+          "bytes": 1258560,
+          "sha256": "f35944ab7796e7b6e715b6011201f349f40fac776cbcf232cba97218395ea443"
+        },
+        {
+          "path": "captures/estuary-detail.png",
+          "bytes": 458497,
+          "sha256": "df4714da0801a000532edc842bc4ee1aad41fcb4dc0b83fc2769c7fb8be1016d"
+        }
+      ]
+    },
+    {
+      "id": "railway",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/010-the-midnight-railway-of-elsewhere.html",
+      "blob_sha": "ff8b192ad156049bfce22fe7d91f5bf9572e82b4",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 22,
+        "y": 81,
+        "width": 1396,
+        "height": 838.390625
+      },
+      "detail_clip": {
+        "x": 363.9200000000001,
+        "y": 285.3470312500001,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/railway-desktop.png",
+          "bytes": 885387,
+          "sha256": "b83bf897909f6a165fee376ce0633ef6dec2f764b1ffba5119f386aa8480ad84"
+        },
+        {
+          "path": "captures/railway-detail.png",
+          "bytes": 466816,
+          "sha256": "7ff07b28dd6a3a100a823ab31bef29a1692125eca37474818b952a985bb43b21"
+        }
+      ]
+    },
+    {
+      "id": "beacon",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/005-below-the-beacon.html",
+      "blob_sha": "2aba05bff6cb5dfd58195db5ebf9b6cc17227ec2",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "detail_clip": {
+        "x": 364.80000000000007,
+        "y": 237,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/beacon-desktop.png",
+          "bytes": 1320948,
+          "sha256": "622ecd2feb1bc6b25a53fc3f11c07fd8a5ac3af280db54914609c79b4fb6b0bd"
+        },
+        {
+          "path": "captures/beacon-detail.png",
+          "bytes": 393369,
+          "sha256": "6ed3f6c111a6d776f57e0f6b7e3a60be2c0d85e2fa2c774c11e75f5174a8f802"
+        }
+      ]
+    },
+    {
+      "id": "city",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/007-a-city-practicing-dawn.html",
+      "blob_sha": "6f1b2cf9c9dba5eb403faf91c8418e977dbfeb57",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 34.546875,
+        "y": 100,
+        "width": 1370.90625,
+        "height": 655
+      },
+      "detail_clip": {
+        "x": 363.41812500000003,
+        "y": 207.15000000000003,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/city-desktop.png",
+          "bytes": 794590,
+          "sha256": "4c8a63ba26cdebfcdf5cd9910ab7049d47cf3c32ffb5d4cd234da640af58d9fc"
+        },
+        {
+          "path": "captures/city-detail.png",
+          "bytes": 330656,
+          "sha256": "2836624751a770a2468f193afa8eedf0fe670aeca4175b36e227ba8e34b6e49a"
+        }
+      ]
+    },
+    {
+      "id": "orchard",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/013-the-orchard-of-second-suns.html",
+      "blob_sha": "b0457c3cbdcbcd17b78d286fa485e570bcd82308",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 73,
+        "y": 131.875,
+        "width": 1294,
+        "height": 808
+      },
+      "detail_clip": {
+        "x": 361.88,
+        "y": 320.115,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/orchard-desktop.png",
+          "bytes": 1164273,
+          "sha256": "e6294365bcd7a4c84bc1301885f2a7ae0bd4064bb053b7d3a64dd88c0c9768c7"
+        },
+        {
+          "path": "captures/orchard-detail.png",
+          "bytes": 602962,
+          "sha256": "f1e6b8ff72cf480eaca8b2646503b1db7c74829b1df77c7ba1194ad94d5206d8"
+        }
+      ]
+    },
+    {
+      "id": "cathedral",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/005-the-cathedral-of-unsent-messages.html",
+      "blob_sha": "4d4b94104590ac71e2469c5eb006847d546d5197",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 34.796875,
+        "y": 104,
+        "width": 1370.40625,
+        "height": 653
+      },
+      "detail_clip": {
+        "x": 363.40812500000004,
+        "y": 210.09000000000003,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/cathedral-desktop.png",
+          "bytes": 714251,
+          "sha256": "81458a833804e403cf396eba3ad8d234e35000542d6ccdde1e65d6ee2cc5509a"
+        },
+        {
+          "path": "captures/cathedral-detail.png",
+          "bytes": 340669,
+          "sha256": "d4d4314cac73fd045d0851e1159f3b0210db034f6a299f3369085dc35e4f16f6"
+        }
+      ]
+    },
+    {
+      "id": "choir",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/003-the-choir-of-drowned-bells.html",
+      "blob_sha": "da6e6e3b66a38bd9a6c121c6a9c3c0120b3e4bf4",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "detail_clip": {
+        "x": 364.80000000000007,
+        "y": 237,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/choir-desktop.png",
+          "bytes": 1670570,
+          "sha256": "d346ae6266db9110f63befa014771b643e95f167143f550d43591299ad5eb55e"
+        },
+        {
+          "path": "captures/choir-detail.png",
+          "bytes": 521341,
+          "sha256": "76ad56b29d30be974ee518072da37afa02af77a632d73c3e2ba406e43a26dceb"
+        }
+      ]
+    },
+    {
+      "id": "weather-house",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/012-the-house-that-held-the-weather.html",
+      "blob_sha": "b4e103eb383d30fd69185bb87ede712f713a2aa9",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 42,
+        "y": 38,
+        "width": 1356,
+        "height": 873.890625
+      },
+      "detail_clip": {
+        "x": 363.12,
+        "y": 261.16203125000004,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/weather-house-desktop.png",
+          "bytes": 734474,
+          "sha256": "7e0d3df2be411acb75e2363086901275c81b71ed4127bae1aadd798ab073e170"
+        },
+        {
+          "path": "captures/weather-house-detail.png",
+          "bytes": 333575,
+          "sha256": "958137ea4d10e425d6dc33caac24b6482364be7d639d64b720a9c7d5dcb74e10"
+        }
+      ]
+    },
+    {
+      "id": "freight",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/008-the-freight-of-small-suns.html",
+      "blob_sha": "e3ed56d8054d8e1a4e2cf68267b91b03dcb52bed",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 81,
+        "y": 130.375,
+        "width": 1278,
+        "height": 798
+      },
+      "detail_clip": {
+        "x": 361.56000000000006,
+        "y": 313.31500000000005,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/freight-desktop.png",
+          "bytes": 660031,
+          "sha256": "0598aa5db3bdd69626342bbeb13f93a2a8e81afafecf4be14f36d748481455b2"
+        },
+        {
+          "path": "captures/freight-detail.png",
+          "bytes": 296161,
+          "sha256": "0c939a662b0319906a8a2c856b6df958e8892220285cf03a21acc49468d2f8e1"
+        }
+      ]
+    },
+    {
+      "id": "unfallen-rain",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/007-the-archive-of-unfallen-rain.html",
+      "blob_sha": "39006b9aa7f5bb42eb9ebed2cbe83a3f53bd003c",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 76,
+        "y": 43,
+        "width": 1288,
+        "height": 825.84375
+      },
+      "detail_clip": {
+        "x": 361.76,
+        "y": 240.69718750000004,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/unfallen-rain-desktop.png",
+          "bytes": 837411,
+          "sha256": "50d3b9962a872fa1c879287f4bfd527252e2b3076e2290bcd3451555ae7f3f5b"
+        },
+        {
+          "path": "captures/unfallen-rain-detail.png",
+          "bytes": 334804,
+          "sha256": "ced25e57a5e72ec191054bdc5b287bb550e61e2d89dce4a3c1ddd845bf1d6dd2"
+        }
+      ]
+    },
+    {
+      "id": "strata-study",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "lineage/023-strata.html",
+      "blob_sha": "be0b8589277bd7be071132011b1dffa78b38ff14",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "detail_clip": {
+        "x": 364.80000000000007,
+        "y": 237,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/strata-study-desktop.png",
+          "bytes": 1114417,
+          "sha256": "3a741dc19b62f89fb21c8851446039e3e7b8e2e0db0b450e0b416f7cddfe03ae"
+        },
+        {
+          "path": "captures/strata-study-detail.png",
+          "bytes": 383313,
+          "sha256": "0220f363f583699e90815c739903ba902238161d56b37be70fc94521fcc2bbb0"
+        }
+      ]
+    },
+    {
+      "id": "terraform-study",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "salvage/063-terraform.html",
+      "blob_sha": "d3be55eae2e460e4c911bfce4f3260a723ca1d5f",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "detail_clip": {
+        "x": 364.80000000000007,
+        "y": 237,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/terraform-study-desktop.png",
+          "bytes": 48117,
+          "sha256": "307fdb57d9420ecbdc2f530f00dcaa66bdd2cf7c53f21795bbd3e873032d7e3f"
+        },
+        {
+          "path": "captures/terraform-study-detail.png",
+          "bytes": 15505,
+          "sha256": "7efb5eca69d1c1187699e970a573899c1647427f9574467471c129a8d354700b"
+        }
+      ]
+    },
+    {
+      "id": "truchet-study",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "salvage/060-truchet-loops.html",
+      "blob_sha": "4d36e6f47d2ad99b7d33f386b575fe80cd3645b7",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium on exact pinned source HTML",
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "detail_clip": {
+        "x": 364.80000000000007,
+        "y": 237,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/truchet-study-desktop.png",
+          "bytes": 91594,
+          "sha256": "33d5f90e1d1174f9f0992d51af0ae2b033e0c502f5e1b0c7f061da35f14f70eb"
+        },
+        {
+          "path": "captures/truchet-study-detail.png",
+          "bytes": 39221,
+          "sha256": "914bbe07e67a0ebcce1aa15e42ca1d11c8b679e45801fe0f95a9d356c7f0fdf0"
+        }
+      ]
+    }
+  ]
+}
