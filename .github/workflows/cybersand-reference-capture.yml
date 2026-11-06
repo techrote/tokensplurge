@@ -43,6 +43,8 @@ jobs:
             node references/cybersand/tools/capture.cjs
             node references/cybersand/tools/verify.cjs --require-captures
           fi
+      - name: Browser-smoke the selected environment across desktop and mobile
+        run: node references/cybersand/tools/smoke-selected-art.cjs
       - name: Browser-smoke the single-file moodboard and filters
         run: node references/cybersand/tools/smoke-ui.cjs
       - name: Commit only capture assets to the isolated documentation branch

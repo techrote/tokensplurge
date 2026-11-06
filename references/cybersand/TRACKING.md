@@ -118,3 +118,15 @@ New #32 actual Chromium 1440×900 desktop and 768×480 detail readbacks are now 
 **Immutable provenance:** New card #37 individually pins its exact commit/blob; existing curation #32 and initial 19 remain untouched. This session additionally locks #32's prior curated identity into policy regression checks, so a future editor cannot silently replace it. Screenshots must come from actual exact-commit Git HTML in Chromium via the branch's existing capture workflow, with per-PNG SHA256, browser exceptions, source identity, dynamic catalogue/HTML consistency and history checks. If capture cannot be executed, leave the new card `pending`; do not mark pixel/artistic acceptance.
 
 **Open acceptance questions:** Source-bound #37 PNGs and crop, firsthand pixel comparison to #35/#36 and all five CyberSand benchmark gallery images, user-facing visual-quality judgement, cross-browser/production GPU, native physics or material validation, and the full 15-pack/#454 genuine Godot campaign. No PR merge or Ready transition is authorised.
+
+### Curator session 02 — actual Chromium evidence, exact source and historical custody
+
+The first capture workflow on the session-02 source commit [42299562733](https://github.com/techrote/tokensplurge/actions/runs/42299562733) **PASSED** on Ubuntu 24.04 Playwright Chromium, with the exact source `17b09a592a30e52ef35040ef2076f336ad6380ec` and Git blob `f6260fa0b9c4694e3978c3520f840de74a39ff45`. The workflow produced and committed the real source-pinned browser PNGs, not SVG redraws or author-provided image substitutes:
+
+- `captures/lantern-ossuary-desktop.png`: 1,252,978 bytes, SHA-256 `ce2400fa840ab3ec240040da34340e8e60a10325f4674d33709f265b1241e1c8`.
+- `captures/lantern-ossuary-detail.png`: 420,478 bytes, SHA-256 `9ad69d11d6fffe2f3f11a465fbe966b6e695de87adea0a21fd8d3b283bb29d3b`.
+- UI preview `captures/moodboard-2026-11-06-curation-02-preview.png` is a genuine Chromium gallery-frame screenshot and is **not** a third artwork capture.
+
+**Completed cross-revision checks:** 21/21 reference cards, five primary CyberSand benchmarks, 16/16 actual source-pinned browser capture records, zero capture failures. Exact `catalogue.json` vs embedded `index.html` object equality verified by readback. Compared published Git trees to previous curation `3f1e6cb755cec8dcb80eb90c08aea500be0def8c`: all 32 preexisting PNG files retain byte-identical Git blobs; historical initial pin policy file is byte-identical, and no previously published reference file was removed. A new immutable curation-01 pin policy protects the Aeolian source/filenames too.
+
+This evidence qualifies the **capture pipeline and published source-bound PNG identities**, not independent visual superiority, interaction coverage or CyberSand material authenticity. A subsequent browser-interaction pass tests selected #37 desktop/mobile controls, pause/resume and exported PNG actual bytes; its outcome must be reported separately. Direct aesthetic inspection of the new PNGs against all five original CyberSand gallery images and human acceptance remain open.
