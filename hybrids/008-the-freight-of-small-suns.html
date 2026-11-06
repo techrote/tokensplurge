@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111b2a"><title>The Freight of Small Suns — a living sandpile observatory</title>
+<style>
+:root{color-scheme:dark;--ink:#d8c7a7;--bronze:#bf925e;--night:#101925;--pale:#f0dcaa}*{box-sizing:border-box}
+html{background:#0b111b}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 50% 0,#27374b 0,#101925 52%,#080c13 100%);font:14px/1.5 Georgia,'Times New Roman',serif;min-height:100vh}
+button,input{font:inherit}button{cursor:pointer}.folio{max-width:1340px;margin:auto;padding:22px 30px 38px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin:0 0 19px;padding:0 0 14px;border-bottom:1px solid #d4af775c}
+.overline,.folio-id,.meta,.eyebrow,.controls,.foot,.value,.phase-note,.stat{font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.15em;text-transform:uppercase}
+.overline{color:#ad9a76;margin:0 0 6px}h1{font-size:clamp(29px,4.3vw,53px);letter-spacing:-.035em;font-weight:400;line-height:.96;margin:0;color:#eee0bf}
+h1 em{font-style:italic;color:#ddaf76}.folio-id{text-align:right;color:#c1a67f;line-height:1.85}
+.gallery{position:relative;overflow:hidden;border:1px solid #956f48;background:#0c1724;box-shadow:0 0 0 6px #091018,0 0 0 7px #85623d5a,0 22px 80px #0009;aspect-ratio:8/5}
+#scene{display:block;width:100%;height:100%;touch-action:pan-y;cursor:crosshair} .controls{display:grid;grid-template-columns: 1.3fr 1fr 1fr auto;gap:24px;margin-top:24px;align-items:start}
+.control-title{margin:0 0 7px;color:#e3c291}.plates{display:flex;flex-wrap:wrap;gap:7px}.plates button,.actions button{border:1px solid #8d7157;background:#162332;color:#d6c2a4;padding:10px 13px;min-height:42px;letter-spacing:.055em;transition:background .2s,color .2s}
+.plates button:hover,.actions button:hover{border-color:#f7d49c;background:#294052}.plates button[aria-pressed="true"]{background:#c69965;color:#111921;border-color:#e3c396}
+.setting{display:flex;align-items:center;gap:12px;margin:8px 0 0}input[type=range]{flex:1;min-width:70px;accent-color:#ce9e66}.value{color:#f0d49d;min-width:35px;text-align:right}
+.actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}.actions button{white-space:nowrap}
+.foot{display:flex;justify-content:space-between;gap:25px;color:#948b80;border-top:1px solid #a88f6b4d;margin-top:26px;padding-top:13px;letter-spacing:.065em}.foot p{margin:0}.accent{color:#d9b274}.live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c9a371;margin:0 6px 1px 0;box-shadow:0 0 8px #efc784}
+button:focus-visible,input:focus-visible{outline:2px solid #f5d5a3;outline-offset:3px}
+@media(max-width:900px){.folio{padding:14px 17px 24px}.controls{grid-template-columns:1fr 1fr;gap:16px}.actions{justify-content:start}.gallery{box-shadow:0 0 0 4px #091018,0 0 0 5px #85623d5a,0 15px 40px #0009}}
+@media(max-width:600px){.top{align-items:start;margin-bottom:15px}.folio-id{font-size:9px;min-width:72px}h1{font-size:31px;line-height:1.04}.gallery{height:570px;aspect-ratio:auto}.gallery canvas{width:auto!important;height:100%!important;position:absolute;left:49%;transform:translateX(-49%);max-width:none}.controls{grid-template-columns:1fr 1fr;gap:18px 12px;margin-top:22px}.plates button{font-size:10px;padding:10px 9px;min-height:38px}.plates{gap:5px}.setting{gap:5px}.actions{justify-content:flex-start}.actions button{font-size:10px;padding:9px 10px;min-height:38px}.foot{display:block;font-size:10px}.foot p+p{margin-top:10px}}
+@media(prefers-reduced-motion:reduce){.live{box-shadow:none}}
+</style></head>
+<body><main class="folio">
+<header class="top"><div><p class="overline">ATLAS OF IMPOSSIBLE INFRASTRUCTURES &nbsp; / &nbsp; NUMBER VIII</p><h1>The Freight of <em>Small Suns</em></h1></div><div class="folio-id">THE NIGHT CONSIGNMENT<br>AN ASTRAL RAILWAY FOLIO<br>MMXXVI / 008</div></header>
+<div class="gallery" id="gallery"><canvas id="scene" width="1280" height="800" role="img" aria-label="Animated Art Deco observatory: a train delivers grains of light to an astronomical sandpile that evolves in the glass sky. Click the sky to send an additional delivery."></canvas></div>
+<section class="controls" aria-label="Artwork controls"><div><p class="control-title">01 / OBSERVATIONAL PLATE</p><div class="plates" role="group" aria-label="Select plate"><button class="plate" data-plate="0" aria-pressed="true">I · Night</button><button class="plate" data-plate="1" aria-pressed="false">II · Ember</button><button class="plate" data-plate="2" aria-pressed="false">III · Dawn</button></div></div>
+<div><label class="control-title" for="velocity">02 / TRAIN VELOCITY</label><div class="setting"><input id="velocity" type="range" min="20" max="100" value="57" step="1"><span class="value" id="velocityValue">57</span></div></div>
+<div><label class="control-title" for="freight">03 / LUMINOUS FREIGHT</label><div class="setting"><input id="freight" type="range" min="1200" max="7000" value="3600" step="100"><span class="value" id="freightValue">3600</span></div></div>
+<div><p class="control-title">04 / DISPATCH</p><div class="actions"><button id="dispatch">Send a sun</button><button id="lines" aria-pressed="true">Survey on</button><button id="pause" aria-pressed="false">Pause</button><button id="export">Collect PNG</button></div></div></section>
+<footer class="foot"><p><span class="live"></span> EVERY ARRIVAL ADDS GRAINS. FOUR GRAINS CAUSE A TOPPLE. THE SKY REMEMBERS THE REST.</p><p class="accent">CLICK THE OBSERVATORY GLASS TO DELIVER LIGHT · KEYS 1–3 / D / S / P / E</p></footer>
+</main><script>
+(()=>{'use strict';
+const scene=document.getElementById('scene'),c=scene.getContext('2d',{alpha:false}),W=1280,H=800;
+const plates=[
+ {title:'THE LAST NIGHT TRAIN',sub:'I / BEFORE THE FIRST LIGHT',dark:'#091b2b',mid:'#142b3c',deep:'#05111f',ink:'#6acbd1',pale:'#ddf4dc',gold:'#dfad75',hot:'#f8cf89',rose:'#e58a86',states:['#000000','#214e68','#48a5aa','#cba478']},
+ {title:'THE EMBER CONSIGNMENT',sub:'II / THE HOURS OF ASH',dark:'#231622',mid:'#47242f',deep:'#100b18',ink:'#f19b91',pale:'#ffe4bd',gold:'#e5a362',hot:'#ffcf82',rose:'#e56a68',states:['#000000','#67334a','#bc6b71','#edb484']},
+ {title:'THE NORTHERN RETURN',sub:'III / THE PALE TERMINUS',dark:'#112727',mid:'#23403c',deep:'#081c22',ink:'#a7dfcc',pale:'#f2f5dc',gold:'#dfc390',hot:'#f0e7b9',rose:'#b3c7ca',states:['#000000','#3b767b','#87afa7','#e4d2a3']}
+];
+const NX=152,NY=94,g=new Uint32Array(NX*NY),inq=new Uint8Array(NX*NY),flux=new Uint8Array(NX*NY);let q=[],qi=0;
+const plateButtons=[...document.querySelectorAll('.plate')],vel=document.querySelector('#velocity'),load=document.querySelector('#freight');
+const meterVel=document.querySelector('#velocityValue'),meterLoad=document.querySelector('#freightValue');
+let plate=0,t=0,frame=0,paused=matchMedia('(prefers-reduced-motion:reduce)').matches,showSurvey=true,trainX=170,deliveries=0,topples=0,spilled=0,stored=0,injected=0,lastBurst={x:0,y:0,age:10},active=0;
+let grainCanvas=document.createElement('canvas');grainCanvas.width=NX;grainCanvas.height=NY;const gc=grainCanvas.getContext('2d'),grainImage=gc.createImageData(NX,NY);
+const glass={x:168,y:235,w:740,h:397};
+const rr=(x,y,w,h,r)=>{c.beginPath();c.roundRect(x,y,w,h,r)};
+const line=(x1,y1,x2,y2)=>{c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()};
+const text=(s,x,y,size=13,color='#f0ddbb',font='Georgia',align='left',tracking=0)=>{c.fillStyle=color;c.textAlign=align;c.font=`${size}px ${font}`;if(!tracking){c.fillText(s,x,y);return}let mw=c.measureText(s).width+Math.max(0,s.length-1)*tracking;if(align==='center')x-=mw/2;if(align==='right')x-=mw;c.textAlign='left';for(const ch of s){c.fillText(ch,x,y);x+=c.measureText(ch).width+tracking}};
+const rand=(i)=>{let x=(i*2654435761)>>>0;x^=x>>>15;x=Math.imul(x,2246822519)>>>0;x^=x>>>13;return(x>>>0)/4294967295};
+const palette=()=>plates[plate];
+function add(x,y,n){x=Math.max(0,Math.min(NX-1,Math.round(x)));y=Math.max(0,Math.min(NY-1,Math.round(y)));let i=y*NX+x;g[i]+=n;injected+=n;if(g[i]>=4&&!inq[i]){inq[i]=1;q.push(i)}}
+function settle(budget){let used=0;while(qi<q.length&&used++<budget){let i=q[qi++];inq[i]=0;let k=Math.floor(g[i]/4);if(k<1)continue;g[i]-=4*k;topples+=k;flux[i]=Math.min(255,flux[i]+Math.min(k,35));let x=i%NX,y=(i/NX)|0;
+ for(let [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){let xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=NX||yy>=NY){spilled+=k;continue}let j=yy*NX+xx;g[j]+=k;if(g[j]>=4&&!inq[j]){inq[j]=1;q.push(j)}}
+ if(g[i]>=4&&!inq[i]){inq[i]=1;q.push(i)} }
+ if(qi>16000){q=q.slice(qi);qi=0}
+}
+function delivery(x,y,n){add(x,y,n);deliveries++;lastBurst={x,y,age:0}}
+function reset(p){plate=p;plateButtons.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===p)));g.fill(0);inq.fill(0);flux.fill(0);q=[];qi=0;topples=spilled=stored=deliveries=injected=0;trainX=165;t=0;
+ const presets=[[[48,49,23000],[92,37,16000],[124,60,12000]],[[47,35,25000],[100,55,21000],[74,72,16000]],[[45,52,17000],[112,42,30000],[78,68,21000]]][p];presets.forEach(v=>add(...v));lastBurst={x:presets[0][0],y:presets[0][1],age:3};settle(210000);count();render();}
+function count(){let s=0;for(let i=0;i<g.length;i++)s+=g[i];stored=s;}
+const stars=Array.from({length:180},(_,i)=>({x:165+rand(i*19+31)*745,y:220+rand(i*37+9)*415,r:.4+rand(i+44)*1.3,w:rand(i+711)*5}));
+function panorama(P){let gradient=c.createLinearGradient(0,0,0,800);gradient.addColorStop(0,P.dark);gradient.addColorStop(.72,P.mid);gradient.addColorStop(1,P.deep);c.fillStyle=gradient;c.fillRect(0,0,W,H);
+ // Linen, plate etching and perforated gold rule
+ for(let i=0;i<950;i++){let x=rand(i+987)*W,y=rand(i*3+187)*H;c.fillStyle=i%3?'#fff2':'#0002';c.fillRect(x,y,rand(i*9)*1.5+.25,.5)}
+ c.strokeStyle=P.gold;c.lineWidth=1;c.globalAlpha=.55;c.strokeRect(24,23,1232,754);c.globalAlpha=.35;c.strokeRect(33,32,1214,736);
+ for(let i=0;i<52;i++){let x=38+i*23.4;c.globalAlpha=.25;c.strokeStyle=P.gold;line(x,40,x,47);line(x,753,x,761)}c.globalAlpha=1;
+ // Printed architrave
+ c.fillStyle=P.gold;c.fillRect(62,66,3,72);c.fillRect(1212,65,3,73);
+ if(window.innerWidth<601){text('THE NIGHT CONSIGNMENT',572,129,19,P.pale,'Georgia','center',1.4)}else{text('THE',85,103,14,P.gold,'Georgia','left',3.5);text('FREIGHT OF SMALL SUNS',85,152,42,P.pale,'Georgia','left',1.05)}
+ c.strokeStyle=P.gold;c.globalAlpha=.75;line(85,170,1188,170);c.globalAlpha=1;
+ text('ROYAL OBSERVATORY OF UNDELIVERED LIGHT',88,193,10,P.gold,'monospace','left',1.9);
+ text('CELESTIAL GOODS SERVICE  /  04:16 AM',1187,193,10,P.gold,'monospace','right',1.7);
+}
+function drawGlass(P){let x=glass.x,y=glass.y,w=glass.w,h=glass.h;
+ c.save();c.beginPath();c.moveTo(x,y+h);c.lineTo(x,y+95);c.bezierCurveTo(x+20,y+20,x+110,y-31,x+w/2,y-31);c.bezierCurveTo(x+w-110,y-31,x+w-20,y+20,x+w,y+95);c.lineTo(x+w,y+h);c.closePath();c.clip();
+ let grd=c.createLinearGradient(180,214,860,641);grd.addColorStop(0,P.deep);grd.addColorStop(.6,P.dark);grd.addColorStop(1,P.mid);c.fillStyle=grd;c.fillRect(x-15,y-35,w+30,h+55);
+ let rad=c.createRadialGradient(520,397,35,520,398,460);rad.addColorStop(0,P.ink+'24');rad.addColorStop(.57,P.ink+'09');rad.addColorStop(1,'#02060c10');c.fillStyle=rad;c.fillRect(x,y-30,w,h+40);
+ // Azimuth engravings, celestial circles and sightlines
+ c.lineWidth=.65;c.strokeStyle=P.ink;c.globalAlpha=.11;
+ for(let r=72;r<520;r+=42){c.beginPath();c.ellipse(543,440,r,r*.52,0,0,Math.PI*2);c.stroke()}
+ for(let i=0;i<24;i++){let a=i*Math.PI/12;line(543,440,543+Math.cos(a)*600,440+Math.sin(a)*450)}
+ c.globalAlpha=1;for(let i=0;i<stars.length;i++){let s=stars[i];c.globalAlpha=.18+.33*(.5+.5*Math.sin(t*.43+s.w));c.fillStyle=i%5?P.pale:P.hot;c.beginPath();c.arc(s.x,s.y,s.r,0,Math.PI*2);c.fill()}c.globalAlpha=1;
+ // The actual four-state sandpile field, glowing through etched objective glass
+ let d=grainImage.data;const colors=P.states.map(s=>[parseInt(s.slice(1,3),16),parseInt(s.slice(3,5),16),parseInt(s.slice(5,7),16)]);
+ for(let i=0;i<g.length;i++){let v=Math.min(3,g[i]);let o=i*4,k=colors[v],f=flux[i];d[o]=Math.min(255,k[0]+f*.9);d[o+1]=Math.min(255,k[1]+f*.45);d[o+2]=Math.min(255,k[2]+f*.28);d[o+3]=v===0?0:(v===1?155: v===2?195:218);if(flux[i])flux[i]=Math.max(0,flux[i]-1)}gc.putImageData(grainImage,0,0);
+ c.save();c.globalCompositeOperation='screen';c.globalAlpha=.25;c.filter='blur(19px)';c.drawImage(grainCanvas,glass.x-7,glass.y+6,glass.w+10,glass.h+1);c.filter='none';c.globalCompositeOperation='source-over';c.globalAlpha=.89;c.imageSmoothingEnabled=false;c.drawImage(grainCanvas,x,y,w,h);c.restore();
+ // Gold station markers pass behind field pixels
+ for(let j=0;j<3;j++){let xx=x+(j+1)*w/4;let yy=y+h*.73;c.globalAlpha=.4;c.strokeStyle=P.gold;c.beginPath();c.arc(xx,yy,11,0,7);c.stroke();line(xx-16,yy,xx+16,yy);line(xx,yy-16,xx,yy+16)}c.globalAlpha=1;
+ if(showSurvey){c.strokeStyle=P.pale;c.globalAlpha=.18;c.setLineDash([2,9]);line(x+10,y+35,x+w-8,y+35);line(x+10,y+h-36,x+w-8,y+h-36);c.setLineDash([]);c.globalAlpha=.6;
+ text('FIG. 8 / RELAXATION CHAMBER',x+22,y+56,10,P.pale,'monospace','left',1.3);text('FOUR / NORTH EAST SOUTH WEST',x+w-17,y+56,9,P.pale,'monospace','right',.6);c.globalAlpha=1}
+ // Optical glass reflections
+ c.save();c.globalCompositeOperation='screen';c.globalAlpha=.06;c.fillStyle=P.pale;c.beginPath();c.moveTo(x+38,y-40);c.lineTo(x+157,y-40);c.lineTo(x+500,y+h);c.lineTo(x+386,y+h);c.fill();c.restore();
+ c.restore();
+ c.strokeStyle=P.gold;c.lineWidth=3;c.beginPath();c.moveTo(x-6,y+h+4);c.lineTo(x-6,y+92);c.bezierCurveTo(x+12,y+14,x+130,y-38,x+w/2,y-38);c.bezierCurveTo(x+w-130,y-38,x+w-12,y+14,x+w+6,y+92);c.lineTo(x+w+6,y+h+4);c.stroke();c.lineWidth=1;c.globalAlpha=.65;c.strokeStyle=P.pale;c.beginPath();c.moveTo(x+3,y+h);c.lineTo(x+3,y+89);c.bezierCurveTo(x+35,y+23,x+130,y-27,x+w/2,y-27);c.bezierCurveTo(x+w-130,y-27,x+w-35,y+23,x+w-3,y+89);c.lineTo(x+w-3,y+h);c.stroke();c.globalAlpha=1;
+ for(let i=0;i<17;i++){let xx=x+i*w/16;c.strokeStyle=P.gold;c.globalAlpha=.29;line(xx,y+h-3,xx,y+h+6)}c.globalAlpha=1;
+}
+function drawArchitecture(P){let y=624;
+ // Observatory foundations + railway viaduct + engraved city silhouette
+ c.fillStyle=P.deep;c.fillRect(128,632,804,89);c.strokeStyle=P.gold;c.globalAlpha=.6;line(115,629,938,629);line(113,635,943,635);c.globalAlpha=1;
+ for(let i=0;i<25;i++){let x=147+i*30;c.globalAlpha=.16+.18*rand(i*17);c.fillStyle=P.gold;c.fillRect(x,640,9+rand(i+18)*11,7+rand(i*22)*16)}c.globalAlpha=1;
+ c.fillStyle=P.mid;for(let i=0;i<11;i++){let x=152+i*72;let h=30+rand(i+115)*35;c.fillRect(x,692-h,41,h);c.fillStyle=P.gold+'33';for(let j=0;j<3;j++)c.fillRect(x+7+j*10,699-h,4,7);c.fillStyle=P.mid;}
+ c.fillStyle=P.deep;c.fillRect(125,683,820,42);c.strokeStyle=P.gold;c.lineWidth=1.3;line(127,684,939,684);line(129,713,940,713);
+ // Viaduct half-arches
+ c.strokeStyle=P.gold;c.globalAlpha=.55;for(let x=141;x<934;x+=68){c.beginPath();c.moveTo(x,713);c.quadraticCurveTo(x+33,680,x+66,713);c.stroke()}c.globalAlpha=1;
+ // Rail sleepers and twin metal lines
+ c.strokeStyle=P.hot;c.lineWidth=1;line(132,649,933,649);line(132,659,933,659);c.globalAlpha=.35;for(let x=132;x<934;x+=14)line(x,646,x,663);c.globalAlpha=1;
+ // Terminal platforms, freight posts
+ for(let k=0;k<3;k++){let x=[287,522,770][k];c.strokeStyle=P.gold;line(x,614,x,674);c.fillStyle=P.gold;c.beginPath();c.arc(x,614,4,0,7);c.fill();rr(x-20,669,40,8,2);c.fill();text(['01','02','03'][k],x,607,10,P.pale,'monospace','center',1)}
+ // A gold electric locomotive towing two small freight carriages
+ c.save();let x=trainX,by=647;c.shadowColor=P.hot;c.shadowBlur=13;c.fillStyle=P.hot;
+ c.beginPath();c.arc(x+5,by-12,8,0,7);c.fill();c.shadowBlur=0;
+ c.fillStyle=P.deep;c.strokeStyle=P.pale;c.lineWidth=1.6;rr(x-12,by-26,28,18,2);c.fill();c.stroke();c.fillStyle=P.hot;c.fillRect(x-8,by-22,9,8);
+ c.fillStyle=P.gold;rr(x+15,by-22,13,16,2);c.fill();c.fillRect(x-18,by-5,47,3);
+ for(let n=0;n<2;n++){let cx=x-45-n*34;c.fillStyle=P.deep;c.strokeStyle=P.gold;rr(cx-2,by-19,28,15,2);c.fill();c.stroke();c.fillStyle=P.ink;c.fillRect(cx+5,by-16,9,6);c.fillStyle=P.gold;c.fillRect(cx-4,by-5,32,3)}
+ c.fillStyle=P.pale;for(let n=0;n<3;n++){let wx=x+17-n*33;c.beginPath();c.arc(wx,by-2,3,0,7);c.fill()}
+ c.restore();
+ text('NIGHT FREIGHT / OBSERVATORY APPROACH',146,748,11,P.gold,'monospace','left',1.2);
+ text('THE TRAIN CARRIES WHAT THE SKY CANNOT KEEP',919,748,10,P.gold,'monospace','right',.35);
+}
+function ledger(P){let x=975,y=223,w=238,h=493;
+ c.fillStyle=P.deep+'da';c.fillRect(x,y,w,h);c.strokeStyle=P.gold;c.lineWidth=1.1;c.strokeRect(x,y,w,h);c.globalAlpha=.45;c.strokeRect(x+6,y+6,w-12,h-12);c.globalAlpha=1;
+ c.fillStyle=P.gold;rr(x+18,y+20,w-36,37,0);c.fill();text('FREIGHT REGISTER',x+w/2,y+45,14,P.deep,'Georgia','center',1.4);
+ text('STATION / NIGHT OBSERVATIONS',x+22,y+79,9,P.gold,'monospace','left',.6);c.globalAlpha=.6;c.strokeStyle=P.gold;line(x+17,y+96,x+w-17,y+96);c.globalAlpha=1;
+ let labels=[['CONS. ARRIVED',String(deliveries).padStart(5,'0')],['GRAINS RETAINED',String(stored).padStart(7,'0')],['TOTAL TOPPLINGS',String(topples).padStart(9,'0')],['LOST TO NIGHT',String(spilled).padStart(6,'0')],['ACTIVE DISPATCH',String(q.length-qi).padStart(6,'0')]];
+ for(let i=0;i<labels.length;i++){let yy=y+122+i*53;text(labels[i][0],x+22,yy,9,P.gold,'monospace','left',1);text(labels[i][1],x+w-22,yy+23,21,P.pale,'Georgia','right',.8);c.strokeStyle=P.gold;c.globalAlpha=.2;line(x+18,yy+33,x+w-18,yy+33);c.globalAlpha=1}
+ text('CURRENT MANIFEST',x+20,y+414,9,P.gold,'monospace','left',1);
+ for(let k=0;k<3;k++){let xx=x+34+k*82;c.fillStyle=P.ink;c.globalAlpha=.35;c.beginPath();c.arc(xx,y+445,15,0,7);c.fill();c.globalAlpha=1;c.strokeStyle=P.gold;c.beginPath();c.arc(xx,y+445,16,0,7);c.stroke();text(['I','II','III'][k],xx,y+450,12,P.pale,'Georgia','center')}
+ text('AUREOLE / SIGNAL & SEDIMENT',x+w/2,y+481,8,P.gold,'monospace','center',.5);
+}
+function ornament(P){
+ // Symmetric brass handles, engraved instrument dial in margin
+ const x=1044,y=92;c.strokeStyle=P.gold;c.globalAlpha=.55;c.beginPath();c.arc(x,y,31,0,7);c.stroke();c.beginPath();c.arc(x,y,26,0,7);c.stroke();for(let i=0;i<12;i++){let a=i*Math.PI/6;line(x+Math.cos(a)*23,y+Math.sin(a)*23,x+Math.cos(a)*30,y+Math.sin(a)*30)}c.globalAlpha=1;
+ c.save();c.translate(x,y);c.rotate(t*.045);c.strokeStyle=P.ink;c.lineWidth=2;line(0,19,0,-18);c.fillStyle=P.hot;c.beginPath();c.arc(0,0,3,0,7);c.fill();c.restore();
+ text('TEMPUS',1113,88,10,P.gold,'monospace','left',1);text('INFINITUM',1113,108,10,P.gold,'monospace','left',1);
+ // Decorative annotation in upper sky, plate number at bottom right
+ c.strokeStyle=P.gold;c.globalAlpha=.5;line(58,223,106,223);line(58,222,58,281);line(1225,223,1225,281);c.globalAlpha=1;
+ for(let i=0;i<5;i++){c.fillStyle=P.gold;c.globalAlpha=.35;let a=i*9;c.beginPath();c.arc(56+a,300+i*18,2,0,7);c.fill()}c.globalAlpha=1;
+ text('PLATE '+['I','II','III'][plate],1194,752,13,P.hot,'Georgia','right',2.3);
+
+}
+function effects(P){if(lastBurst.age<2){let x=glass.x+lastBurst.x/NX*glass.w,y=glass.y+lastBurst.y/NY*glass.h;let a=1-lastBurst.age/2;c.strokeStyle=P.hot;c.globalAlpha=a*.55;c.lineWidth=2;c.beginPath();c.arc(x,y,8+lastBurst.age*65,0,7);c.stroke();c.globalAlpha=1}}
+function render(){let P=palette();c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';panorama(P);drawGlass(P);drawArchitecture(P);ledger(P);ornament(P);effects(P);}
+function step(dt){t+=dt;lastBurst.age+=dt;frame++;let speed=Number(vel.value)/57;let oldX=trainX;trainX+=dt*(52*speed);
+ if(trainX>923){trainX=164;oldX=164}const stationX=[287,522,770];for(let k=0;k<3;k++)if(oldX<stationX[k]&&trainX>=stationX[k]){let yy=[47,36,65][k],xx=[49,92,120][k];delivery(xx,yy,Number(load.value))}
+ settle(7000);if(frame%5===0)count();}
+let stamp=0;function loop(now){let dt=stamp?Math.min(.045,(now-stamp)/1000):.016;stamp=now;if(!paused)step(dt);if(frame%2===0||paused)render();requestAnimationFrame(loop)}
+function sync(){meterVel.textContent=vel.value;meterLoad.textContent=load.value}
+vel.addEventListener('input',sync);load.addEventListener('input',sync);plateButtons.forEach(b=>b.addEventListener('click',()=>reset(Number(b.dataset.plate))));
+const pauseButton=document.querySelector('#pause');function togglePause(){paused=!paused;pauseButton.textContent=paused?'Resume':'Pause';pauseButton.setAttribute('aria-pressed',String(paused));render()}
+const surveyButton=document.querySelector('#lines');function toggleSurvey(){showSurvey=!showSurvey;surveyButton.textContent=showSurvey?'Survey on':'Survey off';surveyButton.setAttribute('aria-pressed',String(showSurvey));render()}
+function dispatch(){delivery(74+Math.sin(deliveries*2.22)*41,50+Math.cos(deliveries*1.73)*20,Number(load.value));settle(12000);count();render()}
+document.querySelector('#dispatch').addEventListener('click',dispatch);pauseButton.addEventListener('click',togglePause);surveyButton.addEventListener('click',toggleSurvey);
+scene.addEventListener('pointerdown',e=>{let r=scene.getBoundingClientRect(),xx=(e.clientX-r.left)/r.width*W,yy=(e.clientY-r.top)/r.height*H;if(xx>=glass.x&&xx<glass.x+glass.w&&yy>=glass.y&&yy<glass.y+glass.h){delivery((xx-glass.x)*NX/glass.w,(yy-glass.y)*NY/glass.h,Number(load.value));settle(12000);count();render()}});
+function exportPNG(){render();let a=document.createElement('a');a.download='the-freight-of-small-suns-plate-'+(plate+1)+'.png';a.href=scene.toDataURL('image/png');a.click()}
+document.querySelector('#export').addEventListener('click',exportPNG);
+document.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['1','2','3'].includes(k))reset(Number(k)-1);else if(k==='d')dispatch();else if(k==='s')toggleSurvey();else if(k==='p')togglePause();else if(k==='e')exportPNG()});
+window.__artState=()=>{count();return ({plate,paused,showSurvey,deliveries,stored,topples,spilled,queued:q.length-qi,injected,massError:injected-(stored+spilled),trainX,frame,controls:{velocity:Number(vel.value),freight:Number(load.value)}})};
+reset(0);sync();pauseButton.textContent=paused?'Resume':'Pause';pauseButton.setAttribute('aria-pressed',String(paused));requestAnimationFrame(loop);
+})();
+</script></body></html>
