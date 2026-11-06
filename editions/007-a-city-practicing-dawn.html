@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101d30"><title>A City Practicing Dawn — an illuminated experiment in mutual light</title>
+<style>
+:root{--ink:#071724;--copper:#d9b889;--pale:#f5e2c3}*{box-sizing:border-box}html{background:var(--ink)}body{margin:0;color:var(--pale);font-family:Georgia,'Times New Roman',serif;background:radial-gradient(ellipse at 50% 20%,#26374b,#0c1828 70%,#080e19);min-height:100svh}main{max-width:1720px;margin:auto;min-height:100svh;display:flex;flex-direction:column;padding:13px clamp(10px,2.4vw,38px);gap:11px}.mast{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid #c9a87980;padding-top:10px;min-height:66px}.eyebrow,.index,.control label,button,.status,.micro{font-family:'Courier New',monospace;letter-spacing:.12em;text-transform:uppercase}.eyebrow{font-size:10px;color:#e5bd88}.title{font-size:clamp(23px,2.65vw,40px);font-variant:small-caps;line-height:1.1;letter-spacing:.028em}.index{text-align:right;font-size:9px;line-height:1.7;color:#d5b58b}.stage{display:grid;place-items:center;flex:1;min-height:0}canvas{display:block;width:100%;max-width:1540px;height:min(calc(100svh - 245px),810px);min-height:465px;border:1px solid #a6815a;background:#111c2d;box-shadow:0 0 0 7px #152032,0 0 0 8px #8f705650,0 23px 70px #0009;touch-action:none;cursor:crosshair}.rack{display:grid;grid-template-columns:minmax(190px,1fr) 238px minmax(305px,auto);gap:16px;align-items:center;min-height:80px}.intro{font-size:13px;line-height:1.5;font-style:italic;color:#cbbdae;max-width:455px}.intro em{font-style:normal;color:#ffe0a5}.sliders{display:flex;gap:11px}.control{width:50%;min-width:97px}.control label{font-size:10px;display:flex;justify-content:space-between;color:#d0b18a;gap:7px}.control output{color:#f1d49d}input[type=range]{width:100%;accent-color:#efb76d;height:18px;cursor:pointer}.buttons{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end}button{background:#192f3e;color:#f7e2c0;border:1px solid #ad9478a8;border-radius:0;min-height:34px;padding:7px 10px;font-size:10px;letter-spacing:.045em;cursor:pointer}button:hover,button[aria-pressed=true]{color:#142a38;background:#e6bc84}button:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid #ffecbf;outline-offset:3px}.status{font-size:10px;display:flex;justify-content:space-between;gap:12px;border-top:1px solid #a98a6955;padding-top:8px;color:#baaa95}.status strong{font-weight:normal;color:#ffdf9e}.sr{position:absolute;clip-path:inset(50%);height:1px;width:1px;overflow:hidden}
+@media(max-width:1080px){.rack{grid-template-columns:1fr 1fr;gap:9px}.intro{grid-column:1/-1;max-width:none;text-align:center}.sliders{max-width:290px}.buttons{justify-content:flex-end}}
+@media(max-width:650px){main{padding:9px 8px 14px;gap:8px}.mast{min-height:54px}.title{font-size:20px}.eyebrow,.index{font-size:8px;letter-spacing:.04em}.index{max-width:100px}.stage{flex:none}canvas{height:min(64svh,685px);min-height:385px}.rack{grid-template-columns:1fr;gap:8px}.intro{font-size:11px}.sliders{max-width:none;width:100%}.buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:4px}.buttons button{padding:5px 2px;font-size:9px}.status{font-size:8px;flex-wrap:wrap;justify-content:center;text-align:center}}
+</style></head>
+<body><main>
+<header class="mast"><div><div class="eyebrow">Institute of Collective Light · Night Studies VII</div><div class="title">A City Practicing Dawn</div></div><div class="index">192 borrowed windows<br>one night / no master clock</div></header>
+<div class="stage"><canvas id="city" role="img" tabindex="0" aria-label="An intricately engraved midnight city of chimneys, towers, tram lines and 192 individually glowing windows. Windows exchange phase with neighbors, gradually synchronizing. Conduct a window with touch or mouse."></canvas></div>
+<div class="rack"><div class="intro">No resident can order the sunrise. In this city, <em>each window keeps its own time</em>; light passes only between neighbours. Touch a building to lend it the beginning of a morning.</div><div class="sliders"><div class="control"><label for="affinity">Affinity <output id="affinityValue">1.15</output></label><input id="affinity" type="range" min="0" max="4.5" step="0.05" value="1.15"></div><div class="control"><label for="wildness">Wildness <output id="wildnessValue">0.38</output></label><input id="wildness" type="range" min="0.01" max="0.95" step="0.01" value="0.38"></div></div><nav class="buttons" aria-label="Artwork controls"><button data-scene="0" aria-pressed="true">I · Blackout</button><button data-scene="1" aria-pressed="false">II · Relay</button><button data-scene="2" aria-pressed="false">III · Dawn</button><button id="scatter">Scatter</button><button id="pause" aria-pressed="false">Stillness</button><button id="save">Collect PNG</button></nav></div>
+<footer class="status"><span>ACCORD <strong id="accord">0%</strong> · <strong id="condition">192 separate hours</strong></span><span>LIGHT TRAVELS BY NEIGHBOURHOOD · NOT BY DECREE</span></footer><div class="sr" id="announce" aria-live="polite" role="status"></div>
+</main>
+<script>
+(()=>{'use strict';
+const el=document.getElementById('city'),g=el.getContext('2d',{alpha:false});if(!g)return;
+const $=s=>document.querySelector(s),TAU=Math.PI*2,PI=Math.PI,clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const palettes=[
+ {title:'THE BLACKOUT',sub:'EACH WINDOW HAS A PRIVATE MIDNIGHT',sky:['#111b34','#2f2940','#6b444e'],moon:'#f7c2a1',far:'#3e3349',fog:'#a76765',facades:['#1c2d41','#263142','#2a3248','#303243'],line:'#a78c83',bright:'#ffcf8e',halo:'#e4896d',glass:'#425a70',a:1.15,d:.38},
+ {title:'THE RELAY',sub:'A RUMOUR OF LIGHT PASSES FROM HOUSE TO HOUSE',sky:['#071e30','#28536a','#6b737b'],moon:'#d1f4ed',far:'#2c5965',fog:'#86aca4',facades:['#112e3d','#1c3b49','#214452','#273e50'],line:'#90b9ae',bright:'#aaf7db',halo:'#70d3d0',glass:'#345c75',a:2.65,d:.14},
+ {title:'THE COMMON DAWN',sub:'NO SINGLE WINDOW INVENTED THE MORNING',sky:['#24334c','#856b7b','#eeaa83'],moon:'#ffe7bb',far:'#756476',fog:'#f8ba8e',facades:['#374559','#3d4855','#4e4b5c','#434357'],line:'#edbea0',bright:'#ffe7b3',halo:'#ffc288',glass:'#796c86',a:4.1,d:.05}
+];
+let scene=0,affinity=1.15,wildness=.38,paused=matchMedia('(prefers-reduced-motion:reduce)').matches,time=0,last=0,raf=0,W=1200,H=780,portrait=false,seed=1,order=0,shock=null,stars=[],buildings=[],nodes=[],edges=[],dpr=1;
+function rnd(n){let v=Math.sin(n*127.71+64.231)*43758.545312;return v-Math.floor(v)}
+function L(x,y,X,Y,color,width=1){g.strokeStyle=color;g.lineWidth=width;g.beginPath();g.moveTo(x,y);g.lineTo(X,Y);g.stroke()}
+function disk(x,y,r,color){g.fillStyle=color;g.beginPath();g.arc(x,y,r,0,TAU);g.fill()}
+function ellipse(x,y,rx,ry,color,stroke=null,width=1){g.beginPath();g.ellipse(x,y,rx,ry,0,0,TAU);if(color){g.fillStyle=color;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=width;g.stroke()}}
+function txt(s,x,y,font,color,align='left'){g.fillStyle=color;g.textAlign=align;g.font=font;g.fillText(s,x,y)}
+function path(points,fill,stroke=null,width=1){g.beginPath();points.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=width;g.stroke()}}
+function generate(){buildings=[];nodes=[];edges=[];stars=[];const count=portrait?4:6,base=portrait?H*.83:H*.865,outer=portrait?43:80,avail=W-outer*2,slot=avail/count;
+ for(let b=0;b<count;b++){
+  const cols=portrait?6:4,rows=8,roof=base-(portrait?350:301)-rnd(b*7+8)*(portrait?145:125),x=outer+b*slot+3,bw=slot-6;
+  const face={x:x,y:roof,w:bw,h:base-roof,base,cols,rows,type:b%5,shade:b%4,index:b};buildings.push(face);
+  for(let r=0;r<rows;r++)for(let k=0;k<cols;k++){
+    const margin=13,wx=x+margin+(k+.5)*(bw-2*margin)/cols,wy=roof+51+(r+.5)*(base-roof-80)/rows;
+    nodes.push({x:wx,y:wy,b,r,k,phase:rnd((b+1)*101+r*43+k*73)*TAU,omega:2.5,neighbors:[],metal:rnd(b*42+r*7+k*11)});
+  }
+ }
+ for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+  const a=nodes[i],b=nodes[j];const same=a.b===b.b,connected=same?Math.abs(a.r-b.r)+Math.abs(a.k-b.k)===1:Math.hypot(a.x-b.x,a.y-b.y)<(portrait?44:42)&&Math.abs(a.b-b.b)===1;
+  if(connected){edges.push([i,j,same?1:.34]);a.neighbors.push(j);b.neighbors.push(i)}
+ }
+ // Ensure windows at the perimeter of every building have a cross-building connection.
+ for(let b=0;b<count-1;b++){let left=nodes.filter(n=>n.b===b&&n.k===buildings[b].cols-1),right=nodes.filter(n=>n.b===b+1&&n.k===0);for(let a of left){let nearest=right.reduce((x,y)=>Math.abs(y.y-a.y)<Math.abs(x.y-a.y)?y:x);const i=nodes.indexOf(a),j=nodes.indexOf(nearest);edges.push([i,j,.18]);a.neighbors.push(j);nearest.neighbors.push(i)}}
+ for(let i=0;i<195;i++)stars.push({x:rnd(i*21+4)*W,y:55+rnd(i*13+22)*H*.53,level:rnd(i*7+4),phase:rnd(i*7+1)*TAU});
+ setWild(wildness);scatter(true)
+}
+function setWild(v){wildness=v;$('#wildnessValue').textContent=v.toFixed(2);nodes.forEach((n,i)=>n.omega=2.55+(rnd(i*23+17)-.5)*4.7*v)}
+function scatter(silent=false){seed++;nodes.forEach((n,i)=>n.phase=rnd(i*31+seed*101)*TAU);order=0;if(!silent)$('#announce').textContent='All 192 clocks scattered; a new conversation begins';draw()}
+function setScene(n){scene=n;let p=palettes[n];affinity=p.a;$('#affinity').value=affinity;$('#affinityValue').textContent=affinity.toFixed(2);$('#wildness').value=p.d;setWild(p.d);document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.scene===n)));scatter();$('#announce').textContent='Selected '+p.title.toLowerCase()+' plate';draw()}
+function resize(){const r=el.getBoundingClientRect();dpr=Math.min(2,window.devicePixelRatio||1);el.width=Math.max(2,Math.round(r.width*dpr));el.height=Math.max(2,Math.round(r.height*dpr));portrait=r.height/r.width>1.1;W=portrait?760:1200;H=portrait?1120:780;generate();draw()}
+function drawSky(p){let grad=g.createLinearGradient(0,0,0,H);p.sky.forEach((color,i)=>grad.addColorStop(i/2,color));g.fillStyle=grad;g.fillRect(0,0,W,H);
+ const mx=portrait?W*.74:W*.78,my=portrait?H*.22:H*.24,rad=portrait?75:85;
+ let glow=g.createRadialGradient(mx,my,12,mx,my,rad*3.8);glow.addColorStop(0,p.moon+'59');glow.addColorStop(.35,p.moon+'22');glow.addColorStop(1,p.moon+'00');g.fillStyle=glow;g.fillRect(0,0,W,H);
+ ellipse(mx,my,rad,rad,p.moon);for(let i=0;i<18;i++){const a=rnd(i*7)*TAU,r=rad*(.15+rnd(i*11)*.6);ellipse(mx+Math.cos(a)*r,my+Math.sin(a)*r,2+rnd(i*4)*7,2+rnd(i*13)*5,p.sky[1]+'25')}
+ for(const s of stars){const flicker=.38+.44*(.5+.5*Math.sin(time*.67+s.phase));disk(s.x,s.y,s.level> .85?1.55:.7,p.moon+Math.round(flicker*200).toString(16).padStart(2,'0'))}
+ for(let i=0;i<6;i++){const y=H*(.28+.055*i);g.beginPath();g.moveTo(-30,y);for(let x=-30;x<=W+55;x+=22)g.lineTo(x,y+Math.sin(x*.009+i*1.9)*13+Math.sin(x*.018+i)*5);g.strokeStyle=p.fog+'16';g.lineWidth=20+i*7;g.stroke()}
+}
+function backgroundArchitecture(p){const skyline=H*(portrait?.58:.64);for(let layer=0;layer<3;layer++){
+ const base=skyline+layer*25;g.fillStyle=layer===0?p.far:layer===1?'#293b4a':'#233442';g.beginPath();g.moveTo(0,H);g.lineTo(0,base);for(let i=0;i<37;i++){const x=i*W/36,h=27+rnd(i*11+layer*26)*100+(i%8===0?54:0);g.lineTo(x,base);g.lineTo(x,base-h);g.lineTo(x+W/45,base-h);g.lineTo(x+W/45,base)}g.lineTo(W,H);g.fill();
+ for(let k=0;k<90;k++){const x=rnd(k*17+layer*21)*W,y=base-rnd(k*9+layer*32)*80;if(rnd(k*5+layer*2)>.55)g.fillStyle=p.moon+'22';else g.fillStyle=p.fog+'33';g.fillRect(x,y,1.8,3)}
+ }
+ // A distant suspended railway with deliberately fine industrial trusses.
+ const railY=portrait?H*.64:H*.695;g.strokeStyle=p.line+'55';g.lineWidth=1.2;g.beginPath();g.moveTo(0,railY);g.quadraticCurveTo(W*.50,railY-51,W,railY+4);g.stroke();g.beginPath();g.moveTo(0,railY+13);g.quadraticCurveTo(W*.5,railY-36,W,railY+17);g.stroke();for(let x=0;x<W;x+=20){const f=x/W,y=railY-4*4*f*(1-f);L(x,y,x,y+13,p.line+'37',.8)}
+}
+function roof(f,p){const {x,y,w,type}=f;g.fillStyle=p.facades[f.shade];const col=p.line;
+ if(type===0){path([[x-5,y],[x+w+5,y],[x+w-9,y-17],[x+9,y-17]],p.facades[f.shade],col+'a6',1.6);for(let k=0;k<6;k++)L(x+k*w/5,y-18,x+k*w/5,y-29,col+'8a',1)}
+ if(type===1){path([[x-5,y],[x+w+5,y],[x+w*.73,y-29],[x+w*.24,y-29]],p.facades[f.shade],col+'a6',1.8);L(x+w*.49,y-30,x+w*.49,y-52,col,2);disk(x+w*.49,y-54,3,p.bright)}
+ if(type===2){path([[x-4,y],[x+w+4,y],[x+w+4,y-19],[x+w*.66,y-19],[x+w*.66,y-38],[x+w*.33,y-38],[x+w*.33,y-18],[x-4,y-18]],p.facades[f.shade],col+'9d',1.5);for(let k=0;k<3;k++)L(x+w*.39+k*8,y-38,x+w*.39+k*8,y-56,col,1)}
+ if(type===3){path([[x-6,y],[x+w+6,y],[x+w*.52,y-42]],p.facades[f.shade],col+'a6',1.6);L(x+w*.5,y-41,x+w*.5,y-70,col,1.8);ellipse(x+w*.5,y-73,5,5,p.bright)}
+ if(type===4){path([[x-5,y],[x+w+5,y],[x+w+5,y-13],[x-5,y-13]],p.facades[f.shade],col,1.5);for(let k=0;k<7;k++)g.strokeRect(x+8+k*(w-16)/7,y-25,8,12)}
+ // Fine chimney stacks and smoke curls.
+ const cx=x+w*(.19+rnd(type*9)*.56),ch=18+type*3;g.fillStyle=p.facades[(f.shade+2)%4];g.fillRect(cx,y-24-ch,13,ch+24);g.strokeStyle=col+'aa';g.strokeRect(cx,y-24-ch,13,ch+24);g.fillRect(cx-4,y-ch-28,21,5);
+ for(let k=0;k<3;k++){const X=cx+5+Math.sin(time*.18+k)*8,Y=y-28-ch-k*24-time%12;ellipse(X,Y,9+k*7,6+k*4,p.fog+'10')}
+}
+function facades(p){for(const f of buildings){
+ let grad=g.createLinearGradient(f.x,0,f.x+f.w,0);grad.addColorStop(0,'#071522');grad.addColorStop(.21,p.facades[f.shade]);grad.addColorStop(.77,p.facades[f.shade]);grad.addColorStop(1,'#0b1827');g.fillStyle=grad;g.fillRect(f.x,f.y,f.w,f.h+50);
+ g.lineWidth=1.9;g.strokeStyle=p.line+'6c';g.strokeRect(f.x,f.y,f.w,f.h+50);roof(f,p);
+ for(let r=0;r<9;r++){let y=f.y+45+r*(f.base-f.y-80)/8;L(f.x+3,y,f.x+f.w-3,y,p.line+'30',1);L(f.x+3,y+6,f.x+f.w-3,y+6,'#07132188',1.7)}
+ for(let i=0;i<7;i++){let xx=f.x+f.w*i/6;L(xx,f.y+9,xx,f.base+36,p.line+'19',i%3===0?3:1.2)}
+ // Stone courses, cornice mouldings, and delicate riveted corner columns.
+ for(let t=0;t<4;t++)L(f.x-3,f.y+11+t*5,f.x+f.w+3,f.y+11+t*5,p.line+(t===1?'90':'45'),t===1?1.4:.7);
+ for(const bx of [f.x+5,f.x+f.w-5]){L(bx,f.y+27,bx,f.base+33,p.line+'68',2.1);for(let y=f.y+48;y<f.base;y+=29)ellipse(bx,y,1.3,1.3,p.line+'ab')}
+ if(f.index%2===0){const vx=f.x+f.w-10;L(vx,f.y+23,vx,f.base+24,'#080f18b8',3);for(let y=f.y+60;y<f.base;y+=34)ellipse(vx,y,2,2,p.line+'6d')}
+ // Each block has its own urban typology: balcony screens, art-deco friezes, recessed shopfronts.
+ if(f.index%3===0){for(let row of [3,6]){const yy=f.y+51+(row+.5)*(f.base-f.y-80)/8+18;g.fillStyle='#071522';g.fillRect(f.x+8,yy,f.w-16,6);L(f.x+9,yy-3,f.x+f.w-9,yy-3,p.line+'c4',1.3);for(let v=0;v<13;v++)L(f.x+12+v*(f.w-24)/12,yy-10,f.x+12+v*(f.w-24)/12,yy-3,p.line+'76',.9)}}
+ if(f.index%3===1){const fy=f.y+34;for(let j=0;j<13;j++){const xx=f.x+8+j*(f.w-16)/12;L(xx,fy,xx+3,fy+4,p.line+'89',1)}for(let y=f.y+51;y<f.base-35;y+=105)for(let xx of [f.x+10,f.x+f.w-10]){L(xx,y,xx,y+24,p.line+'86',1);ellipse(xx,y+27,2.5,2.5,p.halo+'80')}}
+ if(f.index%3===2){for(let i=0;i<8;i++){const a=i*TAU/8;const cx=f.x+f.w*.5,cy=f.y+35;ellipse(cx+Math.cos(a)*15,cy+Math.sin(a)*6,1.4,1.4,p.line+'96')}}
+ const signX=f.x+7;for(let i=0;i<4;i++)L(signX+i*3,f.base+8,signX+i*3,f.base+22,p.line+'30',.7);
+ }
+}
+// The moth's engraved clockwork is recast as a public dial that only *observes* concordance.
+// No clock prescribes the 192 independent window phases.
+function relayDial(p){const f=buildings[Math.floor(buildings.length/2)-1];if(!f)return;const x=f.x+f.w*.52,y=f.y-31,r=portrait?25:34;
+ // Steel spandrels and a suspended circular glass instrument.
+ L(x-r*.9,y+r*.65,x-r*1.08,y+r*2.0,p.line+'bf',2);L(x+r*.9,y+r*.65,x+r*1.08,y+r*2.0,p.line+'bf',2);
+ const aura=g.createRadialGradient(x,y,3,x,y,r*2.0);aura.addColorStop(0,p.bright+'7b');aura.addColorStop(1,p.bright+'00');g.fillStyle=aura;g.fillRect(x-r*2,y-r*2,r*4,r*4);
+ ellipse(x,y,r+7,r+7,'#071723',p.line,2.6);ellipse(x,y,r+2,r+2,p.facades[1],p.bright,1.3);ellipse(x,y,r-5,r-5,'#172a3f',p.line+'aa',.7);
+ for(let k=0;k<48;k++){const a=k*TAU/48-PI/2,rd=k%4===0?8:4;L(x+Math.cos(a)*(r-6),y+Math.sin(a)*(r-6),x+Math.cos(a)*(r-6-rd),y+Math.sin(a)*(r-6-rd),p.line+'bd',k%4===0?1.3:.7)}
+ g.strokeStyle=p.bright;g.lineWidth=3.5;g.beginPath();g.arc(x,y,r-16,-PI/2,-PI/2+TAU*order);g.stroke();
+ ellipse(x,y,4,4,p.bright);txt(Math.round(order*100)+'%',x,y+r*.50,'bold '+(portrait?'9':'11')+'px Courier New',p.moon,'center');
+ // Broken radial outriggers: civic listening mast, not a conductor.
+ for(let a of [-1,1]){L(x+a*r,y-2,x+a*(r+16),y-10,p.line+'c6',1);disk(x+a*(r+16),y-10,2,p.bright)}
+}
+function windows(p){for(const n of nodes){const f=buildings[n.b],wid=(f.w-25)/f.cols*.57,hei=(f.base-f.y-75)/f.rows*.56;const power=Math.pow((1+Math.cos(n.phase))/2,5),alpha=.16+power*.84;
+ const x=n.x,y=n.y,w=wid*.5,h=hei*.5;
+ // Bleed from glass onto stone; alpha is directly linked to each local oscillator.
+ const halo=g.createRadialGradient(x,y,1,x,y,30+power*38);halo.addColorStop(0,p.halo+Math.round(power*99).toString(16).padStart(2,'0'));halo.addColorStop(1,p.halo+'00');g.fillStyle=halo;g.fillRect(x-64,y-64,128,128);
+ g.fillStyle='#07111f';g.fillRect(x-w-4,y-h-5,w*2+8,h*2+9);g.strokeStyle=p.line+'6b';g.lineWidth=1.2;g.strokeRect(x-w-2,y-h-3,w*2+4,h*2+6);
+ let light=g.createLinearGradient(x-w,y-h,x+w,y+h);light.addColorStop(0,p.glass);light.addColorStop(.44,p.bright);light.addColorStop(1,p.halo);g.globalAlpha=alpha;g.fillStyle=light;g.fillRect(x-w,y-h,w*2,h*2);g.globalAlpha=1;
+ L(x,y-h,x,y+h,'#0c1a25bd',1.45);L(x-w,y,x+w,y,'#0c1a25c9',1.6);g.fillStyle='#182230';g.fillRect(x-w-4,y+h,w*2+8,2.5);
+ // Curtains, inhabited shadows and light silhouettes vary independently from phase.
+ if(n.metal>.55){path([[x-w+2,y-h+2],[x-w+4,y-h+2],[x-w+8,y+h-2],[x-w+2,y+h-2]],'#182e4488');path([[x+w-2,y-h+2],[x+w-6,y-h+2],[x+w-8,y+h-2],[x+w-2,y+h-2]],'#182e4488')}
+ if(n.metal<.15){ellipse(x,y+h*.45,w*.35,h*.42,'#101f32a8');ellipse(x,y-h*.18,w*.25,h*.22,'#101f32a8')}
+ }
+ // Draw the actual neighborhood-coupling graph as faint overhead signal threads, not a separate simulation.
+ for(const [a,b,strength] of edges){if(strength<.3)continue;const n=nodes[a],m=nodes[b],v=(Math.cos(n.phase)+Math.cos(m.phase)+2)/4;if(v<.8)continue;L(n.x,n.y,m.x,m.y,p.bright+Math.round(v*50).toString(16).padStart(2,'0'),.4)}
+}
+function wires(p){g.save();for(let i=0;i<3;i++){const y=H*(portrait?.34:.22)+i*53;g.beginPath();g.moveTo(-20,y);g.bezierCurveTo(W*.31,y+57,W*.65,y+48,W+20,y-10);g.strokeStyle=p.line+'9e';g.lineWidth=i===0?1.4:.85;g.stroke();for(let k=0;k<12;k++){const x=(k+.5)*W/12,yy=y+52*(1-4*Math.pow(x/W-.5,2));L(x,yy,x,yy+8,p.line+'8a');ellipse(x,yy+9,2.5,3,p.bright+'c7')}}g.restore()}
+function streets(p){const start=portrait?H*.84:H*.87;let gr=g.createLinearGradient(0,start,0,H);gr.addColorStop(0,'#0c1723');gr.addColorStop(.65,'#162638');gr.addColorStop(1,'#080f1a');g.fillStyle=gr;g.fillRect(0,start,W,H-start);
+ for(let i=0;i<80;i++){const x=rnd(i*19)*W,y=start+7+rnd(i*11)*(H-start-23),len=5+rnd(i*13)*50;L(x,y,x+len,y,p.halo+Math.round(30+rnd(i*17)*60).toString(16).padStart(2,'0'),rnd(i*17)>.75?1.5:.6)}
+ // Rain-glazed rails in perspective, subtle crossing pedestrians, tram conductors.
+ for(let a of [.16,.39,.62,.85]){L(W*.5,start+10,W*a,H,p.line+'56',1.3);L(W*.5+8,start+10,W*a+16,H,p.line+'2d',.6)}
+ const people=portrait?[[.18,.96],[.78,.94],[.46,.92]]:[[.20,.96],[.49,.945],[.81,.96],[.68,.925]];
+ for(const [x,y] of people){const X=W*x,Y=H*y,scale=(y-.85)*1.9;ellipse(X,Y-16*scale,5*scale,5*scale,'#040c16');L(X,Y-11*scale,X,Y+14*scale,'#040c16',5*scale);L(X,Y+11*scale,X-7*scale,Y+26*scale,'#040c16',2*scale);L(X,Y+11*scale,X+8*scale,Y+26*scale,'#040c16',2*scale);L(X,Y-4*scale,X-10*scale,Y+2*scale,'#040c16',2*scale)}
+}
+function engravedFrame(p){const m=22;g.strokeStyle=p.line+'c0';g.lineWidth=1.5;g.strokeRect(m,m,W-m*2,H-m*2);g.strokeStyle=p.line+'54';g.lineWidth=.8;g.strokeRect(m+7,m+7,W-2*m-14,H-2*m-14);
+ for(const x of [m+3,W-m-3])for(const y of [m+3,H-m-3]){g.save();g.translate(x,y);g.rotate(PI/4);g.strokeStyle=p.line;g.strokeRect(-6,-6,12,12);g.restore()}
+ const center=W*.5,head=portrait?83:75;
+ txt('THE MUNICIPAL ARCHIVE OF BORROWED LIGHT',center,head,portrait?'12px Courier New':'14px Courier New',p.moon,'center');L(W*.3,head+14,W*.7,head+14,p.line+'7f',1);
+ txt('FOLIO  VII  /  '+palettes[scene].title,W*.5,head+45,portrait?'20px Georgia':'23px Georgia',p.moon,'center');txt(p.sub,W*.5,head+67,portrait?'10px Courier New':'11px Courier New',p.moon+'de','center');
+ let labelY=portrait?H-80:H-66;L(49,labelY-14,W-49,labelY-14,p.line+'6d',.9);txt('192 / 192     LAMPS ACCOUNTED FOR',51,labelY+8,'10px Courier New',p.moon);txt('R = '+Math.round(order*100).toString().padStart(2,'0')+'%  /  NO MASTER SIGNAL',W-50,labelY+8,'10px Courier New',p.moon,'right');
+ for(let i=0;i<7;i++){const x=65+i*(W-130)/6;L(x,head+80,x,head+86,p.line+'7e',1)}
+}
+function foregroundMist(p){for(let i=0;i<4;i++){let y=H*(portrait?.78:.79)+i*25;const haze=g.createLinearGradient(0,y-55,0,y+55);haze.addColorStop(0,p.fog+'00');haze.addColorStop(.5,p.fog+(scene===2?'30':'17'));haze.addColorStop(1,p.fog+'00');g.fillStyle=haze;g.fillRect(0,y-55,W,110)}}
+function draw(){if(!el.width)return;g.setTransform(el.width/W,0,0,el.height/H,0,0);const p=palettes[scene];drawSky(p);backgroundArchitecture(p);facades(p);windows(p);relayDial(p);wires(p);foregroundMist(p);streets(p);engravedFrame(p);
+ if(shock){let u=(time-shock.t)/1.4;if(u>=1)shock=null;else{g.strokeStyle=p.bright+Math.round(150*(1-u)).toString(16).padStart(2,'0');g.lineWidth=1.3;g.beginPath();g.arc(shock.x,shock.y,12+u*110,0,TAU);g.stroke()}}
+ // Hand-toned lithographic grain, weighted towards the paper's shadows.
+ for(let i=0;i<950;i++){const x=rnd(i*17+7)*W,y=rnd(i*19+41)*H;g.fillStyle=i%4===0?'#f9e6c012':'#06112122';g.fillRect(x,y,1.4,i%7===0?3.1:1.1)}
+}
+function advance(dt){const old=nodes.map(n=>n.phase),sum=new Float32Array(nodes.length);for(const [i,j,w] of edges){let v=Math.sin(old[j]-old[i])*w;sum[i]+=v;sum[j]-=v}let re=0,im=0;
+ for(let i=0;i<nodes.length;i++){let n=nodes[i];n.phase=(old[i]+dt*(n.omega+affinity*sum[i]*1.1))%TAU;re+=Math.cos(n.phase);im+=Math.sin(n.phase)}order=Math.hypot(re,im)/nodes.length;time+=dt;
+ $('#accord').textContent=Math.round(order*100)+'%';$('#condition').textContent=order>.77?'Morning in the making':order>.45?'A chorus across the roofs':'192 separate hours';
+}
+function tick(now){raf=0;let dt=last?Math.min((now-last)/1000,.05):.016;last=now;if(!paused){advance(dt);draw()}if(!paused&&!document.hidden)raf=requestAnimationFrame(tick)}
+function schedule(){if(!raf&&!paused&&!document.hidden){last=0;raf=requestAnimationFrame(tick)}}
+function conduct(e){let r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,nearest=nodes.slice().sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
+ if(!nearest)return;let count=0;for(const n of nodes){let d=Math.hypot(n.x-nearest.x,n.y-nearest.y);if(d<(portrait?99:105)){n.phase=.15*(rnd(n.r*13+n.k+seed)*2-1);count++}}shock={x:nearest.x,y:nearest.y,t:time};$('#announce').textContent='Conducted '+count+' windows at '+Math.round(x)+', '+Math.round(y);draw()}
+function toggle(){paused=!paused;const b=$('#pause');b.textContent=paused?'Awaken':'Stillness';b.setAttribute('aria-pressed',String(paused));if(paused){if(raf)cancelAnimationFrame(raf);raf=0;draw()}else schedule()}
+el.addEventListener('pointerdown',conduct);$('#affinity').addEventListener('input',e=>{affinity=+e.target.value;$('#affinityValue').textContent=affinity.toFixed(2)});$('#wildness').addEventListener('input',e=>setWild(+e.target.value));document.querySelectorAll('[data-scene]').forEach(b=>b.addEventListener('click',()=>setScene(+b.dataset.scene)));$('#scatter').addEventListener('click',()=>scatter());$('#pause').addEventListener('click',toggle);
+$('#save').addEventListener('click',()=>{draw();el.toBlob(blob=>{if(!blob){$('#announce').textContent='PNG export unavailable';return}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='a-city-practicing-dawn-plate-'+(scene+1)+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),9000);$('#announce').textContent='Collected '+palettes[scene].title.toLowerCase()+' plate'},'image/png')});
+document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))return;if(['1','2','3'].includes(e.key))setScene(+e.key-1);else if(e.code==='Space'){e.preventDefault();toggle()}else if(e.key.toLowerCase()==='s')scatter();else if(e.key.toLowerCase()==='e')$('#save').click()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});
+new ResizeObserver(resize).observe(el);if(paused){$('#pause').textContent='Awaken';$('#pause').setAttribute('aria-pressed','true')}resize();schedule();
+})();
+</script></body></html>
