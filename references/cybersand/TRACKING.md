@@ -130,3 +130,18 @@ The first capture workflow on the session-02 source commit [42299562733](https:/
 **Completed cross-revision checks:** 21/21 reference cards, five primary CyberSand benchmarks, 16/16 actual source-pinned browser capture records, zero capture failures. Exact `catalogue.json` vs embedded `index.html` object equality verified by readback. Compared published Git trees to previous curation `3f1e6cb755cec8dcb80eb90c08aea500be0def8c`: all 32 preexisting PNG files retain byte-identical Git blobs; historical initial pin policy file is byte-identical, and no previously published reference file was removed. A new immutable curation-01 pin policy protects the Aeolian source/filenames too.
 
 This evidence qualifies the **capture pipeline and published source-bound PNG identities**, not independent visual superiority, interaction coverage or CyberSand material authenticity. A subsequent browser-interaction pass tests selected #37 desktop/mobile controls, pause/resume and exported PNG actual bytes; its outcome must be reported separately. Direct aesthetic inspection of the new PNGs against all five original CyberSand gallery images and human acceptance remain open.
+
+### Hosted curation-02 interaction evidence — exact source and both display sizes
+
+The **corrected** [run 42300145915](https://github.com/techrote/tokensplurge/actions/runs/42300145915) **PASSED** at the exact documentation candidate head `5014f4bc147605dfa3ce66ce9757a2e1fd92af25`, with actual Chromium/Playwright checks of the immutable #37 HTML Git blob:
+
+- **Desktop 1440×900, DPR 1:** 92 distinct sampled real Canvas RGB colours; 72/96 light-valued sample points; genuine `SAVE / PNG` 1,438,961 bytes at 1440×900.
+- **Mobile 390×844, DPR 2:** 85 distinct sampled RGB colours; 67/96 light-valued points; genuine `SAVE / PNG` 1,266,953 bytes at 780×1688.
+- Both sizes passed memory-tide slider, snow/storm, pause-frame stability, resumed-frame changes, canvas pointer action, PNG download, zero browser JS exceptions and zero horizontal overflow.
+- The same workflow passed 21 source-pinned references, 16 verified capture records, five immutable CyberSand primary benchmarks, historical pin controls and exact embedded HTML catalogue equality. The gallery passed search/filter/reset/responsive smoke.
+
+**Retained negative:** [run 42300070796](https://github.com/techrote/tokensplurge/actions/runs/42300070796) correctly failed a newly introduced independent blob check because its test script initially encoded a wrong Git blob-header NUL separator (`80b5ee85...` versus the pinned `f6260fa0...`). Corrected at `5014f4bc...`; do not substitute that earlier red run for the genuine later desktop/mobile qualification.
+
+**UI-preview custody:** The passing run generated an additional moodboard-preview commit `f59bdb5c7e7ae06347cd3126a96c3030f6ba3395`, changing *only* `moodboard-2026-11-06-curation-02-preview.png`. The capture branch now preserves the first preview bytes per edition while continuing to execute screenshot smoke on each iteration. All 32 pre-session artwork/gallery PNGs and the original five benchmark asset identities were separately verified unchanged; neither this preview nor any browser PNG establishes native Godot quality.
+
+**Remaining:** Source-verified, screenshot-captured and independently interaction-tested, but not firsthand fine-art pixel critique at matching scale to all five original CyberSand gallery examples, nor human acceptance, Godot material/physics/world simulation, cross-browser GPU, or CyberSand atlas qualification. Curation scores above remain provisional until genuine side-by-side aesthetic review.

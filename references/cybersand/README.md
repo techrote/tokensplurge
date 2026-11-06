@@ -65,3 +65,5 @@ A second independently source-pinned study, `lantern-ossuary`, was selected from
 ### Curation 02 source-bound result
 
 The new Lantern Ossuary desktop/detail PNGs were **actually captured by hosted Chromium** at [run 42299562733](https://github.com/techrote/tokensplurge/actions/runs/42299562733), published in the same isolated Draft PR and recorded under `captures/report.json`. There are now 21 reference cards (five primary CyberSand engine-gallery benchmarks) and 16 actual source-pinned browser capture records, with no lost prior PNGs and no failed captures. The selected work is still *provisional visual inspiration*, not a CyberSand native/material/physics test or claim of exceeding the five engine benchmarks.
+
+The edition-labelled moodboard screenshot is immutable once first published: later CI runs still execute actual Chromium screenshot and UI assertions but discard their ephemeral re-render instead of silently rewriting the original PNG. A new edition explicitly chooses a new screenshot path. This preserves historical visual evidence while allowing documentation-only requalification.

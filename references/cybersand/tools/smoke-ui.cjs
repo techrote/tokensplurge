@@ -38,7 +38,14 @@ async function check(){
   await page.locator('#cards').scrollIntoViewIfNeeded();
   await page.waitForTimeout(250);
   const preview=path.join(lib,'captures/moodboard-'+catalog.edition+'-preview.png');fs.mkdirSync(path.dirname(preview),{recursive:true});
-  await page.screenshot({path:preview,type:'png',fullPage:false});
+  // Always execute a real graphical screenshot, but preserve the first
+  // source-pinned screenshot bytes for a given edition on subsequent runs.
+  const alreadyPublished=fs.existsSync(preview);
+  const candidate=alreadyPublished?path.join(require('node:os').tmpdir(),'ts-ui-'+process.pid+'-'+catalog.edition+'.png'):preview;
+  try{
+   await page.screenshot({path:candidate,type:'png',fullPage:false});
+   assert.ok(fs.statSync(candidate).size>10000,'real UI screenshot unexpectedly tiny');
+  }finally{if(alreadyPublished)fs.rmSync(candidate,{force:true})}
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
   assert.equal(overflow,false,'no desktop horizontal overflow');
   await page.setViewportSize({width:390,height:844});
