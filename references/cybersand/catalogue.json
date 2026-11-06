@@ -2,7 +2,7 @@
   "schema_version": 2,
   "edition": "2026-11-06-curation-01",
   "created_utc": "2026-11-06",
-  "status": "source-curated-new-art-capture-pending",
+  "status": "source-curated-browser-evidence-not-human-or-native-accepted",
   "pinned_sources": [
     {
       "repo": "techrote/tokensplurge",
@@ -603,9 +603,9 @@
         "method": "local Chromium/Playwright exact per-entry source HTML",
         "desktop": "captures/aeolian-palimpsest-desktop.png",
         "detail": "captures/aeolian-palimpsest-detail.png",
-        "status": "pending",
+        "status": "captured",
         "report": "captures/report.json",
-        "evidence": "Independent published Chromium full-frame/detail captures pending. Author reported local real Chromium tests, not durable evidence. No native Godot qualification."
+        "evidence": "Actual pinned Chromium source/PNG hashes in captures/report.json; human and native Godot comparison outstanding."
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/ea0c04508670af179e8e104253c94c3a3b703bb3/environments/001-the-aeolian-palimpsest.html"
     }
