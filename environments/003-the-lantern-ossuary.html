@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#131525"><title>The Lantern Ossuary — a city in the bones of a vanished migration</title>
+<style>
+:root{color-scheme:dark;--ink:#f3e6d3;--soft:#c2b4b9;--glass:rgba(14,18,32,.78);--hair:rgba(234,216,201,.25)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b111f;color:var(--ink);font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}#view{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}#grain{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 175px #050717b8;background:linear-gradient(90deg,#090c1b76,transparent 38%,transparent 79%,#050a1880)}header{position:fixed;left:clamp(16px,3.3vw,50px);top:clamp(17px,3vh,33px);z-index:4;max-width:440px;pointer-events:none;text-shadow:0 2px 18px #060817}header .eyebrow{font-size:10px;letter-spacing:.3em;color:#ffc68f}h1{font:normal clamp(30px,3.9vw,58px)/.99 Georgia,'Times New Roman',serif;letter-spacing:-.045em;margin:11px 0 12px}header p{max-width:365px;margin:0;color:#d4c0c1;font-size:11px;line-height:1.65}#telemetry{position:fixed;right:clamp(15px,3.2vw,45px);top:clamp(18px,3vh,35px);z-index:3;text-align:right;font-size:10px;line-height:1.8;color:#c5afbc;letter-spacing:.13em;text-shadow:0 2px 12px #050719}#telemetry strong{color:#eacda6;font-weight:400}#inscription{position:fixed;left:clamp(17px,3.4vw,50px);bottom:112px;color:#cec3c4;text-shadow:0 2px 14px #050719;letter-spacing:.17em;font-size:10px;pointer-events:none}#inscription b{color:#ffce98;font-weight:400}#controls{position:fixed;z-index:5;left:clamp(12px,3vw,46px);bottom:clamp(12px,3vh,28px);display:flex;align-items:stretch;gap:8px;max-width:calc(100vw - 24px)}.field,button{background:var(--glass);border:1px solid var(--hair);color:#f2dccc;border-radius:3px;backdrop-filter:blur(14px);box-shadow:0 5px 30px #01051240}button{font:10px ui-monospace,monospace;letter-spacing:.12em;padding:12px 14px;cursor:pointer;white-space:nowrap}button:hover,button:focus-visible{background:#c8a88d;color:#14182b}button:focus-visible,input:focus-visible{outline:2px solid #fbe3b2;outline-offset:2px}.field{width:248px;display:flex;flex-direction:column;justify-content:center;padding:7px 14px 5px}.field label{display:flex;justify-content:space-between;letter-spacing:.15em;font-size:9px;color:#d8bec8}.field output{color:#ffdb9b}.field input{width:100%;accent-color:#ffc58e;cursor:pointer}#side{position:fixed;right:28px;bottom:33px;color:#c3aeba9a;text-align:right;letter-spacing:.1em;font-size:9px;pointer-events:none}#live{position:fixed;bottom:111px;right:30px;color:#ffca99;letter-spacing:.12em;font-size:10px;text-shadow:0 2px 10px #070a15;pointer-events:none}@media(max-width:720px){header{left:13px;top:14px;max-width:calc(100vw - 26px)}header .eyebrow{font-size:8px}h1{font-size:27px;margin:6px 0 5px}header p{font-size:9px;max-width:270px}#telemetry{display:none}#controls{left:9px;right:9px;bottom:9px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-width:none}.field{grid-column:1/-1;width:100%;padding:5px 10px;min-height:45px}button{font-size:9px;padding:10px 4px;letter-spacing:.03em}#inscription{left:12px;bottom:121px;font-size:8px;max-width:230px}#live,#side{display:none}}@media(prefers-reduced-motion:reduce){button{transition:none}}
+</style></head><body>
+<canvas id="view" role="img" aria-label="Original interactive speculative environment: a monumental pearl-white leviathan skeleton lies across a violet frozen plain, with miniature rope bridges, dwellings and illuminated migration lanterns suspended within its ribs."></canvas><div id="grain"></div>
+<header><div class="eyebrow">TOKENSPLURGE / ENVIRONMENT LABORATORY / 003</div><h1>The Lantern<br>Ossuary</h1><p>At the end of the last migration, a village was built between the ribs. Each winter the lanterns retrace the creature's journey across a sea that no longer exists.</p></header>
+<aside id="telemetry">FIELD / 03 · LATE GLACIAL<br>ARCHITECTURE <strong>OSSIFIED / INHABITED</strong><br>PHOSPHOR DRIFT <strong id="drift">58%</strong><br>PROCESSION <strong id="count">240 LIGHTS</strong></aside>
+<div id="inscription">TOUCH THE BONES TO WAKE AN OLD CURRENT<br><b>DRAG TO DRAW THE MIGRATION BACK INTO THE SKY</b></div><div id="live" aria-live="polite">THE PROCESSION CONTINUES</div>
+<footer id="controls"><div class="field"><label for="tide">MEMORY TIDE <output id="level">58%</output></label><input type="range" min="0" max="100" value="58" id="tide" aria-label="Memory tide intensity"></div><button id="light">SNOW / CLEAR</button><button id="pause">STILL / PAUSE</button><button id="export">SAVE / PNG</button></footer><div id="side">CONCEPT STUDY · CANVAS / NOT A NATIVE SIMULATION</div>
+<script>
+(()=>{'use strict';
+const cv=document.getElementById('view'),g=cv.getContext('2d',{alpha:false}),$=id=>document.getElementById(id),TAU=Math.PI*2;
+const VW=1600,VH=960;let w=0,h=0,dpr=1,sc=1,dx=0,dy=0,time=0,last=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,storm=false,tide=.58,dragging=false,pointer={x:-1000,y:-1000},wake=[],frame=0;
+function rng(s){return()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296}}const rand=rng(934882),range=(a,b)=>a+(b-a)*rand(),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const dust=Array.from({length:960},()=>({x:range(0,1600),y:range(70,960),z:range(.2,1),v:range(.2,1),p:range(0,TAU)}));
+const boneFlecks=Array.from({length:1250},()=>({rib:Math.floor(range(0,16)),u:rand(),cross:range(-.8,.8),v:rand()}));
+const stars=Array.from({length:240},()=>({x:range(0,1600),y:range(30,460),r:range(.25,1.1),p:rand()}));
+const lights=Array.from({length:260},(_,i)=>({i,t:rand(),track:Math.floor(range(0,3)),phase:rand()*TAU,size:range(.6,2.1),speed:range(.025,.11)}));
+const huts=Array.from({length:52},(_,i)=>({x:range(465,1288),y:range(532,702),z:range(.6,1.55),r:rand(),lit:rand()>.16}));
+function line(x,y,X,Y,c='#ffffff',wd=1){g.beginPath();g.moveTo(x,y);g.lineTo(X,Y);g.strokeStyle=c;g.lineWidth=wd;g.stroke()}
+function path(pts,c,stroke,wd=1){g.beginPath();g.moveTo(...pts[0]);for(let i=1;i<pts.length;i++)g.lineTo(...pts[i]);g.closePath();if(c){g.fillStyle=c;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=wd;g.stroke()}}
+function ball(x,y,r,c){g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=c;g.fill()}
+function glow(x,y,r,rgb,alpha=1){const grd=g.createRadialGradient(x,y,1,x,y,r);grd.addColorStop(0,`rgba(${rgb},${alpha})`);grd.addColorStop(.25,`rgba(${rgb},${alpha*.19})`);grd.addColorStop(1,`rgba(${rgb},0)`);g.fillStyle=grd;g.fillRect(x-r,y-r,r*2,r*2)}
+function cubic(a,b,c,d,t){let u=1-t;return u*u*u*a+3*u*u*t*b+3*u*t*t*c+t*t*t*d}
+const spine=x=>421+Math.sin((x-340)*.0028)*35+(x-340)*.068;
+function rib(i,t){const x=365+i*62.5,yt=spine(x)+10,drift=(i-8)*.9;return [cubic(x,x-40-drift,x+46,x+62,t),cubic(yt,yt+66,yt+238,845-(i-6)*3,t)]}
+function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,2);cv.width=Math.max(1,Math.round(w*dpr));cv.height=Math.max(1,Math.round(h*dpr));sc=Math.max(w/VW,h/VH);if(w<680)sc=Math.max(sc,h/980);dx=(w-VW*sc)*.5;dy=(h-VH*sc)*.5;g.setTransform(dpr,0,0,dpr,0,0);draw()}
+function background(){let sky=g.createLinearGradient(0,0,100,960);[['0','#101324'],['.24',storm?'#292634':'#27253e'],['.53',storm?'#4d4153':'#76586e'],['.75',storm?'#88757b':'#ab8c85'],['1','#4c4659']].forEach(([a,c])=>sky.addColorStop(+a,c));g.fillStyle=sky;g.fillRect(0,0,1600,960);
+// Veils of fading aurora and high vapour; curved ribbons avoid concentric machinery motifs.
+for(let k=0;k<32;k++){g.beginPath();for(let x=-100;x<=1700;x+=24){let y=90+k*8+Math.sin(x*.002+k*.21+time*.027)*25+Math.sin(x*.005+time*.015)*21; x===-100?g.moveTo(x,y):g.lineTo(x,y)}g.strokeStyle=`rgba(${storm?'214,180,194':'189,183,220'},${.006+k*.0007})`;g.lineWidth=1.5+k*.17;g.stroke()}
+for(const s of stars){ball(s.x,s.y,s.r,`rgba(249,218,217,${(storm?.08:.23)+s.p*.32})`)}
+let horizon=g.createLinearGradient(0,365,0,860);horizon.addColorStop(0,'#51445a00');horizon.addColorStop(.3,storm?'#c4a5ac55':'#e2a7a855');horizon.addColorStop(1,'#1c243e00');g.fillStyle=horizon;g.fillRect(0,360,1600,500);
+// Vanished salt sea: flat, reflective fractured tessellations, not mountain terraces.
+path([[0,665],[130,644],[320,668],[445,658],[655,686],[885,663],[1160,679],[1470,657],[1600,665],[1600,960],[0,960]],'#35334c');
+for(let j=0;j<10;j++){let y=676+j*j*3.4;line(0,y+Math.sin(j)*9,1600,y+Math.cos(j*2)*15,`rgba(216,183,172,${.07+j*.004})`,j%3?1:2)}
+for(let q=0;q<380;q++){let x=(q*331.71)%1640-20,y=690+((q*137.63)%280),rx=7+(y-680)*.35;g.beginPath();g.moveTo(x-rx,y-8);g.lineTo(x,y-2);g.lineTo(x+rx*(.55+Math.sin(q)*.1),y+7);g.strokeStyle=q%4?'rgba(193,178,185,.11)':'rgba(235,208,202,.16)';g.lineWidth=.7;g.stroke()}
+// silhouette of a tiny distant caravan emphasizes the scale.
+for(let j=0;j<23;j++){let x=1230+j*10,y=663+Math.sin(j*.7)*3;ball(x,y,1.1,'#201f31');line(x,y,x-2,y+4,'#201f31',1)}
+}
+function snow(){for(let i=0;i<dust.length;i++){const s=dust[i],x=(s.x+time*(storm?25:4)*s.v*tide)%1670-35,y=(s.y+Math.sin(time*.35+s.p)*3)%1000;ball(x,y,s.z*(storm?1.3:.7),`rgba(247,218,220,${(storm?.4:.18)*s.v})`)}}
+function shadowLand(){// enormous cast shadow and broken ice standing perpendicular to the skeleton
+const gr=g.createRadialGradient(840,760,90,800,815,720);gr.addColorStop(0,'#060c1ec2');gr.addColorStop(1,'#0a101d00');g.fillStyle=gr;g.fillRect(0,550,1600,410);
+for(let j=0;j<320;j++){let x=(j*87.951)%1600,y=770+(j*49.39)%190;line(x,y,x+4+(j%9)*4,y+Math.sin(j)*1,`rgba(215,197,188,${.035+(j%6)*.009})`,.8)} }
+function boneStroke(points,width){g.beginPath();g.moveTo(...points[0]);g.bezierCurveTo(...points[1],...points[2],...points[3]);g.lineCap='round';g.strokeStyle='#0b1020bc';g.lineWidth=width+13;g.stroke();g.strokeStyle='#554a5e';g.lineWidth=width+6;g.stroke();let grd=g.createLinearGradient(points[0][0]-25,0,points[0][0]+70,0);grd.addColorStop(0,'#5d5260');grd.addColorStop(.22,'#a999a5');grd.addColorStop(.5,'#eee1d2');grd.addColorStop(.73,'#d0bdaf');grd.addColorStop(1,'#65535f');g.strokeStyle=grd;g.lineWidth=width;g.stroke();g.strokeStyle='#f1e8db91';g.lineWidth=Math.max(1,width*.11);g.stroke()}
+function skeleton(){// Enormous migratory animal bone arches, structurally distinct from architectural vaults.
+for(let i=15;i>=0;i--){let x=365+i*62.5,y=spine(x),width=18+(1-Math.abs(i-8)/10)*11;boneStroke([[x,y],[x-31,y+85],[x+64,y+224],[x+62,836-(i-6)*3]],width);
+ // ring of growth etchings and sediment erosion on ribs
+ for(let j=0;j<13;j++){let t=.1+j*.064,p=rib(i,t);line(p[0]-8,p[1]+2,p[0]+8,p[1]-3,`rgba(59,45,63,${.14+j%3*.06})`,.7)}
+}
+// Vertebrae and an asymmetric zigzag dorsal spine.
+for(let i=0;i<20;i++){let x=307+i*54,y=spine(x);let d=1+Math.sin(i*1.7)*.13;path([[x-34,y-13*d],[x-8,y-22*d],[x+26,y-18*d],[x+38,y+2*d],[x+23,y+22*d],[x-14,y+25*d],[x-39,y+7*d]],'#b4a3aa','#3f354b',3);path([[x-21,y-11],[x+17,y-13],[x+25,y+3],[x+12,y+14],[x-21,y+10]],'#e5d8cf','#f7e7d67a',1);line(x-10,y-7,x+19,y-4,'#6f606a',1);ball(x+9,y+7,3,'#6b5969')}
+// Skull and lower jaw: largest focal object, clearly mammalian/leviathan and not a machine.
+g.save();g.translate(278,483);g.rotate(-.11);
+path([[-217,39],[-169,-3],[-115,-57],[-64,-66],[2,-45],[62,-24],[89,19],[47,64],[-45,76],[-126,92],[-212,89]],'#8f8291','#29273c',7);
+path([[-194,37],[-135,-13],[-87,-40],[-37,-37],[40,-14],[63,19],[30,43],[-67,55],[-151,64]],'#e6d6d0','#a18b95',3);
+path([[-143,39],[-110,13],[-80,11],[-69,28],[-86,45],[-123,48]],'#3b384c','#f2e1d290',2);
+for(let j=0;j<16;j++){let x=-163+j*14;line(x,56+(j%3)*3,x+2,76+(j%4)*3,'#6a5263',2)}
+// lower jaw, weathered tusk-like ramus: open and forked.
+boneStroke([[-205,84],[-155,118],[-3,105],[68,57]],13);boneStroke([[-180,102],[-85,146],[27,127],[83,49]],8);
+for(let j=0;j<45;j++){let x=-175+(j*23.3)%245,y=5+(j*17.7)%74;line(x,y,x+7,y+2,`rgba(59,42,57,${.08+j%4*.03})`,.7)}g.restore();
+// Filament tail vanishes beyond the frame.
+boneStroke([[1302,spine(1302)],[1395,465],[1494,443],[1650,391]],14);for(let j=0;j<8;j++){let x=1320+j*39,y=spine(1320)+j*-4;line(x,y+6,x+15,y-34,'#d0c0bc98',4)}
+// Fine crack deposits across each rib.
+for(const f of boneFlecks){let p=rib(f.rib,.09+f.u*.83);line(p[0]+f.cross*10,p[1],p[0]+f.cross*10+(f.v-.5)*8,p[1]+4+f.v*9,`rgba(61,52,73,${.06+f.v*.22})`,f.v>.82?1:.55)}
+}
+function platforms(){// Rope paths, nets and suspended walkways bridging a living settlement.
+const spans=[[435,550,720,570],[720,570,1010,624],[1010,624,1240,645],[516,655,790,695],[790,695,1155,727]];
+for(let [x,y,X,Y] of spans){line(x,y,X,Y,'#242439',8);line(x,y-6,X,Y-6,'#f0d6bd75',2);line(x,y+8,X,Y+8,'#927a84',3);for(let q=0;q<=1;q+=.045){let xx=x+(X-x)*q,yy=y+(Y-y)*q;line(xx,yy-10,xx+5,yy+10,'#a58e9278',1)}
+// sagging safety lines
+ g.beginPath();g.moveTo(x,y-20);g.quadraticCurveTo((x+X)/2,(y+Y)/2-3,X,Y-20);g.strokeStyle='#b7a7b399';g.lineWidth=1.3;g.stroke();for(let k=1;k<12;k++){let v=k/12,xx=x+(X-x)*v,yy=y+(Y-y)*v-20+15*Math.sin(Math.PI*v);line(xx,yy,xx,yy+18,'#95838e',.8)}
+}
+// Elevated dwellings are irregular cliff camps, not repeated architectural facade modules.
+for(let i=0;i<huts.length;i++){let h=huts[i],sx=h.x,sy=h.y,sz=h.z,roof=12*sz;if((sx<570&&sy>612)||(sx>1100&&sy<590))continue;
+const stilts=sy+17*sz;line(sx-9*sz,sy,sx-10*sz,stilts,'#453d4d',3);line(sx+9*sz,sy,sx+7*sz,stilts,'#453d4d',3);path([[sx-16*sz,sy],[sx-13*sz,sy-16*sz],[sx+14*sz,sy-16*sz],[sx+13*sz,sy]],'#453347','#1c2032',2);path([[sx-19*sz,sy-15*sz],[sx-2*sz,sy-28*sz],[sx+19*sz,sy-15*sz]],'#514350','#b59797',1.5);
+for(let k=0;k<5;k++)line(sx-11*sz+(k*5*sz),sy-14*sz,sx-12*sz+(k*5*sz),sy-1*sz,'#b09aa279',.7);
+if(h.lit){g.fillStyle=h.r>.55?'#ffc58e':'#8cdcca';g.fillRect(sx-4*sz,sy-10*sz,5*sz,6*sz);glow(sx-1*sz,sy-7*sz,23*sz,h.r>.55?'249,147,84':'113,220,197',.18)}
+ball(sx+14*sz,sy-9*sz,1.3*sz,'#ffe1af')}
+// Rope ladders descend from multiple vertebrae.
+for(const [a,b,yy] of [[535,549,688],[880,895,750],[1173,1187,808]]){line(a,spine(a)+4,a,yy,'#5c5262',1.6);line(b,spine(b)+7,b,yy,'#5c5262',1.6);for(let y=spine(a)+20;y<yy;y+=12)line(a,y,b,y+1,'#d0afaa',1.1)}
+// Tiny inhabitants: a scale control against the colossal skeletal space.
+for(let i=0;i<42;i++){let x=473+i*19.7,y=563+(i/42)*76+Math.sin(i*.8)*12;ball(x,y-4,2,'#191a2b');line(x,y-2,x-1,y+7,'#191a2b',2);line(x-1,y+7,x-4,y+12,'#191a2b',1);line(x-1,y+7,x+3,y+12,'#191a2b',1)}
+}
+function procession(){const drift=tide*(storm?1.6:1),epoch=time*.055*drift;
+for(const p of lights){let a=(p.t+epoch*p.speed*2)%1,x,y;if(p.track===0){x=350+920*a;y=380+180*Math.sin(a*Math.PI)+Math.sin(a*22+p.phase)*11}else if(p.track===1){x=450+830*a;y=590+76*Math.sin(a*3.8+p.phase)+29*Math.sin(a*13+p.phase)}else{x=210+1170*a;y=240+130*Math.sin(a*3.9+time*.045)}
+let flick=.65+.35*Math.sin(time*(1.1+p.speed*5)+p.phase),rad=p.size*(.6+drift*.75);
+if(p.i%13===0)glow(x,y,23*rad,p.track===2?'157,228,221':'253,173,119',.2*flick);ball(x,y,rad,p.track===2?`rgba(171,239,230,${.4+.5*flick})`:`rgba(255,200,146,${.35+.65*flick})`)}
+// Reactive wake: amber light runs in unpredictable arcs when touched.
+for(const f of wake){let rr=(time-f.t)*138;if(rr<0||rr>270)continue;g.beginPath();g.ellipse(f.x,f.y,rr,rr*.55,-.11,-.2,Math.PI*1.3);g.strokeStyle=`rgba(255,210,156,${.45*(1-rr/270)})`;g.lineWidth=1.3+2*(1-rr/270);g.stroke()}
+}
+function foreground(){// Jagged flakes of fractured permafrost cut through low fog and fallen remains.
+path([[0,848],[120,832],[202,863],[337,825],[420,854],[607,831],[721,870],[881,846],[995,878],[1114,854],[1298,894],[1430,858],[1600,876],[1600,960],[0,960]],'#1d2032','#3b394a',2);
+for(let i=0;i<125;i++){let x=(i*129.7)%1610,y=866+(i*113.7)%100;line(x,y,x+13+(i%11)*3,y-2-(i%5)*3,`rgba(183,175,195,${.08+i%5*.016})`,.7)}
+// waterless frost-fog rising past the ribs
+for(let k=0;k<7;k++){let y=689+k*29+Math.sin(time*.05+k)*5,gr=g.createLinearGradient(0,y-30,0,y+30);gr.addColorStop(0,'#a49ba800');gr.addColorStop(.5,'#d1b4ae16');gr.addColorStop(1,'#a49ba800');g.fillStyle=gr;g.fillRect(0,y-30,1600,60)}
+}
+function draw(){if(!w||!h)return;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.save();g.setTransform(dpr*sc,0,0,dpr*sc,dpr*dx,dpr*dy);
+background();shadowLand();skeleton();platforms();procession();foreground();snow();g.restore()}
+function schedule(){if(!frame&&!paused&&!document.hidden)frame=requestAnimationFrame(tick)}
+function tick(now){frame=0;time+=Math.min(50,now-(last||now))/1000;last=now;wake=wake.filter(x=>time-x.t<2.4);draw();schedule()}
+function point(e){return{x:(e.clientX-dx)/sc,y:(e.clientY-dy)/sc}}
+cv.addEventListener('pointerdown',e=>{dragging=true;cv.setPointerCapture(e.pointerId);let p=point(e);pointer=p;wake.push({...p,t:time});time+=.013;draw();schedule()});cv.addEventListener('pointermove',e=>{if(!dragging)return;let p=point(e);if(Math.hypot(p.x-pointer.x,p.y-pointer.y)>15){wake.push({...p,t:time});pointer=p;tide=clamp(tide+.005,0,1);$('tide').value=Math.round(tide*100);$('level').textContent=$('drift').textContent=Math.round(tide*100)+'%';draw()}});for(const ev of ['pointerup','pointercancel','lostpointercapture'])cv.addEventListener(ev,()=>dragging=false);
+$('tide').addEventListener('input',e=>{tide=Number(e.target.value)/100;$('level').textContent=$('drift').textContent=e.target.value+'%';draw()});
+$('light').addEventListener('click',()=>{storm=!storm;$('light').textContent=storm?'SNOW / STORM':'SNOW / CLEAR';$('live').textContent=storm?'BLIZZARD FIELD ACTIVE':'THE PROCESSION CONTINUES';draw()});
+$('pause').addEventListener('click',()=>{paused=!paused;$('pause').textContent=paused?'STILL / RESUME':'STILL / PAUSE';$('live').textContent=paused?'FIELD TIME SUSPENDED':'THE PROCESSION CONTINUES';last=0;schedule();draw()});
+$('export').addEventListener('click',()=>{draw();cv.toBlob(b=>{if(!b)return;const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='the-lantern-ossuary.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)},'image/png')});
+addEventListener('resize',resize,{passive:true});document.addEventListener('visibilitychange',()=>{last=0;schedule()});resize();schedule();
+})();
+</script></body></html>
