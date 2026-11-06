@@ -676,7 +676,7 @@
         "method": "local Chromium/Playwright exact per-entry source HTML",
         "desktop": "captures/thirst-of-the-sky-desktop.png",
         "detail": "captures/thirst-of-the-sky-detail.png",
-        "status": "pending",
+        "status": "captured",
         "report": "captures/report.json",
         "evidence": "Source Git blob independently pinned; author-reported Chromium tests are not independently captured evidence. Pending exact-source hosted browser PNGs and per-image SHA-256 verification; never native Godot or physical Water qualification."
       },

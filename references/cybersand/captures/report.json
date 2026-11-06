@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
-  "edition": "2026-11-06-curation-02",
+  "edition": "2026-11-06-curation-03",
   "source_revision_policy": "per-entry",
   "historical_pin": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
   "engine": "Chromium via Playwright",
   "playwright_version": "1.56.1",
-  "generated_utc": "2026-11-06T21:47:36.566Z",
+  "generated_utc": "2026-11-06T23:47:55.837Z",
   "limitations": "Not native Godot/material/physics, cross-browser, hosted preview or human visual acceptance evidence.",
   "results": [
     {
@@ -533,6 +533,39 @@
           "path": "captures/lantern-ossuary-detail.png",
           "bytes": 420478,
           "sha256": "9ad69d11d6fffe2f3f11a465fbe966b6e695de87adea0a21fd8d3b283bb29d3b"
+        }
+      ]
+    },
+    {
+      "id": "thirst-of-the-sky",
+      "ref": "d2d7eb71bb4fdab431ab4a36515421e7c6f5df1c",
+      "path": "environments/004-the-thirst-of-the-sky.html",
+      "blob_sha": "87b6343d2827ad036e4b894f41864923c83695b1",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium exact per-entry Git source",
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "detail_clip": {
+        "x": 364.80000000000007,
+        "y": 237,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/thirst-of-the-sky-desktop.png",
+          "bytes": 1384584,
+          "sha256": "adb1aab223e5cbeafa2f76fdc594dd0ce85f59431030eafac982bf0cf7b5e12a"
+        },
+        {
+          "path": "captures/thirst-of-the-sky-detail.png",
+          "bytes": 526727,
+          "sha256": "9e168f8738333123e26b65d228e39e119354d13f46ea9352a9a13ef485c87dfa"
         }
       ]
     }
