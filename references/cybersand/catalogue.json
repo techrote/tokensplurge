@@ -678,7 +678,7 @@
         "detail": "captures/thirst-of-the-sky-detail.png",
         "status": "captured",
         "report": "captures/report.json",
-        "evidence": "Source Git blob independently pinned; author-reported Chromium tests are not independently captured evidence. Pending exact-source hosted browser PNGs and per-image SHA-256 verification; never native Godot or physical Water qualification."
+        "evidence": "Independently executed GitHub-hosted Playwright Chromium on exact immutable Git source; run 42314175464 captured 1440x900 and 768x480 PNGs with per-image SHA-256 in captures/report.json (17/17 verified, 0 pending); not original-author screenshots, Godot/native material, fluid or human quality acceptance."
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/d2d7eb71bb4fdab431ab4a36515421e7c6f5df1c/environments/004-the-thirst-of-the-sky.html"
     }
