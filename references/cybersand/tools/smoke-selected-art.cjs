@@ -11,7 +11,7 @@ const c=JSON.parse(fs.readFileSync(path.join(lib,'catalogue.json'),'utf8'));
 const item=c.references.find(x=>x.id==='lantern-ossuary');
 assert.ok(item,'Lantern Ossuary card missing');
 const content=execFileSync('git',['show',item.ref+':'+item.path],{cwd:repo,maxBuffer:4*1024*1024});
-assert.equal(crypto.createHash('sha1').update(Buffer.from('blob '+content.length+'\\0')).update(content).digest('hex'),item.blob_sha,'exact source blob');
+assert.equal(crypto.createHash('sha1').update(Buffer.from('blob '+content.length+'\0')).update(content).digest('hex'),item.blob_sha,'exact source blob');
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'ts-curated-art-smoke-'));
 const source=path.join(temp,'lantern-ossuary.html');
 fs.writeFileSync(source,content);
@@ -44,6 +44,7 @@ async function one(browser,width,height,dpr){
   assert.equal(await page.locator('#light').textContent(),'SNOW / STORM');
   await page.locator('#pause').click();
   assert.equal(await page.locator('#pause').textContent(),'STILL / RESUME');
+  await page.waitForTimeout(100); // permit any already-queued animation callback to finish
   const frozen=await page.locator('#view').evaluate(x=>x.toDataURL('image/png'));
   await page.waitForTimeout(180);
   assert.equal(await page.locator('#view').evaluate(x=>x.toDataURL('image/png')),frozen,'pause freezes actual canvas frame');
