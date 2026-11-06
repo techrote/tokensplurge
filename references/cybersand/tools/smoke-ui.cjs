@@ -35,7 +35,7 @@ async function check(){
   await page.locator('.tab[data-kind="inspiration"]').click();
   await page.locator('#cards').scrollIntoViewIfNeeded();
   await page.waitForTimeout(250);
-  const preview=path.join(lib,'captures/moodboard-preview.png');fs.mkdirSync(path.dirname(preview),{recursive:true});
+  const preview=path.join(lib,'captures/moodboard-'+catalog.edition+'-preview.png');fs.mkdirSync(path.dirname(preview),{recursive:true});
   await page.screenshot({path:preview,type:'png',fullPage:false});
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
   assert.equal(overflow,false,'no desktop horizontal overflow');

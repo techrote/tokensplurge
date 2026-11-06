@@ -77,3 +77,15 @@ This document tracks the library's *own* completeness and reproducibility. Cyber
 **Publication and tests planned on this docs-only branch:** Preserve the old 19-card identity lock; enable mixed immutable per-entry revisions, incremental fresh browser captures without re-rendering 14 verified older works, SHA-256 checks of every retained PNG, dynamic inventory/UI tests, and an exact-head GitHub-hosted Chromium workflow. Newly added #32 is pending until real PNG bytes are published; do not substitute its author report or SVG/source for independent renderer proof. Test outcomes, workflow SHA, browser exits, screenshot SHA and any failures must be appended once actually observed.
 
 **Outstanding:** Actual source-pinned Chromium screenshot publication for #32; manual pixel inspection and ranking; actual comparable Godot framebuffer acceptance for #454 via separate #457/#462 qualification; native materials, runtime physics, human judgement. The 15 world collections/120 modules are source-proposal design work, not accepted engine maps.
+
+### Actual source-matched capture qualification — 2026-11-06 19:52–19:53 UTC
+
+GitHub-hosted [workflow run 42283462249](https://github.com/techrote/tokensplurge/actions/runs/42283462249) **completed successfully** for exact source commit daa9fef7120a4cce7d157bba1dec983b2a07bcb8. The hosted job recorded PASS for immutable-source/mixed-revision policy negatives, incremental Chromium capture with source/blob/PNG verification, dynamic catalogue verification and real browser UI/search/filter/mobile smoke. It committed capture assets and synchronized embedded JSON onto docs-only commit 6543df04b3bc2c4bd25c0a63907c0ce811eb9785.
+
+New #32 actual Chromium 1440×900 desktop and 768×480 detail readbacks are now committed, and the new entry reports capture.status=captured. The exact item source pin remains ea0c04508670af179e8e104253c94c3a3b703bb3 with Git blob 6d83aca13bb686505527edc0ebe0026aad8c0836; capture/report.json contains:
+- Desktop: 852,335 bytes, SHA-256 e822f8e645942964a9af8a0394cdf417cdfedee292b0d4586929d45544a1e110.
+- Detail: 312,103 bytes, SHA-256 38467c3a51bb916758684b489cc67c9dc5db3be789a3f6dcd8cce1f8fae7f68c.
+
+**Independent post-publication source/report custody read:** all 14 historical report rows are identical byte-for-byte as JSON data. Every one of the original 28 artwork PNG Git blob identities remains unchanged. All five primary CyberSand benchmark URLs and identities remain locked. The source-bound report now contains 15/15 captured items without failures. The moodboard UI preview originally changed through UI smoke (not an artwork source screenshot); this follow-up restores its exact historical blob and preserves the new 20-card preview under a separate edition-labelled filename.
+
+**Still not claimed:** independent human/curator visual comparison of the newly generated pixels, Chromium-to-Godot parity, source-independent artistic acceptance, production CyberSand maps or physical world validation. Existing five real CyberSand benchmark images are the primary art quality control.

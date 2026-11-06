@@ -53,3 +53,7 @@ The documentation-branch GitHub Action `.github/workflows/cybersand-reference-ca
 5. Publish changes through a dedicated documentation branch/PR. Do not edit the three-worker CyberSand atlas PR branch, merge production changes or activate paused schedulers.
 
 The portfolio curation and implementation contracts in CyberSand's [world-design QUALITY_BAR](https://github.com/techrote/cybersand/blob/d7baad924a0d5ab69d0fc5bf95080057f875bb3d/docs/world-design/QUALITY_BAR.md) remain authoritative for that programme.
+
+## Curation 01 capture evidence
+
+The new Aeolian entry has now been captured on hosted real Chromium at source-pinned [run 42283462249](https://github.com/techrote/tokensplurge/actions/runs/42283462249), producing checksummed desktop/detail PNGs in `captures/` and a 15-item report. Its creative assessment remains provisional pending human/pixel comparison and genuine Godot native material presentation. The original 19-card identities and 28 art/study PNG captures are unchanged. For UI-review reproducibility, the original `captures/moodboard-preview.png` remains preserved, and subsequent editions write a separate edition-labelled moodboard UI screenshot.
