@@ -14,6 +14,9 @@ reject(x=>x.references[0].image.url='https://example.com/new.png','primary bench
 reject(x=>x.references.at(-1).source_url='https://github.com/techrote/tokensplurge/blob/main/environments/001-the-aeolian-palimpsest.html','moving URL');
 reject(x=>x.references.at(-1).capture.detail='captures/rivers-detail.png','collision with old image');
 reject(x=>x.references.splice(7,1),'historic card removed');
+reject(x=>x.references.find(e=>e.id==='aeolian-palimpsest').ref=x.references.at(-1).ref,'curation-01 revision shifted');
+reject(x=>x.references.find(e=>e.id==='aeolian-palimpsest').capture.desktop='captures/lantern-ossuary-desktop.png','curation-01 capture overwritten');
+reject(x=>x.references.splice(x.references.findIndex(e=>e.id==='aeolian-palimpsest'),1),'prior-curation entry removed');
 const x=c.references.at(-1),e={id:x.id,ref:x.ref,path:x.path,blob_sha:x.blob_sha,status:'captured',files:[{path:x.capture.desktop},{path:x.capture.detail}]};
 assertCaptureRecord(x,e);
 assert.throws(()=>assertCaptureRecord(x,{...e,ref:c.references[5].ref}),undefined,'mixed commit');

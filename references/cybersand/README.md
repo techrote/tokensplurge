@@ -1,6 +1,6 @@
 # CyberSand × TokenSplurge environmental reference atlas
 
-**Initial edition:** 2026-11-06 · **Curation extension:** 2026-11-06. Original 19 sources and their evidence remain immutable. One newly pinned environment candidate is pending independent Chromium capture; actual engine-side graphical acceptance remains outstanding.
+**Initial edition:** 2026-11-06 · **Curation extension:** 2026-11-06. Original 19 sources and their evidence remain immutable. Two individually pinned environment studies have been selected across separate curation sessions. Aeolian has genuine Chromium captures; Lantern Ossuary is pending exact-source Chromium capture at the beginning of session 02. Actual CyberSand engine-side graphical acceptance remains outstanding.
 
 [Open the filterable moodboard](index.html) · [Canonical selection and revision manifest](catalogue.json) · [Creative-distance instructions](CURATORIAL_GUIDE.md) · [Acceptance and tracking ledger](TRACKING.md)
 
@@ -57,3 +57,7 @@ The portfolio curation and implementation contracts in CyberSand's [world-design
 ## Curation 01 capture evidence
 
 The new Aeolian entry has now been captured on hosted real Chromium at source-pinned [run 42283462249](https://github.com/techrote/tokensplurge/actions/runs/42283462249), producing checksummed desktop/detail PNGs in `captures/` and a 15-item report. Its creative assessment remains provisional pending human/pixel comparison and genuine Godot native material presentation. The original 19-card identities and 28 art/study PNG captures are unchanged. For UI-review reproducibility, the original `captures/moodboard-preview.png` remains preserved, and subsequent editions write a separate edition-labelled moodboard UI screenshot.
+
+## Curation 02 — migration-scale inhabited relic study
+
+A second independently source-pinned study, `lantern-ossuary`, was selected from Environment Laboratory PR #37 for its distinct way of converting a large structural relic, negative space, small-scale settlement and a moving environmental procession into legible place-making. Source `17b09a592a30e52ef35040ef2076f336ad6380ec`, blob `f6260fa0b9c4694e3978c3520f840de74a39ff45`; see `TRACKING.md` for the assessed alternatives, rubric, creative-distance prohibitions and original CyberSand design briefs. This is a new provisional *inspiration*, not a primary benchmark. Its Chromium evidence is initially pending; the unchanged capture workflow must supply actual PNG bytes, verified source and SHA-256 report before it may be labelled captured. Original historical PNGs/benchmark refs and previous Aeolian evidence must remain unchanged.

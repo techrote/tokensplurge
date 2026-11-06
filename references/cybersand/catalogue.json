@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "edition": "2026-11-06-curation-01",
+  "edition": "2026-11-06-curation-02",
   "created_utc": "2026-11-06",
   "status": "source-curated-browser-evidence-not-human-or-native-accepted",
   "pinned_sources": [
@@ -608,6 +608,42 @@
         "evidence": "Actual pinned Chromium source/PNG hashes in captures/report.json; human and native Godot comparison outstanding."
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/ea0c04508670af179e8e104253c94c3a3b703bb3/environments/001-the-aeolian-palimpsest.html"
+    },
+    {
+      "id": "lantern-ossuary",
+      "title": "The Lantern Ossuary — a city within the last migration",
+      "kind": "inspiration",
+      "repo": "techrote/tokensplurge",
+      "ref": "17b09a592a30e52ef35040ef2076f336ad6380ec",
+      "path": "environments/003-the-lantern-ossuary.html",
+      "blob_sha": "f6260fa0b9c4694e3978c3520f840de74a39ff45",
+      "tags": [
+        "ecology",
+        "architecture",
+        "atmosphere",
+        "geology",
+        "narrative",
+        "scale"
+      ],
+      "priority": "curated-candidate",
+      "design_principle": "A vast articulated environmental relic establishes place-scale silhouette while small suspended dwellings, connective spans and a contrasting moving procession make habitation and long history legible.",
+      "cybersand_translation": "Invent a materially different relic-shaped terrain or support network whose large voids govern bridge access, sheltered settlement and environmental memory; constrain every motif to actual native-cell material identity and authored geometry. Treat processional light as visual metaphor, not proven emission or moving entities.",
+      "copy_boundary": "Do not recreate a rib cage, skull at the left, precise arcing bones or vertebrae, perched lantern village, five rope spans, 1600×960 framing, frost fissures, mauve haze, amber/teal procession, Canvas2D particles, or original movement algorithms. Invent new morphology, topology, viewpoint, architecture and palette.",
+      "target_collections": [
+        "Ironroot Necropolis",
+        "Drowned Observatory",
+        "Carved Ice Choir",
+        "Coral Telegraph"
+      ],
+      "capture": {
+        "method": "local Chromium/Playwright exact per-entry source HTML",
+        "desktop": "captures/lantern-ossuary-desktop.png",
+        "detail": "captures/lantern-ossuary-detail.png",
+        "status": "pending",
+        "report": "captures/report.json",
+        "evidence": "Source/author-qualification grounded; independent pinned Chromium PNG capture pending. Not CyberSand native Godot, material or physics proof."
+      },
+      "source_url": "https://github.com/techrote/tokensplurge/blob/17b09a592a30e52ef35040ef2076f336ad6380ec/environments/003-the-lantern-ossuary.html"
     }
   ],
   "source_revision_policy": "source identity is immutable on each entry; pinned_sources are historical snapshot anchors only"

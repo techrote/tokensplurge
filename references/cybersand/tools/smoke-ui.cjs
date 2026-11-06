@@ -30,7 +30,9 @@ async function check(){
   await page.locator('#reset').click();
   await page.locator('#search').fill('railway');assert.ok(await number()>0&&await number()<expected(),'search narrows results');
   await page.locator('#reset').click();
-  await page.locator('#search').fill('Aeolian Palimpsest');assert.equal(await number(),1,'new immutable source entry searchable');
+  await page.locator('#search').fill('Aeolian Palimpsest');assert.equal(await number(),1,'curation-01 entry searchable');
+  await page.locator('#reset').click();
+  await page.locator('#search').fill('Lantern Ossuary');assert.equal(await number(),1,'curation-02 entry searchable');
   await page.locator('#reset').click();
   await page.locator('.tab[data-kind="inspiration"]').click();
   await page.locator('#cards').scrollIntoViewIfNeeded();

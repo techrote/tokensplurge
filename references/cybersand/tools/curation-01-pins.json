@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "from_curation": "2026-11-06-curation-01",
+  "entries": [
+    {
+      "id": "aeolian-palimpsest",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "ea0c04508670af179e8e104253c94c3a3b703bb3",
+      "path": "environments/001-the-aeolian-palimpsest.html",
+      "blob_sha": "6d83aca13bb686505527edc0ebe0026aad8c0836",
+      "capture_files": [
+        "captures/aeolian-palimpsest-desktop.png",
+        "captures/aeolian-palimpsest-detail.png"
+      ]
+    }
+  ]
+}
