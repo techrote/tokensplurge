@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071c27"><meta name="description" content="The Choir of Drowned Bells — a living resonance atlas of a submerged coast, where Chladni standing waves engrave the seafloor.">
+<title>The Choir of Drowned Bells — a living acoustic atlas</title>
+<style>
+:root{color-scheme:dark;--ink:#061923;--paper:#efdfbd;--brass:#ddac69;--fog:#a2b8b9}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071b25;color:var(--paper)}body{font-family:Georgia,'Times New Roman',serif}canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:manipulation}body:after{content:'';position:fixed;inset:0;pointer-events:none;opacity:.23;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='185' height='185'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.66' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='185' height='185' opacity='.16' filter='url(%23n)'/%3E%3C/svg%3E");mix-blend-mode:screen}
+.letter{font:10px/1.65 'Courier New',monospace;letter-spacing:.22em;text-transform:uppercase}.mast{position:fixed;z-index:4;left:4.4%;right:4.4%;top:4%;border-top:1px solid #dec4938c;padding-top:11px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}.mast .right{text-align:right;color:#b4c6bd}.mast .left{color:#e6bf80}.intro{position:fixed;top:19%;left:6.4%;width:min(41%,550px);z-index:3;pointer-events:none}.intro h1{font:normal clamp(53px,6.25vw,112px)/.91 Georgia,serif;letter-spacing:-.065em;margin:0;color:#f4e6ce;text-shadow:0 5px 24px #031724a9}.intro h1 em{color:#f2c68c;font-weight:normal}.intro p{font:italic clamp(14px,1.35vw,19px)/1.58 Georgia,serif;max-width:310px;margin:29px 0 19px;color:#c7d8d2;text-shadow:0 2px 9px #00131b}.signature{font:10px/1.9 'Courier New',monospace;letter-spacing:.19em;color:#d7bc8e;text-transform:uppercase}.plate{position:fixed;left:6.5%;bottom:25%;z-index:3;pointer-events:none}.plate b{display:block;font:italic 26px Georgia,serif;letter-spacing:-.02em;color:#f2dfbd}.plate span{display:block;margin-top:5px;color:#b9c7bd;font:10px/1.5 'Courier New',monospace;letter-spacing:.19em;text-transform:uppercase}.plate .small{margin-top:13px;color:#deba83;opacity:.84;font-size:9px}.legend{position:fixed;right:4.7%;top:27%;color:#e3cb9d;pointer-events:none;text-align:right;z-index:2;opacity:.85;font:9px/1.75 'Courier New',monospace;letter-spacing:.16em;text-transform:uppercase}.deck{position:fixed;bottom:3.2%;left:4.4%;right:4.4%;z-index:6;border-bottom:1px solid #dfc99b82;padding-bottom:11px;display:flex;align-items:flex-end;gap:18px;justify-content:space-between}.actions{display:flex;align-items:center;justify-content:flex-start;gap:5px;flex-wrap:wrap}.actions button{font:10px/1.15 'Courier New',monospace;letter-spacing:.11em;color:#e5d0a6;background:#071e2cdd;border:1px solid #c3a47771;min-height:37px;padding:11px 12px;cursor:pointer;transition:background .2s ease,color .2s ease}.actions button:hover{background:#bc936c43}.actions button[aria-pressed=true]{background:#dfbc84;color:#08212c;border-color:#e6cd98}.actions button:focus-visible,.tuning input:focus-visible{outline:2px solid #f1cf97;outline-offset:2px}.tuning{display:flex;gap:11px;align-items:center;border-left:1px solid #cdb38879;padding-left:15px;background:#06182577;min-height:38px}.tuning label{display:flex;flex-direction:column;gap:2px;min-width:90px;color:#e0bb85;font:9px 'Courier New',monospace;letter-spacing:.12em}.tuning strong{font-weight:normal;color:#fff3da}.tuning input{width:90px;height:14px;accent-color:#e2b376;cursor:pointer}.sr{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+@media(max-width:900px){.intro{top:16%;left:6%;width:46%}.intro h1{font-size:clamp(52px,6.5vw,78px)}.legend{display:none}.deck{display:block}.tuning{margin-top:8px;border-left:0;border-top:1px solid #d7c39052;padding:8px 0 0}.actions button{padding:9px 10px;min-height:34px}.plate{bottom:29%}}
+@media(max-width:650px){.mast{left:5%;right:5%;top:2.6%}.letter{font-size:8px;letter-spacing:.12em}.mast .right{font-size:8px}.intro{top:10.5%;left:6%;width:88%}.intro h1{font-size:clamp(43px,10vw,62px);line-height:.91;max-width:340px}.intro p{font-size:12px;line-height:1.4;max-width:300px;margin:10px 0}.signature{display:none}.plate{bottom:29%;left:6%}.plate b{font-size:19px}.plate span,.plate .small{font-size:8px}.deck{bottom:2%;left:5%;right:5%;padding-bottom:7px}.actions{gap:4px}.actions button{letter-spacing:.045em;padding:7px 7px;min-height:31px;font-size:9px}.tuning{gap:18px;min-height:35px;padding-top:6px}.tuning label{min-width:118px;font-size:9px;flex-direction:row;flex-wrap:wrap;gap:6px}.tuning input{width:112px}.deck:before{content:'';position:absolute;inset:-18px -14px -10px;background:linear-gradient(transparent,#041620e8 21%,#041620ee);z-index:-1;pointer-events:none}}
+@media(max-height:660px){.intro{top:12%}.intro p{display:none}.plate{display:none}}
+@media(prefers-reduced-motion:reduce){.actions button{transition:none}}
+</style></head>
+<body>
+<canvas id="atlas" role="img" aria-label="A copperplate atlas of a drowned bell below the sea. Resonant standing-wave nodes gather into luminous sand patterns, engrave ocean-depth contours and pulse through a submerged coastline."></canvas>
+<header class="mast letter"><div class="left">THE INSTITUTE OF LOST FREQUENCIES<br>FIELD SHEET 003 &nbsp;/&nbsp; ATLANTIC DEPOSIT</div><div class="right">HYDROACOUSTIC ARCHIVE<br>58° 41′ N &nbsp;·&nbsp; DEPTH − 280 M</div></header>
+<section class="intro"><h1>THE CHOIR<br><em>OF DROWNED</em><br>BELLS</h1><p>There are sounds the sea remembers long after the towers have fallen.</p><div class="signature">AN INSTRUMENT FOR SEEING SILENCE<br>THE COAST IS WRITTEN IN RESONANCE</div></section>
+<div class="plate"><b id="movement">The First Sounding</b><span id="movementSub">I / WHEN THE SOUND ENTERED THE WATER</span><span id="readout" class="small">NODE PAIR 03 : 05 &nbsp; / &nbsp; QUIET</span></div>
+<div class="legend" id="legend">ISOLINES / RESONANT SEABED<br>VISIBLE SOUND / NO AUDIO<br>1 CM : 20 FATHOMS</div>
+<footer class="deck"><nav class="actions" aria-label="Art and movement controls"><button data-scene="0" aria-pressed="true">I · SOUNDING</button><button data-scene="1" aria-pressed="false">II · TOLL</button><button data-scene="2" aria-pressed="false">III · CHOIR</button><button id="strike">STRIKE ↗</button><button id="survey" aria-pressed="true">SOUNDINGS</button><button id="still" aria-pressed="false">STILL</button><button id="save">COLLECT ↓</button></nav><div class="tuning" aria-label="Standing wave modes"><label for="modeA">FIRST MODE <strong id="aVal">03</strong><input id="modeA" type="range" min="1" max="8" step="1" value="3"></label><label for="modeB">SECOND MODE <strong id="bVal">05</strong><input id="modeB" type="range" min="1" max="8" step="1" value="5"></label></div></footer>
+<div class="sr" id="live" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('atlas'),c=canvas.getContext('2d',{alpha:false});if(!c)return;
+const TAU=Math.PI*2,PI=Math.PI,W=1600,H=1000,CX=1074,CY=473,R=312,reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const modes=[{n:3,m:5,name:'The First Sounding',sub:'I / WHEN THE SOUND ENTERED THE WATER',sky:'#071c2c',sea:'#0b3546',dark:'#04131e',gold:'#edbd81',blue:'#9ddcca',rose:'#c8998e'},
+{n:4,m:6,name:'The Deep Toll',sub:'II / THE BRONZE REMEMBERS THE STORM',sky:'#211d32',sea:'#37263a',dark:'#120d20',gold:'#f4ad8c',blue:'#e6c2d9',rose:'#fa9283'},
+{n:5,m:7,name:'The Choir of Silt',sub:'III / EVERY SHORE IS A STRING',sky:'#082527',sea:'#163b3d',dark:'#071818',gold:'#e7cd89',blue:'#bcf0cd',rose:'#dbad75'}];
+let scene=0,n=3,m=5,phase=5.3,frozen=reduced.matches,survey=true,energy=.2,impact=0,contours=null,dots=[],vw=0,vh=0,dpr=1,scl=1,ox=0,oy=0,frame=0,last=0;
+const $=id=>document.getElementById(id),rng=k=>{const t=Math.sin(k*127.1+23.819)*43758.5453;return t-Math.floor(t)},clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function color(hex,a){const s=hex.replace('#','');return `rgba(${parseInt(s.slice(0,2),16)},${parseInt(s.slice(2,4),16)},${parseInt(s.slice(4,6),16)},${a})`}
+function grad(x,y,x1,y1,stops){const z=c.createLinearGradient(x,y,x1,y1);for(const [p,col] of stops)z.addColorStop(p,col);return z}
+function radial(x,y,r,stops){const z=c.createRadialGradient(x,y,0,x,y,r);for(const [p,col] of stops)z.addColorStop(p,col);return z}
+function line(x,y,x1,y1,col='#ffffff',w=1){c.beginPath();c.moveTo(x,y);c.lineTo(x1,y1);c.strokeStyle=col;c.lineWidth=w;c.stroke()}
+function disc(x,y,r,fill){c.beginPath();c.arc(x,y,r,0,TAU);c.fillStyle=fill;c.fill()}
+function text(s,x,y,sz=11,col='#c9bd9d',align='left'){c.font=`${sz}px "Courier New",monospace`;c.textAlign=align;c.textBaseline='middle';c.fillStyle=col;c.fillText(s,x,y);c.textAlign='left'}
+function wave(u,v){return Math.cos(n*PI*u)*Math.cos(m*PI*v)-Math.cos(m*PI*u)*Math.cos(n*PI*v)}
+function seaFloor(x){let u=x/1600;return 790+50*Math.sin(u*5.9+.28)+42*Math.sin(u*12.4+1.5)+16*Math.sin(u*28.2)+17*wave(clamp(u,0,1),.6)}
+function refreshModes(){
+  contours=[];dots=[];const SZ=80,N=SZ+1;let vals=new Float32Array(N*N);
+  const val=(i,j)=>vals[j*N+i];
+  for(let j=0;j<=SZ;j++)for(let i=0;i<=SZ;i++){const x=2*i/SZ-1,y=2*j/SZ-1;vals[j*N+i]=wave((x+1)/2,(y+1)/2)+.20*y+.13*Math.sin(x*9+y*7)}
+  for(let h=-1.5;h<=1.5;h+=.155){const path=new Path2D();for(let j=0;j<SZ;j++)for(let i=0;i<SZ;i++){
+    const v=[val(i,j),val(i+1,j),val(i+1,j+1),val(i,j+1)],pts=[];
+    for(let k=0;k<4;k++){const q=(k+1)%4;if((v[k]<h)!==(v[q]<h)){const t=clamp((h-v[k])/(v[q]-v[k]),0,1),a=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]][k],b=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]][q];pts.push([CX-R+(a[0]+(b[0]-a[0])*t)*(2*R/SZ),CY-R+(a[1]+(b[1]-a[1])*t)*(2*R/SZ)])}}
+    if(pts.length===2){path.moveTo(pts[0][0],pts[0][1]);path.lineTo(pts[1][0],pts[1][1])}else if(pts.length===4){path.moveTo(pts[0][0],pts[0][1]);path.lineTo(pts[1][0],pts[1][1]);path.moveTo(pts[2][0],pts[2][1]);path.lineTo(pts[3][0],pts[3][1])}
+  }contours.push({h,path})}
+  for(let k=0;k<2600;k++){let x=rng(k*3+5)*2-1,y=rng(k*3+6)*2-1;if(x*x+y*y>.96)continue;let v=Math.abs(wave((x+1)/2,(y+1)/2));if(v<.105||rng(k*3+7)<.035)dots.push({x:CX+x*R,y:CY+y*R,v,t:rng(k*4+11)*TAU,r:.45+rng(k*4+13)*1.25})}
+  $('aVal').textContent=String(n).padStart(2,'0');$('bVal').textContent=String(m).padStart(2,'0');$('readout').textContent=`NODE PAIR ${String(n).padStart(2,'0')} : ${String(m).padStart(2,'0')} / ${energy>.5?'RINGING':'QUIET'}`;
+}
+function sceneSelect(i){scene=i;const p=modes[i];n=p.n;m=p.m;$('modeA').value=n;$('modeB').value=m;$('movement').textContent=p.name;$('movementSub').textContent=p.sub;document.querySelectorAll('[data-scene]').forEach((b,k)=>b.setAttribute('aria-pressed',String(i===k)));energy=.27;refreshModes();$('live').textContent=p.name;draw()}
+function strike(){impact=0;energy=1.35;$('readout').textContent=`NODE PAIR ${String(n).padStart(2,'0')} : ${String(m).padStart(2,'0')} / RINGING`;if(frozen)draw();$('live').textContent='The drowned bell resonates. The lines of sand rearrange.'}
+function background(P){c.fillStyle=grad(0,0,0,H,[[0,P.sky],[.45,P.sea],[1,P.dark]]);c.fillRect(0,0,W,H);
+ c.fillStyle=radial(CX,370,660,[[0,color(P.blue,.22)],[.55,color(P.blue,.035)],[1,color(P.blue,0)]]);c.fillRect(260,-200,1450,1240);
+ for(let i=0;i<420;i++){let x=rng(i*11+9)*W,y=rng(i*11+10)*H;if(x<580&&y<625)continue;c.globalAlpha=.12+.4*rng(i*8+4);disc(x,y,.35+rng(i*7+5)*1.1,P.blue)}c.globalAlpha=1;
+ // The ocean surface is a cartographer's ruled horizon, not a photographic wave.
+ c.fillStyle=grad(0,265,0,450,[[0,color(P.blue,.13)],[1,color(P.blue,0)]]);c.fillRect(0,265,W,185);
+ for(let j=0;j<18;j++){c.beginPath();for(let x=0;x<=W;x+=14){const y=273+j*8+Math.sin(x*.013+j*.7+phase*.19)*2.4+Math.sin(x*.039-j*.8-phase*.16)*.9;x?c.lineTo(x,y):c.moveTo(x,y)}c.strokeStyle=color(P.blue,.03+(j%4===0?.10:0));c.lineWidth=j%4===0?1.3:.65;c.stroke()}
+ line(0,270,1600,270,color(P.gold,.23));for(let x=0;x<1600;x+=18)line(x,266,x,274,color(P.gold,.08));
+ // A distant upper beacon; the archive's coastal above/below vocabulary.
+ const bx=690;line(bx,214,bx,268,color(P.gold,.3));c.beginPath();c.moveTo(bx-35,267);c.lineTo(bx-26,236);c.lineTo(bx-16,234);c.lineTo(bx-13,189);c.lineTo(bx+14,189);c.lineTo(bx+19,235);c.lineTo(bx+35,265);c.closePath();c.fillStyle='#061924';c.fill();c.strokeStyle=color(P.gold,.5);c.lineWidth=1.5;c.stroke();c.fillStyle=P.gold;c.fillRect(bx-17,188,34,5);c.fillRect(bx-7,179,14,8);disc(bx,183,5,P.gold);line(bx,183,CX-220,362,color(P.gold,.13),1.2);
+ // Depth-graded ruled longitude and bathymetric markers.
+ for(let x=40;x<1600;x+=80){line(x,286,x,1000,color(P.blue,.035));for(let y=320;y<980;y+=80)disc(x,y,.65,color(P.blue,.09))}
+ for(let y=355;y<1000;y+=86){line(62,y,114,y,color(P.gold,.15));line(94,y,94,y+44,color(P.gold,.1));if(survey)text('-'+Math.round((y-250)*.57)+' m',121,y,9,color(P.gold,.44))}
+}
+function seabed(P){c.beginPath();c.moveTo(0,1000);c.lineTo(0,seaFloor(0));for(let x=8;x<=W;x+=8)c.lineTo(x,seaFloor(x));c.lineTo(W,1000);c.closePath();c.fillStyle=grad(0,720,0,1000,[[0,color(P.rose,.19)],[.3,color(P.gold,.10)],[1,'#030d13']]);c.fill();c.strokeStyle=color(P.gold,.49);c.lineWidth=1.7;c.stroke();
+ c.save();c.beginPath();c.moveTo(0,1000);c.lineTo(0,seaFloor(0));for(let x=8;x<=W;x+=8)c.lineTo(x,seaFloor(x));c.lineTo(W,1000);c.closePath();c.clip();for(let z=0;z<19;z++){let off=z*10;c.beginPath();for(let x=0;x<=W;x+=7){let y=seaFloor(x)+off+Math.sin(x*.036+z*.45)*5;x?c.lineTo(x,y):c.moveTo(x,y)}c.strokeStyle=z%4===0?color(P.gold,.24):color(P.blue,.10);c.lineWidth=z%4===0?1.5:.75;c.stroke()}for(let i=0;i<700;i++){const x=rng(i*3+100)*1600,y=seaFloor(x)+rng(i*3+101)*220;if(y>1000)continue;disc(x,y,rng(i*3+102)*1.1,color(P.gold,.17))}c.restore();
+ if(survey){for(let x=690;x<1550;x+=146){const y=seaFloor(x);line(x,y-32,x,y-8,color(P.gold,.46));disc(x,y,2,P.gold);text(String(Math.round((y-260)*.57)).padStart(3,'0'),x,y-39,9,color(P.gold,.65),'center')}}
+}
+function ringingPlate(P){c.save();c.beginPath();c.arc(CX,CY,R,0,TAU);c.clip();c.fillStyle=radial(CX,CY,330,[[0,color(P.blue,.10)],[.66,'#041923e8'],[1,'#020d19']]);c.fillRect(CX-R,CY-R,R*2,R*2);
+ // Graduated tidal isobaths: the Chladni displacement field is the terrain itself.
+ c.save();c.globalCompositeOperation='screen';for(let i=0;i<contours.length;i++){const {path,h}=contours[i];c.strokeStyle=color(i%3===0?P.gold:P.blue,.12+.045*Math.cos(i+phase*.2)+Math.min(.15,energy*.1));c.lineWidth=i%4===0?1.5:.65;c.stroke(path)}c.restore();
+ // Sand gathers along standing-wave nodes. After a strike, the plate brightens.
+ for(const p of dots){const fl=.64+.36*Math.sin(p.t+phase*.5);c.globalAlpha=clamp((.25+energy*.35)*fl,0,1);disc(p.x,p.y,p.r+energy*.35,P.gold)}c.globalAlpha=1;
+ for(let i=0;i<14;i++){const y=CY-R+i*50;line(CX-R,y,CX+R,y,color(P.blue,.032));}
+ c.restore();
+ // Three calibrated concentric annuli, gilded ticks and compass points.
+ for(let i=0;i<4;i++){c.beginPath();c.arc(CX,CY,R+8+i*11,0,TAU);c.strokeStyle=color(i%2?P.gold:P.blue,i===0?.55:i===3?.15:.27);c.lineWidth=i===0?2:.8;c.stroke()}
+ for(let i=0;i<144;i++){const a=i*TAU/144,inner=R+11,outer=R+(i%12===0?27:i%3===0?21:16);line(CX+Math.cos(a)*inner,CY+Math.sin(a)*inner,CX+Math.cos(a)*outer,CY+Math.sin(a)*outer,color(P.gold,i%12===0?.77:.34),i%12===0?1.7:.8)}
+ c.beginPath();c.arc(CX,CY,R+39,PI*1.05,PI*1.93);c.strokeStyle=color(P.gold,.34);c.lineWidth=1;c.stroke();
+ if(survey){text('RESONANT CROSS SECTION / '+n+' : '+m,CX,CY-R-59,11,P.gold,'center');text('THE SOUNDING IS A SHAPE',CX,CY+R+58,11,P.gold,'center');for(const [a,s] of [[-PI/2,'N'],[0,'E'],[PI/2,'S'],[PI,'W']])text(s,CX+Math.cos(a)*(R+52),CY+Math.sin(a)*(R+52),10,color(P.gold,.69),'center')}
+}
+function bell(P){const x=CX,y=CY+25;
+ // The instrument is submerged: chains, corrosion and asymmetric cast-metal relief.
+ for(let a=-1;a<=1;a+=2){line(x+a*60,CY-287,x+a*62,y-124,color(P.gold,.27),2);for(let j=0;j<17;j++){const yy=CY-272+j*9;c.beginPath();c.ellipse(x+a*60,yy,4,7,0,0,TAU);c.strokeStyle=color(P.gold,.14);c.lineWidth=1;c.stroke()}}
+ c.save();c.shadowColor=P.gold;c.shadowBlur=20+energy*28;
+ c.beginPath();c.moveTo(x-47,y-132);c.quadraticCurveTo(x-71,y-129,x-81,y-89);c.bezierCurveTo(x-85,y-18,x-108,y+69,x-154,y+114);c.quadraticCurveTo(x,y+153,x+155,y+114);c.bezierCurveTo(x+104,y+65,x+83,y-11,x+82,y-88);c.quadraticCurveTo(x+68,y-132,x+47,y-132);c.closePath();c.fillStyle=grad(x-162,y,x+166,y,[[0,'#30291e'],[.2,P.rose],[.39,'#ad764f'],[.55,'#edbb78'],[.72,'#7e684a'],[1,'#192d2a']]);c.fill();c.shadowBlur=0;c.strokeStyle=color(P.gold,.89);c.lineWidth=2.2;c.stroke();c.clip();
+ for(let j=0;j<15;j++){const yy=y-86+j*14;c.beginPath();c.moveTo(x-180,yy);c.bezierCurveTo(x-30,yy+6+Math.sin(j*4)*10,x+85,yy-14,x+160,yy+5);c.strokeStyle=color(j%3===0?P.blue:P.gold,j%3===0?.21:.26);c.lineWidth=j%3===0?1.6:.8;c.stroke()}
+ for(let i=0;i<73;i++){const xx=x+(rng(i*29+1)-.5)*300,yy=y+(rng(i*29+2)-.5)*225;disc(xx,yy,1+rng(i*29+3)*2,color(P.blue,.04+rng(i*29+4)*.18))}c.restore();
+ // Burnished lip and the sounding clapper; ornament is separate from modal geometry.
+ c.beginPath();c.ellipse(x,y+116,153,22,0,0,TAU);c.strokeStyle=P.gold;c.lineWidth=5;c.stroke();c.beginPath();c.ellipse(x,y+116,148,17,0,0,TAU);c.strokeStyle=color(P.blue,.65);c.lineWidth=1.2;c.stroke();
+ line(x,y-77,x,y+154,color(P.gold,.75),4);disc(x,y+161,18,grad(x-20,0,x+20,0,[[0,'#4c4b3c'],[.5,P.gold],[1,'#52412f']]));
+ c.beginPath();c.ellipse(x,y-134,43,14,0,0,TAU);c.fillStyle='#182e2e';c.fill();c.strokeStyle=P.gold;c.lineWidth=3;c.stroke();c.beginPath();c.ellipse(x,y-144,20,25,0,PI,0);c.strokeStyle=P.gold;c.lineWidth=5;c.stroke();
+ // Monogram, hand-engraved strokes, and twelve individual crowns.
+ c.save();c.translate(x,y+1);c.strokeStyle=color('#fff2cb',.7);c.lineWidth=1.3;c.beginPath();c.arc(0,-2,41,0,TAU);c.stroke();c.beginPath();c.arc(0,-2,46,0,TAU);c.stroke();for(let i=0;i<12;i++){const a=i*TAU/12;disc(Math.cos(a)*43,Math.sin(a)*43-2,1.6,P.gold)}text('M',0,-4,43,color('#ffe9b5',.8),'center');text('XVII',0,26,8,color('#f6d1a4',.75),'center');c.restore();
+ // Strokes travel through the vessel, rather than generating audio.
+ for(let i=0;i<4;i++){const r=168+i*29+(impact*110)%29;c.beginPath();c.ellipse(x,y+75,r,r*.58,0,0,TAU);c.strokeStyle=color(i%2?P.blue:P.gold,Math.max(0,(.1+energy*.15)*(1-i*.19)));c.lineWidth=1.3;c.stroke()}
+}
+function annotations(P){if(!survey)return;const x=1472;line(x,200,x,740,color(P.gold,.27));for(let j=0;j<=12;j++){let y=210+j*41;line(x-7,y,x+(j%3===0?17:8),y,color(P.gold,.42),j%3===0?1.5:.8);if(j%3===0)text(String(j*20).padStart(3,'0'),x+26,y,9,color(P.gold,.55))}
+ text('FATHOMS',x-2,185,10,color(P.gold,.6));text('SALT / BRONZE',1384,838,9,color(P.gold,.58));line(1364,841,1488,841,color(P.gold,.33));text('NO VOICE SURVIVES',1306,861,9,color(P.gold,.5));
+ text('02 / EXCITED PLATE',738,189,10,color(P.gold,.6));line(736,201,815,201,color(P.gold,.32));
+ // Map line crossing the ring into seafloor: measured geological/acoustic linkage.
+ c.setLineDash([2,9]);line(CX+192,CY+254,CX+230,seaFloor(CX+230),color(P.gold,.36));c.setLineDash([]);
+}
+function draw(){if(!vw||!vh)return;const p=modes[scene];c.setTransform(dpr*scl,0,0,dpr*scl,dpr*ox,dpr*oy);background(p);seabed(p);ringingPlate(p);bell(p);annotations(p);
+ // Sparse flecks above the bell: the deep answers each strike with light.
+ for(let i=0;i<90;i++){const x=CX-265+rng(i*13+3)*530,y=CY-270+rng(i*13+5)*530;if(Math.hypot(x-CX,y-CY)>R-20)continue;const glow=Math.max(0,Math.sin(phase*.5+i)*.5+.5);disc(x+Math.sin(phase*.11+i)*4,y-(phase*.5+i*11)%17,0.5+rng(i*17+3)*1.2,color(p.blue,(.04+glow*.18)*(1+energy*.2)))}
+}
+function resize(){vw=innerWidth;vh=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(vw*dpr);canvas.height=Math.round(vh*dpr);scl=Math.max(vw/W,vh/H);ox=vw/2-(vw<750?CX:W/2)*scl;oy=(vh-H*scl)/2;draw()}
+function animate(now){const dt=Math.min(.05,Math.max(0,(now-last)/1000||0));last=now;if(!frozen){phase+=dt;impact+=dt;energy=Math.max(.18,energy-dt*.35);if(frame++%2===0)draw()}requestAnimationFrame(animate)}
+document.querySelectorAll('[data-scene]').forEach((b,i)=>b.addEventListener('click',()=>sceneSelect(i)));
+$('modeA').addEventListener('input',e=>{n=+e.target.value;refreshModes();draw()});$('modeB').addEventListener('input',e=>{m=+e.target.value;refreshModes();draw()});
+$('strike').addEventListener('click',strike);$('survey').addEventListener('click',()=>{survey=!survey;$('survey').setAttribute('aria-pressed',String(survey));draw()});
+$('still').addEventListener('click',()=>{frozen=!frozen;$('still').setAttribute('aria-pressed',String(frozen));$('live').textContent=frozen?'Motion suspended':'Motion resumed';draw()});
+$('save').addEventListener('click',()=>{draw();const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='the-choir-of-drowned-bells-plate-'+(scene+1)+'.png';document.body.append(a);a.click();a.remove()});
+canvas.addEventListener('pointerdown',()=>strike());document.addEventListener('keydown',e=>{if(e.target?.tagName==='INPUT')return;if(['1','2','3'].includes(e.key))sceneSelect(+e.key-1);else if(e.key===' '){e.preventDefault();strike()}else if(e.key.toLowerCase()==='x')$('survey').click();else if(e.key.toLowerCase()==='p')$('still').click();else if(e.key.toLowerCase()==='e')$('save').click()});
+window.addEventListener('resize',resize);reduced.addEventListener?.('change',e=>{frozen=e.matches;$('still').setAttribute('aria-pressed',String(frozen));draw()});
+$('still').setAttribute('aria-pressed',String(frozen));sceneSelect(0);resize();requestAnimationFrame(animate);
+})();
+</script></body></html>
