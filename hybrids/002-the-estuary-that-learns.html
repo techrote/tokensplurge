@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b181c"><title>The Estuary That Learns — a living woven atlas</title>
+<style>
+:root{color-scheme:dark;--ivory:#e5dabe;--gold:#c6a47a;--mute:#a8ada3;--ink:#101d21}
+*{box-sizing:border-box}html{background:#0b161a}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 48% 26%,#233439,#111c21 59%,#0b1418);color:var(--ivory);font-family:Georgia,'Times New Roman',serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 5px,#d7b989 6px 6.4px,transparent 7px 13px),repeating-linear-gradient(90deg,transparent 0 7px,#c3a98a 8px 8.3px,transparent 9px 16px);mix-blend-mode:soft-light}
+.frame{position:relative;max-width:1370px;padding:22px 30px 23px;margin:auto}.meta{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #8e9a8d55;padding:0 1px 12px;color:#c8ac83;font:10px/1.4 ui-monospace,Consolas,monospace;letter-spacing:.25em}.meta span:last-child{text-align:right}
+header{text-align:center;padding:13px 0 15px}.eyebrow{font:10px/1.5 ui-monospace,monospace;letter-spacing:.4em;color:#bd9b75;margin:4px 0 8px}h1{font-size:clamp(43px,6.5vw,89px);font-weight:normal;letter-spacing:-.062em;line-height:1;margin:0;text-shadow:0 5px 14px #03080b90}h1 em{font-weight:normal;color:#d4a679}.subtitle{font-size:clamp(13px,1.45vw,18px);font-style:italic;letter-spacing:.03em;margin:11px auto 0;color:#bcc4b8}
+.index{width:min(1220px,100%);display:flex;justify-content:space-between;gap:18px;margin:0 auto 7px;font:9px/1.5 ui-monospace,monospace;letter-spacing:.23em;color:#c19e74}.index span:last-child{text-align:right}
+.stage{width:min(1220px,100%);margin:auto;position:relative;box-shadow:0 18px 44px #050b0ed1,0 0 0 1px #8b694a66;background:#11282c;border:12px ridge #69513d;overflow:hidden;touch-action:pan-y}
+.stage::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px #edbe8559,inset 0 0 45px #030909bb}
+#art{display:block;width:100%;height:auto;aspect-ratio:1200 / 750;cursor:crosshair}.screw{position:absolute;width:11px;height:11px;z-index:2;border:1px solid #d2b486;border-radius:50%;background:radial-gradient(circle at 38% 38%,#e4b985,#775132 55%,#2a2520);pointer-events:none}.screw.a{left:5px;top:5px}.screw.b{right:5px;top:5px}.screw.c{left:5px;bottom:5px}.screw.d{right:5px;bottom:5px}
+.status{width:min(1220px,100%);margin:15px auto 0;display:flex;align-items:center;justify-content:space-between;gap:18px}.specimen{font:11px/1.7 ui-monospace,Consolas,monospace;letter-spacing:.16em;color:#dfb889}.specimen em{display:block;font:italic 17px/1.5 Georgia,serif;letter-spacing:0;color:#b8c5b7}.buttons{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:7px}button{appearance:none;border:1px solid #8d948877;background:#1d3134;color:#eadbc0;padding:11px 13px;font:10px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.1em;cursor:pointer;min-height:42px}button:hover,button:focus-visible{outline:2px solid #e7bf89;outline-offset:2px;background:#324549}button[aria-pressed=true]{background:#c9ad83;color:#142326;border-color:#e8c99b}.split{margin-left:6px}.note{width:min(1220px,100%);margin:15px auto 0;padding-top:11px;border-top:1px solid #8e9a8d44;display:flex;justify-content:space-between;gap:18px;color:#8fa49e;font:9px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.13em}.note span:last-child{text-align:right}
+@media(max-width:750px){.frame{padding:12px 12px 18px}.meta{font-size:8px;letter-spacing:.08em}header{padding:19px 0 21px}.eyebrow{font-size:8px;letter-spacing:.17em}h1{font-size:clamp(40px,9vw,65px)}.subtitle{font-size:12px}.index{font-size:7px;letter-spacing:.11em}.stage{border-width:6px}#art{aspect-ratio:5 / 5;object-fit:fill}.status{display:block;margin-top:16px}.specimen{font-size:9px}.specimen em{font-size:14px;margin-bottom:14px}.buttons{justify-content:center}.buttons button{flex:1;min-width:27%;padding:11px 7px;font-size:9px}.split{margin-left:0}.note{display:block;font-size:8px}.note span{display:block;margin-bottom:6px}.note span:last-child{text-align:left}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+</style>
+</head>
+<body><main class="frame">
+<div class="meta"><span>THE UNMADE ATLAS / FIELD NOTE 002</span><span>CARTOGRAPHY OF A POSSIBLE BIOLOGY · MMXXVI</span></div>
+<header><p class="eyebrow">AN EMBROIDERED EXPERIMENT IN GROWING GEOGRAPHY</p><h1>The Estuary <em>That Learns</em></h1><p class="subtitle">What if the missing rivers remembered how to grow?</p></header>
+<div class="index"><span>FIG. <span id="num">I / III</span> · WOVEN HYDROLOGY / LIVING CHEMISTRY</span><span>EVERY STITCH A SMALL DECISION</span></div>
+<div class="stage"><canvas id="art" width="1200" height="750" aria-label="Interactive stitched atlas: tributaries feed a living reaction-diffusion landscape. Drag to plant new growth." role="img"></canvas><i class="screw a"></i><i class="screw b"></i><i class="screw c"></i><i class="screw d"></i></div>
+<section class="status" aria-label="Artwork controls"><div class="specimen"><span id="name">01 / THE VELVET DELTA</span><em id="verse">The river teaches the shore its alphabet.</em></div><nav class="buttons"><button class="mode" data-mode="0" aria-pressed="true">I · DELTA</button><button class="mode" data-mode="1" aria-pressed="false">II · LACE</button><button class="mode" data-mode="2" aria-pressed="false">III · GHOST</button><button id="reseed" class="split">SOW AGAIN</button><button id="pause">STILL</button><button id="save">COLLECT ↓</button></nav></section>
+<div class="note"><span>DRAG ACROSS THE FABRIC TO PLANT CHEMISTRY · KEYS 1—3 / R / SPACE / E</span><span>AFTER “WHERE THE RIVERS WERE” × “TURING GARDEN”</span></div>
+</main>
+<script>
+(()=>{'use strict';
+const W=1200,H=750,TAU=Math.PI*2,canvas=document.getElementById('art'),c=canvas.getContext('2d',{alpha:false});
+const base=document.createElement('canvas');base.width=W;base.height=H;const b=base.getContext('2d');
+const coarse=document.createElement('canvas'),GW=200,GH=125;coarse.width=GW;coarse.height=GH;const cc=coarse.getContext('2d'),pixels=cc.createImageData(GW,GH);
+const modes=[
+{title:'01 / THE VELVET DELTA',verse:'The river teaches the shore its alphabet.',roman:'I / III',f:.035,k:.062,night:'#12282e',ground:'#26483f',deep:'#0d1d27',flow:'#4b8887',glint:'#d8d4aa',stitch:[222,197,126],light:[178,236,202],label:'BRACKISH / SPOTS',seed:3},
+{title:'02 / THE SALT LACE',verse:'A coastline folds itself into a million small loops.',roman:'II / III',f:.025,k:.054,night:'#302831',ground:'#62483d',deep:'#271d2b',flow:'#8b6e72',glint:'#edc68a',stitch:[250,161,123],light:[255,212,173],label:'LITTORAL / LABYRINTH',seed:9},
+{title:'03 / THE GHOST MEANDER',verse:'Even the riverbed has not forgotten the rain.',roman:'III / III',f:.039,k:.060,night:'#132238',ground:'#2c3b58',deep:'#0c162c',flow:'#456a87',glint:'#c7bce8',stitch:[185,164,242],light:[184,226,244],label:'NOCTURNAL / FILAMENT',seed:17}
+];
+let mode=0,seed=15,playing=!matchMedia('(prefers-reduced-motion:reduce)').matches,last=0,t=0,frame=0,drag=false,mouse={x:-99,y:-99},u,v,un,vn,chemicalFrame=0;
+function rnd(n){const x=Math.sin(n*127.1+seed*311.7)*43758.5453123;return x-Math.floor(x)}
+function rgb(h,a=1){const z=parseInt(h.slice(1),16);return `rgba(${z>>16},${z>>8&255},${z&255},${a})`}
+function riverAt(s,offset=0){const x=300+530*s+67*Math.sin(s*6.7-.7)+29*Math.sin(s*14+1.1),y=-90+930*s;const dx=530+449*Math.cos(s*6.7-.7)+406*Math.cos(s*14+1.1),dy=930,ln=Math.hypot(dx,dy);return [x+offset*dy/ln,y-offset*dx/ln]}
+function traced(ctx,arr){ctx.beginPath();arr.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]))}
+function line(ctx,pts,w,cl){traced(ctx,pts);ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=w;ctx.strokeStyle=cl;ctx.stroke()}
+function makeRiver(){return Array.from({length:180},(_,i)=>riverAt(i/179))}
+function mapBackground(){const p=modes[mode];let gr=b.createLinearGradient(0,0,W,H);gr.addColorStop(0,p.night);gr.addColorStop(.55,p.ground);gr.addColorStop(1,p.deep);b.fillStyle=gr;b.fillRect(0,0,W,H);
+ // Warp and weft: individual filaments cross the entire map rather than a flat cloth photograph.
+ b.lineWidth=.55;for(let x=4;x<W;x+=8){b.beginPath();for(let y=0;y<=H;y+=20){const q=x+1.15*Math.sin(y*.07+x*.022);y?b.lineTo(q,y):b.moveTo(q,y)}b.strokeStyle=x%24===4?'#d6bc9b1c':'#d5c5ad10';b.stroke()}
+ for(let y=4;y<H;y+=8){b.beginPath();for(let x=0;x<=W;x+=20){const q=y+1.4*Math.sin(x*.037+y*.05);x?b.lineTo(x,q):b.moveTo(x,q)}b.strokeStyle=y%24===4?'#f5d8ba20':'#ddc7ac12';b.stroke()}
+ // Imagined contour relief, interrupted by history rather than orderly concentric circles.
+ const hills=[[155,140,310,240],[970,220,335,280],[305,626,300,200],[1050,650,325,240]];
+ for(let h=0;h<hills.length;h++){const [cx,cy,rx,ry]=hills[h];for(let ring=0;ring<15;ring++){const sc=1-ring*.049;b.beginPath();for(let k=0;k<=260;k++){const a=k/260*TAU,w=1+.042*Math.sin(a*7+h*3)+.024*Math.sin(a*17+ring*.28),xx=cx+rx*sc*w*Math.cos(a),yy=cy+ry*sc*w*Math.sin(a);k?b.lineTo(xx,yy):b.moveTo(xx,yy)}b.closePath();b.strokeStyle=ring%4===0?rgb(p.glint,.20):rgb(p.glint,.075);b.lineWidth=ring%4===0?1.3:.75;b.stroke()}}
+ // The river is a cut into the cloth; sculpted banks and three physically joined tributaries.
+ const branches=[[[0,202],[180,240],[267,300],riverAt(.43)],[[1200,120],[1024,174],[942,215],riverAt(.39)],[[1200,575],[1050,595],[945,625],riverAt(.77)]];
+ for(let j=0;j<branches.length;j++){const z=branches[j],pts=[];for(let i=0;i<=90;i++){const s=i/90,a=1-s;pts.push([a*a*a*z[0][0]+3*a*a*s*z[1][0]+3*a*s*s*z[2][0]+s*s*s*z[3][0],a*a*a*z[0][1]+3*a*a*s*z[1][1]+3*a*s*s*z[2][1]+s*s*s*z[3][1]])}line(b,pts,38,'#07151caa');line(b,pts,29,p.flow);line(b,pts,1.5,rgb(p.glint,.48))}
+ let water=makeRiver();line(b,water,127,'#07151cb9');line(b,water,113,rgb(p.glint,.27));line(b,water,102,p.flow);line(b,water,71,rgb(p.deep,.29));
+ for(let bank of [-53,53])line(b,Array.from({length:180},(_,i)=>riverAt(i/179,bank)),2.1,rgb(p.glint,.71));
+ // Running-stitch banks, alternating tiny metallic stitches at measured stations.
+ for(let i=0;i<166;i++){let s=i/165;for(const bank of [-1,1]){const pt=riverAt(s,bank*(64+(i%5)*2)),a=s*17+bank; b.strokeStyle=i%3?rgb(p.glint,.30):rgb(p.glint,.78);b.lineWidth=1.1;b.beginPath();b.moveTo(pt[0]-4*Math.cos(a),pt[1]-3*Math.sin(a));b.lineTo(pt[0]+4*Math.cos(a),pt[1]+3*Math.sin(a));b.stroke()}}
+ // Textile map coordinates, compass rose, cartouche rules.
+ b.strokeStyle=rgb(p.glint,.4);b.lineWidth=1;b.strokeRect(30,28,W-60,H-56);b.strokeRect(37,35,W-74,H-70);
+ b.save();b.translate(100,110);for(let i=0;i<8;i++){b.rotate(Math.PI/4);b.beginPath();b.moveTo(0,-40);b.lineTo(7,-8);b.lineTo(0,-16);b.lineTo(-7,-8);b.closePath();b.fillStyle=i%2?rgb(p.glint,.32):rgb(p.glint,.72);b.fill()}b.strokeStyle=rgb(p.glint,.8);b.beginPath();b.arc(0,0,22,0,TAU);b.stroke();b.fillStyle=p.glint;b.font='12px Georgia';b.textAlign='center';b.fillText('N',0,-51);b.restore();
+ b.font='11px ui-monospace,monospace';b.fillStyle=rgb(p.glint,.76);b.fillText('HYPOTHETICAL BASIN / '+String(37+seed%23)+'° 19′',62,690);b.fillText('A FIELD NOT FOUND ON ANY MAP',808,690);
+ for(let n=0;n<70;n++){let x=46+rnd(n+150)*1100,y=50+rnd(n+320)*635,near=Math.abs(x-riverAt(y/930+.1)[0]);if(near<78)continue;b.fillStyle=n%4?rgb(p.glint,.27):rgb(p.glint,.65);b.fillRect(x,y,2.2,2.2);if(n%7===0){b.font='8px ui-monospace,monospace';b.fillText('· '+Math.floor(4+rnd(n+70)*47),x+6,y-4)}}
+}
+function splash(gx,gy,r=4){if(!v)return;for(let yy=Math.max(1,Math.floor(gy-r));yy<Math.min(GH-1,gy+r+1);yy++)for(let xx=Math.max(1,Math.floor(gx-r));xx<Math.min(GW-1,gx+r+1);xx++){if((gx-xx)**2+(gy-yy)**2<r*r){const i=yy*GW+xx;v[i]=.72;u[i]=.45}}}
+function initialize(){seed++;const n=GW*GH;u=new Float32Array(n).fill(1);v=new Float32Array(n);un=new Float32Array(n);vn=new Float32Array(n);
+ // Sown stitches follow riverbank curvature; the chemical is not a tiled background.
+ for(let i=0;i<105;i++){const s=(i+.5)/105,side=i%2?1:-1,[x,y]=riverAt(s,side*(85+110*rnd(i+210)));splash(x/W*GW,y/H*GH,2.5+rnd(i+88)*3.5)}
+ for(let i=0;i<60;i++)splash((40+rnd(i+12)*1120)/W*GW,(30+rnd(i+99)*690)/H*GH,2+rnd(i+7)*3);
+ for(let i=0;i<650;i++)step();chemicalFrame=0;mapBackground();draw()}
+function step(){const p=modes[mode];for(let y=1;y<GH-1;y++){const row=y*GW;for(let x=1;x<GW-1;x++){const i=row+x,U=u[i],V=v[i],lapU=.2*(u[i-1]+u[i+1]+u[i-GW]+u[i+GW])+.05*(u[i-GW-1]+u[i-GW+1]+u[i+GW-1]+u[i+GW+1])-U,lapV=.2*(v[i-1]+v[i+1]+v[i-GW]+v[i+GW])+.05*(v[i-GW-1]+v[i-GW+1]+v[i+GW-1]+v[i+GW+1])-V,uvv=U*V*V;
+ un[i]=U+lapU-uvv+p.f*(1-U);vn[i]=V+.5*lapV+uvv-(p.f+p.k)*V}}
+ [u,un]=[un,u];[v,vn]=[vn,v];}
+function chemical(){const p=modes[mode],d=pixels.data;for(let i=0;i<v.length;i++){let q=Math.max(0,Math.min(1,v[i]*2.5)),a=Math.max(0,Math.min(1,(q-.085)*2.1)),h=(q>.63?p.light:p.stitch),o=i*4;d[o]=h[0];d[o+1]=h[1];d[o+2]=h[2];d[o+3]=Math.round(82*a)}cc.putImageData(pixels,0,0)}
+function ornaments(){const p=modes[mode];c.save();c.fillStyle=rgb(p.glint,.83);c.strokeStyle=rgb(p.glint,.4);c.lineWidth=1;
+ // Reaction-diffusion is drawn as individually embroidered crosses, not as a luminous wallpaper.
+ c.lineCap='round';for(let gy=2;gy<GH-2;gy+=2)for(let gx=2;gx<GW-2;gx+=2){let q=v[gy*GW+gx];if(q<.095)continue;let x=gx*W/GW,y=gy*H/GH,alpha=Math.min(.94,.18+(q-.09)*1.55),len=2+q*5;c.globalAlpha=alpha;c.strokeStyle=q>.3?p.glint:rgb(p.glint,.75);c.lineWidth=q>.29?1.35:.85;c.beginPath();c.moveTo(x-len,y-len*.66);c.lineTo(x+len,y+len*.66);c.moveTo(x-len*.85,y+len*.67);c.lineTo(x+len*.85,y-len*.67);c.stroke()}c.globalAlpha=1;
+ // Irregularly interrupted cross-stitches create frayed margins around the growth.
+ for(let n=0;n<600;n++){let x=55+rnd(n+501)*1090,y=60+rnd(n+950)*630,gx=Math.min(GW-1,Math.floor(x/W*GW)),gy=Math.min(GH-1,Math.floor(y/H*GH));if(v[gy*GW+gx]<.12)continue;c.globalAlpha=.25+.55*rnd(n+800);c.beginPath();c.moveTo(x-2.6,y);c.lineTo(x+2.6,y);c.moveTo(x,y-2.6);c.lineTo(x,y+2.6);c.stroke()}c.globalAlpha=1;
+ // Flux on the river: the glint follows the physical map, not canvas screen rows.
+ for(let j=0;j<120;j++){let s=(j/120+t*.018+rnd(j+600)*.08)%1,[x,y]=riverAt(s,(rnd(j+700)-.5)*58);c.globalAlpha=.15+.65*(.5+.5*Math.sin(t*1.8+j*2));c.fillStyle=j%4?p.glint:'#fff6dc';c.beginPath();c.ellipse(x,y,1+j%3,4+j%7,.45,0,TAU);c.fill()}c.globalAlpha=1;
+ // Marginal field labels anchored to a map, not separate UI overlays.
+ c.fillStyle=rgb(p.glint,.88);c.font='12px ui-monospace,Consolas,monospace';c.fillText('I. / '+p.label,67,62);c.fillText('U + 2V → 3V',887,64);
+ c.font='italic 19px Georgia';c.fillText(mode===0?'Here the shore becomes a garden.':mode===1?'Salts leave a lace of living roads.':'A spectral tide writes over absence.',68,610);
+ const x=1017,y=622;c.lineWidth=1;c.strokeStyle=rgb(p.glint,.42);c.strokeRect(x-65,y-58,147,88);c.font='9px ui-monospace,monospace';c.fillStyle=rgb(p.glint,.8);c.fillText('LIVING STITCHES',x-52,y-42);c.fillText('FEED '+p.f.toFixed(3),x-52,y-22);c.fillText('KILL '+p.k.toFixed(3),x-52,y-7);let alive=0;for(let i=0;i<v.length;i+=19)alive+=v[i]>.17?1:0;c.fillStyle=rgb(p.glint,.64);c.fillRect(x-52,y+5,113,3);c.fillStyle=p.glint;c.fillRect(x-52,y+5,Math.min(113,alive/(v.length/19)*370),3);c.restore()}
+function draw(){if(!u)return;c.drawImage(base,0,0);chemical();c.save();c.globalCompositeOperation='screen';c.imageSmoothingEnabled=true;c.drawImage(coarse,0,0,W,H);c.restore();ornaments();if(drag){c.strokeStyle='#f2d7acb0';c.lineWidth=1;c.beginPath();c.arc(mouse.x,mouse.y,19+Math.sin(t*7)*3,0,TAU);c.stroke()}}
+function loop(now){frame=requestAnimationFrame(loop);if(!playing||document.hidden)return;let dt=Math.min(40,now-last||16);last=now;t+=dt/1000;for(let j=0;j<3;j++)step();chemicalFrame++;draw()}
+function choose(n){mode=n;document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-pressed',String(Number(x.dataset.mode)===n)));document.getElementById('name').textContent=modes[n].title;document.getElementById('verse').textContent=modes[n].verse;document.getElementById('num').textContent=modes[n].roman;initialize()}
+function toggle(){playing=!playing;document.getElementById('pause').textContent=playing?'STILL':'BREATHE';last=performance.now();if(!playing)draw()}
+function plant(e){const r=canvas.getBoundingClientRect();let x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;mouse={x,y};splash(x/W*GW,y/H*GH,7);if(!playing){for(let j=0;j<4;j++)step()}draw()}
+canvas.addEventListener('pointerdown',e=>{drag=true;canvas.setPointerCapture(e.pointerId);plant(e)});
+canvas.addEventListener('pointermove',e=>{if(drag)plant(e)});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{drag=false;draw()});
+document.querySelectorAll('.mode').forEach(btn=>btn.addEventListener('click',()=>choose(Number(btn.dataset.mode))));
+document.getElementById('reseed').addEventListener('click',initialize);document.getElementById('pause').addEventListener('click',toggle);
+document.getElementById('save').addEventListener('click',()=>{draw();let a=document.createElement('a');a.download='the-estuary-that-learns-'+(mode+1)+'.png';a.href=canvas.toDataURL('image/png');a.click()});
+window.addEventListener('keydown',e=>{if(/^[123]$/.test(e.key))choose(Number(e.key)-1);else if(e.key.toLowerCase()==='r')initialize();else if(e.code==='Space'){e.preventDefault();toggle()}else if(e.key.toLowerCase()==='e')document.getElementById('save').click()});
+document.addEventListener('visibilitychange',()=>last=performance.now());
+choose(0);document.getElementById('pause').textContent=playing?'STILL':'BREATHE';frame=requestAnimationFrame(loop);
+})();
+</script></body></html>
