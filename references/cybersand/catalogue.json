@@ -639,7 +639,7 @@
         "method": "local Chromium/Playwright exact per-entry source HTML",
         "desktop": "captures/lantern-ossuary-desktop.png",
         "detail": "captures/lantern-ossuary-detail.png",
-        "status": "pending",
+        "status": "captured",
         "report": "captures/report.json",
         "evidence": "Source/author-qualification grounded; independent pinned Chromium PNG capture pending. Not CyberSand native Godot, material or physics proof."
       },
