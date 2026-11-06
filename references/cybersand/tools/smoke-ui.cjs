@@ -34,6 +34,8 @@ async function check(){
   await page.locator('#reset').click();
   await page.locator('#search').fill('Lantern Ossuary');assert.equal(await number(),1,'curation-02 entry searchable');
   await page.locator('#reset').click();
+  await page.locator('#search').fill('The Thirst of the Sky');assert.equal(await number(),1,'curation-03 entry searchable');
+  await page.locator('#reset').click();
   await page.locator('.tab[data-kind="inspiration"]').click();
   await page.locator('#cards').scrollIntoViewIfNeeded();
   await page.waitForTimeout(250);

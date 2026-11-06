@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "from_commit": "381e93eeb91f96288ab6f9f536e748494d125889",
+  "description": "Published curation-02 identity lock; do not silently repin Lantern Ossuary or reuse its screenshot paths.",
+  "entries": [
+    {
+      "id": "lantern-ossuary",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "17b09a592a30e52ef35040ef2076f336ad6380ec",
+      "path": "environments/003-the-lantern-ossuary.html",
+      "blob_sha": "f6260fa0b9c4694e3978c3520f840de74a39ff45",
+      "capture_files": [
+        "captures/lantern-ossuary-desktop.png",
+        "captures/lantern-ossuary-detail.png"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "edition": "2026-11-06-curation-02",
+  "edition": "2026-11-06-curation-03",
   "created_utc": "2026-11-06",
   "status": "source-curated-browser-evidence-not-human-or-native-accepted",
   "pinned_sources": [
@@ -644,6 +644,43 @@
         "evidence": "Source/author-qualification grounded; independent pinned Chromium PNG capture pending. Not CyberSand native Godot, material or physics proof."
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/17b09a592a30e52ef35040ef2076f336ad6380ec/environments/003-the-lantern-ossuary.html"
+    },
+    {
+      "id": "thirst-of-the-sky",
+      "title": "The Thirst of the Sky — inhabited fog-condenser ridge",
+      "kind": "inspiration",
+      "repo": "techrote/tokensplurge",
+      "ref": "d2d7eb71bb4fdab431ab4a36515421e7c6f5df1c",
+      "path": "environments/004-the-thirst-of-the-sky.html",
+      "blob_sha": "87b6343d2827ad036e4b894f41864923c83695b1",
+      "tags": [
+        "hydrology",
+        "atmosphere",
+        "architecture",
+        "ecology",
+        "infrastructure",
+        "narrative",
+        "scale"
+      ],
+      "priority": "curated-candidate",
+      "design_principle": "Make a scarce environmental resource legible as a causal spatial sequence: weather interception, constrained load-bearing structures, collection, gravity-directed distribution, and visible downstream habitation. Contrast an open aerial silhouette with fine-scale working infrastructure.",
+      "cybersand_translation": "Pose an original arid or alpine resource-catchment environment whose terrain, fixed supports, channels, exposed maintenance, cultivation and settlement communicate a distinct supply chain through native-cell authored geometry; separate illustrative moisture from verified Water/Brine dynamics.",
+      "copy_boundary": "Do not reproduce the source's three pale triangular textile veils, ridgeline aperture, catenaries/anchors, exact cascading spillway, terrace layout, 1440x900 camera, mint/porcelain/apricot and lichen palette, labels/typography, wind/dew equations or droplet paths. Design a new terrain, capture medium, transport topology, silhouette, camera, materials, lighting and algorithm.",
+      "target_collections": [
+        "Dust Meridian",
+        "Silt Clockworks",
+        "Ashroot Nursery",
+        "Mirror Marsh"
+      ],
+      "capture": {
+        "method": "local Chromium/Playwright exact per-entry source HTML",
+        "desktop": "captures/thirst-of-the-sky-desktop.png",
+        "detail": "captures/thirst-of-the-sky-detail.png",
+        "status": "pending",
+        "report": "captures/report.json",
+        "evidence": "Source Git blob independently pinned; author-reported Chromium tests are not independently captured evidence. Pending exact-source hosted browser PNGs and per-image SHA-256 verification; never native Godot or physical Water qualification."
+      },
+      "source_url": "https://github.com/techrote/tokensplurge/blob/d2d7eb71bb4fdab431ab4a36515421e7c6f5df1c/environments/004-the-thirst-of-the-sky.html"
     }
   ],
   "source_revision_policy": "source identity is immutable on each entry; pinned_sources are historical snapshot anchors only"
