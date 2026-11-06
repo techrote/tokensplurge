@@ -17,14 +17,23 @@
 - [x] Each reference annotated with design-principle, translation and no-copy boundary.
 - [x] Benchmark images kept distinct from experimental browser artworks.
 - [x] Filterable single-file HTML library authored with embedded catalogue and source links.
-- [ ] All 14 TokenSplurge artworks/studies actually rendered at pinned revisions; 28 viewport/detail PNGs committed.
-- [ ] Capture report verifies 14/14 without page errors; PNG SHA-256 verified.
-- [ ] Manual review of actual PNGs for compelling compositions, nonblank frames and screenshot quality.
+- [x] All 14 TokenSplurge artworks/studies actually rendered at pinned revisions; 28 viewport/detail PNGs committed.
+- [x] Capture report verifies 14/14 without page errors; PNG SHA-256 verified.
+- [x] Manual inspection of all 14 detail crops (and the railway desktop screenshot) found real, nonblank composition evidence; full independent aesthetic acceptance remains outstanding.
 - [ ] Cross-repository discoverability handoff to CyberSand art workers recorded (without shared branch writes).
 - [ ] Independent artistic comparison against all five CyberSand benchmark images, performed in comparable contexts.
 - [ ] Human acceptance of selected improvements in CyberSand's actual native rendering.
 
-**Current state:** The checked boxes are source/document checks, not proof of rendered CyberSand map quality. Capture boxes remain unchecked until the reporter is present and inspected; future edits must update this ledger with exact outcomes.
+**Current state:** The initial source and capture checks are complete. The checked render gates are *Chromium/browser* evidence, not proof of CyberSand's actual material/world renderer. Native-world graphical comparison and human quality approval remain outstanding.
+
+### Browser capture evidence — 2026-11-06
+
+- Successful GitHub Actions run: [42257449047](https://github.com/techrote/tokensplurge/actions/runs/42257449047), Chromium via Playwright 1.56.1 on Ubuntu 24.04; source revision `f9deae20ded26e959f2096ba9fed9a0e3b61a6ed`.
+- Capture commit: `20aa1271a91b1dfa7f91209dbc667fba6f1f2a99`, containing 28 PNG screenshots plus `captures/report.json`. Each file has source SHA, PNG SHA-256, byte size, viewport/crop and recorded process result.
+- All 14 source-bound works generated genuine PNG evidence; 14/14 success, no recorded browser page exceptions. A read-only manual inspection of every detail crop found meaningful rendered imagery, not a placeholder or empty frame.
+- Original first workflow run [42257222694](https://github.com/techrote/tokensplurge/actions/runs/42257222694) failed before capture because Playwright 1.56.1 did not support the default Ubuntu 26.04 runner. The runner was corrected to Ubuntu 24.04. Do not treat the failed run as a successful graphical check.
+- The sampling frame is post-load, not a frozen scientific simulation state; images are source- and procedure-pinned but **not guaranteed bit-identical** across different capture times or hosts. Nor are they independently hosted-preview, GPU-parity or CyberSand engine proof.
+
 
 ## Specific initial reference choices
 
