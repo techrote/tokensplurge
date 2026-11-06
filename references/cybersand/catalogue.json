@@ -1,8 +1,8 @@
 {
-  "schema_version": 1,
-  "edition": "2026-11-06-initial",
+  "schema_version": 2,
+  "edition": "2026-11-06-curation-01",
   "created_utc": "2026-11-06",
-  "status": "initial-curatorial-selection",
+  "status": "source-curated-new-art-capture-pending",
   "pinned_sources": [
     {
       "repo": "techrote/tokensplurge",
@@ -573,6 +573,42 @@
         "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/salvage/060-truchet-loops.html"
+    },
+    {
+      "id": "aeolian-palimpsest",
+      "title": "The Aeolian Palimpsest — wind-archived salt scar",
+      "kind": "inspiration",
+      "repo": "techrote/tokensplurge",
+      "ref": "ea0c04508670af179e8e104253c94c3a3b703bb3",
+      "path": "environments/001-the-aeolian-palimpsest.html",
+      "blob_sha": "6d83aca13bb686505527edc0ebe0026aad8c0836",
+      "tags": [
+        "geology",
+        "wind",
+        "architecture",
+        "erosion",
+        "atmosphere"
+      ],
+      "priority": "curated-candidate",
+      "design_principle": "Use a sharply exposed fault basin, constrained mechanical landmark and distinct sediment scales to make an otherwise invisible environmental process readable.",
+      "cybersand_translation": "Explore a dry fault region in which deposition eras govern terraces, voids, shelter and mechanically supported survey ruins. Keep authored drift patterns separate from native motion claims.",
+      "copy_boundary": "Do not trace the source's segmented radial ring, catenary anchor plan, 1600×960 basin composition, dust trajectories, indigo/ochre palette, survey props or Canvas2D particle system.",
+      "target_collections": [
+        "Dust Meridian",
+        "Lumen Fault",
+        "Tectonic Archive",
+        "Emberglass Fumaroles"
+      ],
+      "capture": {
+        "method": "local Chromium/Playwright exact per-entry source HTML",
+        "desktop": "captures/aeolian-palimpsest-desktop.png",
+        "detail": "captures/aeolian-palimpsest-detail.png",
+        "status": "pending",
+        "report": "captures/report.json",
+        "evidence": "Independent published Chromium full-frame/detail captures pending. Author reported local real Chromium tests, not durable evidence. No native Godot qualification."
+      },
+      "source_url": "https://github.com/techrote/tokensplurge/blob/ea0c04508670af179e8e104253c94c3a3b703bb3/environments/001-the-aeolian-palimpsest.html"
     }
-  ]
+  ],
+  "source_revision_policy": "source identity is immutable on each entry; pinned_sources are historical snapshot anchors only"
 }

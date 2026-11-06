@@ -1,6 +1,6 @@
 # CyberSand × TokenSplurge environmental reference atlas
 
-**Initial edition:** 2026-11-06 · **Status:** 19 source-pinned references curated; all 14 TokenSplurge sources captured and PNG provenance verified; engine-side graphical acceptance remains outstanding.
+**Initial edition:** 2026-11-06 · **Curation extension:** 2026-11-06. Original 19 sources and their evidence remain immutable. One newly pinned environment candidate is pending independent Chromium capture; actual engine-side graphical acceptance remains outstanding.
 
 [Open the filterable moodboard](index.html) · [Canonical selection and revision manifest](catalogue.json) · [Creative-distance instructions](CURATORIAL_GUIDE.md) · [Acceptance and tracking ledger](TRACKING.md)
 
@@ -10,7 +10,7 @@ This is a **supplementary design reference library**, located in TokenSplurge so
 
 The HTML interface is a **single file** (embedded CSS, filtering code and source-pinned catalogue). Screenshots live alongside it in `captures/` so reviewers can compare real pixels. CyberSand's five existing reference images remain in their original repository and are referenced by immutable commit URLs, avoiding multi-megabyte duplication.
 
-The initial 19 entries comprise five **primary CyberSand visual benchmarks**, eleven **TokenSplurge environmental artworks**, and three **smaller procedural studies**. Each entry contains exact repository commit and Git blob identity, a named transferable principle, a proposed CyberSand use and an explicit copying boundary. Source URLs and links are pinned; moving `main` and GitHub rendered previews are not evidence.
+The original immutable 19 entries comprise five **primary CyberSand visual benchmarks**, eleven **TokenSplurge environmental artworks**, and three **smaller procedural studies**. Each entry contains exact repository commit and Git blob identity, a named transferable principle, a proposed CyberSand use and an explicit copying boundary. Source URLs and links are pinned; moving `main` and GitHub rendered previews are not evidence.
 
 ## Opening and filtering
 
@@ -36,9 +36,11 @@ node references/cybersand/tools/verify.cjs --require-captures
 node references/cybersand/tools/smoke-ui.cjs
 ```
 
-The capture records one 1440×900 desktop viewport and one 768×480 detail crop per TokenSplurge entry (28 PNGs, all generated and verified on 2026-11-06). The independent UI-smoke script exercises search, class/discipline/collection filters, reset and desktop/mobile layouts. An optional resulting screenshot is stored as `captures/moodboard-preview.png`. It verifies pinned Git blob hashes, blocks external runtime requests, waits for real canvas content and records browser exceptions. Each PNG gets a SHA-256 and source provenance entry in `captures/report.json`.
+The original 14 TokenSplurge items retain 28 historically source-bound PNGs. New references require their *own* immutable commit and blob readback and new 1440×900 + 768×480 captures; only missing new items are captured. Existing reported screenshots are checked and never silently overwritten after a checksum failure. The independent UI-smoke script exercises search, class/discipline/collection filters, reset and desktop/mobile layouts. An optional resulting screenshot is stored as `captures/moodboard-preview.png`. It verifies pinned Git blob hashes, blocks external runtime requests, waits for real canvas content and records browser exceptions. Each PNG gets a SHA-256 and source provenance entry in `captures/report.json`.
 
 **Limitations:** This proves source-bound Chromium framebuffer rendering only at the reported viewport/time. It does not prove third-party preview-host availability, interaction paths, artistic superiority, cross-browser/mobile compatibility, native materials, collision, Water/Brine containment, performance or Godot rendering. Source-independent visual review remains necessary.
+
+The original 19 per-card commit/blob pins and benchmark image identities are frozen in `tools/initial-pins.json`; later cards may use different pinned source revisions. `tools/test-policy.cjs` exercises mixed-revision report tampering, historical repins, missing original cards and image-path collision. New entries remain `capture.status=pending` until Chromium actually produces hashes and the report verifies their pixels. The capture workflow then updates both the JSON catalogue and its single-file HTML embedding together.
 
 The documentation-branch GitHub Action `.github/workflows/cybersand-reference-capture.yml` runs this procedure and commits resulting screenshots/report to that same isolated branch only after the relevant checks pass. Existing exact-source verified captures are reused instead of needlessly generating new random frames on every docs edit. It never writes to CyberSand or to a creative worker's branch.
 

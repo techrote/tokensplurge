@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "from_commit": "5771b6285e917526359a35b2bf973487dcbd9c4b",
+  "entries": [
+    {
+      "id": "deepworks",
+      "repo": "techrote/cybersand",
+      "kind": "benchmark",
+      "ref": "06522e300dcf91efbab0ac8f4f4370af72cf2029",
+      "path": "docs/images/deepworks/deepworks-atlas.png",
+      "blob_sha": "00edc2fe5c378f7df281ecc7796d777d693a0e44",
+      "capture_files": null,
+      "benchmark_image_url": "https://raw.githubusercontent.com/techrote/cybersand/06522e300dcf91efbab0ac8f4f4370af72cf2029/docs/images/deepworks/deepworks-atlas.png"
+    },
+    {
+      "id": "gen007-gallery",
+      "repo": "techrote/cybersand",
+      "kind": "benchmark",
+      "ref": "06522e300dcf91efbab0ac8f4f4370af72cf2029",
+      "path": "docs/images/gen007/gen007-gallery-4.png",
+      "blob_sha": "5d8ddfbc92c48bc3e9d2164aaab15fe2b846e472",
+      "capture_files": null,
+      "benchmark_image_url": "https://raw.githubusercontent.com/techrote/cybersand/06522e300dcf91efbab0ac8f4f4370af72cf2029/docs/images/gen007/gen007-gallery-4.png"
+    },
+    {
+      "id": "neon-reliquary",
+      "repo": "techrote/cybersand",
+      "kind": "benchmark",
+      "ref": "06522e300dcf91efbab0ac8f4f4370af72cf2029",
+      "path": "docs/images/neon-reliquary-descent/neon_reliquary/neon-reliquary-04.png",
+      "blob_sha": "9abe7a59dbedbac051af818efa1310452d92c4a8",
+      "capture_files": null,
+      "benchmark_image_url": "https://raw.githubusercontent.com/techrote/cybersand/06522e300dcf91efbab0ac8f4f4370af72cf2029/docs/images/neon-reliquary-descent/neon_reliquary/neon-reliquary-04.png"
+    },
+    {
+      "id": "blacksite-nine",
+      "repo": "techrote/cybersand",
+      "kind": "benchmark",
+      "ref": "06522e300dcf91efbab0ac8f4f4370af72cf2029",
+      "path": "docs/images/blacksite-nine/blacksite-nine.png",
+      "blob_sha": "369d99dd715b876ddb0c2cc78f10470bf525fd16",
+      "capture_files": null,
+      "benchmark_image_url": "https://raw.githubusercontent.com/techrote/cybersand/06522e300dcf91efbab0ac8f4f4370af72cf2029/docs/images/blacksite-nine/blacksite-nine.png"
+    },
+    {
+      "id": "gen007-atlas",
+      "repo": "techrote/cybersand",
+      "kind": "benchmark",
+      "ref": "06522e300dcf91efbab0ac8f4f4370af72cf2029",
+      "path": "docs/images/gen007/gen007-atlas.png",
+      "blob_sha": "3d2b6b38d91a4101914124936aa61b89c87108df",
+      "capture_files": null,
+      "benchmark_image_url": "https://raw.githubusercontent.com/techrote/cybersand/06522e300dcf91efbab0ac8f4f4370af72cf2029/docs/images/gen007/gen007-atlas.png"
+    },
+    {
+      "id": "rivers",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/002-where-the-rivers-were.html",
+      "blob_sha": "73f05e26fdc0273dbfa1da227f27d48298efcc44",
+      "capture_files": [
+        "captures/rivers-desktop.png",
+        "captures/rivers-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "estuary",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/002-the-estuary-that-learns.html",
+      "blob_sha": "4be7a384d1ab4009667940c31c3093f1476917d6",
+      "capture_files": [
+        "captures/estuary-desktop.png",
+        "captures/estuary-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "railway",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/010-the-midnight-railway-of-elsewhere.html",
+      "blob_sha": "ff8b192ad156049bfce22fe7d91f5bf9572e82b4",
+      "capture_files": [
+        "captures/railway-desktop.png",
+        "captures/railway-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "beacon",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/005-below-the-beacon.html",
+      "blob_sha": "2aba05bff6cb5dfd58195db5ebf9b6cc17227ec2",
+      "capture_files": [
+        "captures/beacon-desktop.png",
+        "captures/beacon-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "city",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/007-a-city-practicing-dawn.html",
+      "blob_sha": "6f1b2cf9c9dba5eb403faf91c8418e977dbfeb57",
+      "capture_files": [
+        "captures/city-desktop.png",
+        "captures/city-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "orchard",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/013-the-orchard-of-second-suns.html",
+      "blob_sha": "b0457c3cbdcbcd17b78d286fa485e570bcd82308",
+      "capture_files": [
+        "captures/orchard-desktop.png",
+        "captures/orchard-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "cathedral",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/005-the-cathedral-of-unsent-messages.html",
+      "blob_sha": "4d4b94104590ac71e2469c5eb006847d546d5197",
+      "capture_files": [
+        "captures/cathedral-desktop.png",
+        "captures/cathedral-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "choir",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/003-the-choir-of-drowned-bells.html",
+      "blob_sha": "da6e6e3b66a38bd9a6c121c6a9c3c0120b3e4bf4",
+      "capture_files": [
+        "captures/choir-desktop.png",
+        "captures/choir-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "weather-house",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "editions/012-the-house-that-held-the-weather.html",
+      "blob_sha": "b4e103eb383d30fd69185bb87ede712f713a2aa9",
+      "capture_files": [
+        "captures/weather-house-desktop.png",
+        "captures/weather-house-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "freight",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/008-the-freight-of-small-suns.html",
+      "blob_sha": "e3ed56d8054d8e1a4e2cf68267b91b03dcb52bed",
+      "capture_files": [
+        "captures/freight-desktop.png",
+        "captures/freight-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "unfallen-rain",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "hybrids/007-the-archive-of-unfallen-rain.html",
+      "blob_sha": "39006b9aa7f5bb42eb9ebed2cbe83a3f53bd003c",
+      "capture_files": [
+        "captures/unfallen-rain-desktop.png",
+        "captures/unfallen-rain-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "strata-study",
+      "repo": "techrote/tokensplurge",
+      "kind": "study",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "lineage/023-strata.html",
+      "blob_sha": "be0b8589277bd7be071132011b1dffa78b38ff14",
+      "capture_files": [
+        "captures/strata-study-desktop.png",
+        "captures/strata-study-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "terraform-study",
+      "repo": "techrote/tokensplurge",
+      "kind": "study",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "salvage/063-terraform.html",
+      "blob_sha": "d3be55eae2e460e4c911bfce4f3260a723ca1d5f",
+      "capture_files": [
+        "captures/terraform-study-desktop.png",
+        "captures/terraform-study-detail.png"
+      ],
+      "benchmark_image_url": null
+    },
+    {
+      "id": "truchet-study",
+      "repo": "techrote/tokensplurge",
+      "kind": "study",
+      "ref": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
+      "path": "salvage/060-truchet-loops.html",
+      "blob_sha": "4d36e6f47d2ad99b7d33f386b575fe80cd3645b7",
+      "capture_files": [
+        "captures/truchet-study-desktop.png",
+        "captures/truchet-study-detail.png"
+      ],
+      "benchmark_image_url": null
+    }
+  ]
+}

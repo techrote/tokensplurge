@@ -48,3 +48,32 @@
 **Supporting mechanics and procedural studies:** LINEAGE 023 Stratigraphic Slip; SALVAGE S063 Terraform; SALVAGE S060 Truchet Loops.
 
 This document tracks the library's *own* completeness and reproducibility. CyberSand PR #454's quality rubric and native/graphical acceptance gates are separate and remain unchanged.
+
+## Curator session 01 — 2026-11-06, source-grounded selection
+
+**Custody:** Main was 5771b6285e917526359a35b2bf973487dcbd9c4b. Read-only CyberSand #454 head observed at b2e60ce18ffcd12cae4dab3788ffdb4800e02297, a moving multi-worker design branch; QUALITY_BAR reviewed from exact commit 86c4e5161f1f168cfa519bd20db6544f58cfa565. No CyberSand source or schedule changed. The original five benchmark cards and fourteen already captured sources/capture PNG identities are preserved.
+
+**One provisionally selected new entry:** [Environment Lab #32: Aeolian Palimpsest](https://github.com/techrote/tokensplurge/pull/32), exact commit ea0c04508670af179e8e104253c94c3a3b703bb3, HTML blob 6d83aca13bb686505527edc0ebe0026aad8c0836. The 23.4-kB standalone HTML source and associated author report describe an exposed evaporite fault basin, segmented wind instrument, tension-supported infrastructure and drift-responsive particles. Source inspection confirms authored Canvas2D rendering and controls; **this curator did not independently execute the source or inspect the final actual framebuffer**. The author reported local Playwright desktop/mobile rendering, but its image bytes were not published in PR #32. Therefore the library card is source-curated and **capture pending, not accepted artwork**, pending real source-pinned Playwright output and comparative pixel review.
+
+**Potential scores, 0–5 (source/author-description informed only; NOT pixel-accepted review):** O originality, M macro silhouette, S spatial relations, F fine detail, V value hierarchy, N narrative, T CyberSand transfer.
+
+| Candidate / exact PR commit | O | M | S | F | V | N | T | Disposition |
+| --- | --: | --: | --: | --: | --: | --: | --: | --- |
+| [#32](https://github.com/techrote/tokensplurge/pull/32) ea0c0450 | 4 | 4 | 4 | 3 | 3 | 4 | 5 | **Select for capture**. Dry-wind structural silhouette fills a missing domain; actual visual detail and hierarchy still unverified |
+| [#30](https://github.com/techrote/tokensplurge/pull/30) c103ccaa | 3 | 3 | 4 | 3 | 3 | 4 | 3 | **Defer**. Meaningful locally coupled light ecology, but marsh motif overlaps Estuary/Orchard already represented |
+| [#29](https://github.com/techrote/tokensplurge/pull/29) 10746e46 | 3 | 4 | 4 | 4 | 3 | 4 | 2 | **Defer**. Docking/harbour could enrich transport history, but orbital navigation already resembles railway/freight themes |
+| [#27](https://github.com/techrote/tokensplurge/pull/27) 9ed87d79 | 3 | 2 | 3 | 4 | 4 | 3 | 2 | **Reject this cycle**. Ornate thermal retort is principally an object, not a large spatial composition |
+| [#31](https://github.com/techrote/tokensplurge/pull/31) 88ebf5df | 4 | 2 | 2 | 4 | 4 | 2 | 2 | **Reject this cycle**. Acoustic grain texture is intriguing, but display plates add limited place-making to existing studies |
+| [#26](https://github.com/techrote/tokensplurge/pull/26) 3bca8d07 | 3 | 2 | 3 | 4 | 4 | 3 | 1 | **Reject this cycle**. Kinetic cabinet is sophisticated but primarily a specimen/UI study rather than an environment |
+
+**Creative-distance findings:** #32 differs materially from Where the Rivers Were (watershed connectivity), Pendulum Conservatory (enclosed mechanism) and House That Held the Weather (facade and meteorological containment): it makes dry exposure, structural tension and advection visually legible. Transfer only the general *constraint* that an environmental process must shape topography and remnants. Never copy the source's concentric bronze wheel, anchors, specific canyon profile, dust track, instrument props, original colours, field equations or camera framing. Existing CyberSand Deepworks, GEN-007 gallery 4, Neon Reliquary, Blacksite Nine and GEN-007 atlas remain the mandatory visual comparison set; no quality-superiority claim is warranted.
+
+**Actionable original prompts, for optional future CyberSand art direction:**
+
+- Invent a dry multi-era depositional landscape in which wind shelter and geological layers constrain a distinct non-radial ruined landmark. Choose fresh materials, topology, palette, viewpoint and movement affordances; avoid the source artwork's silhouettes and composition.
+- Expose the passage of an environmental force through asymmetrical wear, trapped debris and protected niches in static native-cell geometry; do not imply simulated wind, emissive sand or scientifically validated physics.
+- For each new flagship, compare genuine material-presentation captures at equivalent scale with all five benchmark images; identify both visual regressions and improvements before any human acceptance.
+
+**Publication and tests planned on this docs-only branch:** Preserve the old 19-card identity lock; enable mixed immutable per-entry revisions, incremental fresh browser captures without re-rendering 14 verified older works, SHA-256 checks of every retained PNG, dynamic inventory/UI tests, and an exact-head GitHub-hosted Chromium workflow. Newly added #32 is pending until real PNG bytes are published; do not substitute its author report or SVG/source for independent renderer proof. Test outcomes, workflow SHA, browser exits, screenshot SHA and any failures must be appended once actually observed.
+
+**Outstanding:** Actual source-pinned Chromium screenshot publication for #32; manual pixel inspection and ranking; actual comparable Godot framebuffer acceptance for #454 via separate #457/#462 qualification; native materials, runtime physics, human judgement. The 15 world collections/120 modules are source-proposal design work, not accepted engine maps.

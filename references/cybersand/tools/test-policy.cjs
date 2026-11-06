@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const {assertCatalogue,assertCaptureRecord}=require('./catalogue-policy.cjs');
+const root=path.resolve(__dirname,'..');
+const c=JSON.parse(fs.readFileSync(path.join(root,'catalogue.json'),'utf8'));
+const b=JSON.parse(fs.readFileSync(path.join(__dirname,'initial-pins.json'),'utf8'));
+const clone=()=>JSON.parse(JSON.stringify(c));
+assertCatalogue(c,b);
+function reject(f,label){const d=clone();f(d);assert.throws(()=>assertCatalogue(d,b),undefined,label);}
+reject(x=>x.references[5].ref=x.references.at(-1).ref,'historic pin changed');
+reject(x=>x.references[5].blob_sha=x.references.at(-1).blob_sha,'historic blob changed');
+reject(x=>x.references[0].image.url='https://example.com/new.png','primary benchmark replaced');
+reject(x=>x.references.at(-1).source_url='https://github.com/techrote/tokensplurge/blob/main/environments/001-the-aeolian-palimpsest.html','moving URL');
+reject(x=>x.references.at(-1).capture.detail='captures/rivers-detail.png','collision with old image');
+reject(x=>x.references.splice(7,1),'historic card removed');
+const x=c.references.at(-1),e={id:x.id,ref:x.ref,path:x.path,blob_sha:x.blob_sha,status:'captured',files:[{path:x.capture.desktop},{path:x.capture.detail}]};
+assertCaptureRecord(x,e);
+assert.throws(()=>assertCaptureRecord(x,{...e,ref:c.references[5].ref}),undefined,'mixed commit');
+assert.throws(()=>assertCaptureRecord(x,{...e,blob_sha:c.references[5].blob_sha}),undefined,'mixed source blob');
+console.log('PASS: historical pin lock, mixed revisions, benchmark custody, capture identity and collisions');

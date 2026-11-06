@@ -30,12 +30,16 @@ For new concept briefs:
 
 ## Future workers and boundaries
 
-**TokenSplurge environment laboratory (proposed, NOT scheduled here):** Create genuinely new standalone art on its own branch; broad geological/architectural/ecological prompts, no named source to copy, real browser renders, one coherent deliverable per run. It may ignore the obvious solution to preserve experimentation. Do not rewrite the unrestricted art workers.
+**TokenSplurge environment laboratory (independent creative lane):** Create genuinely new standalone art on its own branch; broad geological/architectural/ecological prompts, no named source to copy, real browser renders, one coherent deliverable per run. It may ignore the obvious solution to preserve experimentation. Do not rewrite the unrestricted art workers.
 
-**Visual curator (proposed, NOT scheduled here):** Review all streams, including unplanned and unusual outputs. Select evidence-backed examples, update this gallery and short design prompts on a *separate documentation branch*. Reject near-duplicates. Never edit the currently active CyberSand `#454` world-pack source branch, or merge/create competing map implementations.
+**Visual curator (independent documentation lane):** Review all streams, including unplanned and unusual outputs. Select evidence-backed examples, update this gallery and short design prompts on a *separate documentation branch*. Reject near-duplicates. Never edit the currently active CyberSand `#454` world-pack source branch, or merge/create competing map implementations.
 
 **CyberSand atlas workers:** May consult this library voluntarily for novel ideas, but their existing ownership matrix, exact source and renderer gates, expected materials and human graphical acceptance requirements take precedence. Keep the benchmark images mandatory for comparison and the TokenSplurge cards optional inspiration.
 
 ## Independence and provenance
 
 The library is a design instrument, not an acceptance report. It must not be used to assert that a CyberSand world pack already exceeds the five baseline reference captures, or to bypass source-pinned Godot testing. Note screenshot platform, hash, revision, generation method, limitations and whether an image is source-code evidence, browser evidence or Godot-native evidence.
+
+## Immutable mixed-edition evidence
+
+The originally reviewed 19 references retain their original commit and blob SHA, source path, primary benchmark image identity and screenshot filenames. New artworks are individually pinned to their exact authored commit/blob instead of shifting the historical snapshot. Initial identities are locked in `tools/initial-pins.json`. New cards declare pending until executable Chromium capture and screenshot checksums exist; only then may capture tooling change the card status and embedded HTML in one workflow publication. A different source revision requires its own qualification, not an in-place silent repin.
