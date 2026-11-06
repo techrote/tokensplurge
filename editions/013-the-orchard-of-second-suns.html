@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0d1825"><title>The Orchard of Second Suns — an illuminated arboricultural automaton</title>
+<style>
+:root{color-scheme:dark;--paper:#e9d3ad;--brass:#d6aa65;--muted:#c4a885;--line:#755c42;--navy:#0c1522}*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#070d13;color:var(--paper)}body{background:radial-gradient(ellipse at 52% -10%,#203343,#0b1520 55%,#070b12);font-family:Georgia,'Times New Roman',serif}.folio{max-width:1360px;margin:0 auto;padding:24px 32px 32px}.header{display:flex;align-items:end;justify-content:space-between;border-bottom:1px solid #ae8f655e;padding-bottom:14px;gap:18px}.overline,.serial,.setting-title,.actions,.footer,.number,.detail{font:10px/1.65 ui-monospace,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase}.overline{color:var(--brass);margin:0 0 6px}.header h1{font:normal clamp(31px,4.3vw,54px)/.97 Georgia,serif;letter-spacing:-.04em;margin:0}.header h1 em{font-weight:normal;color:#edbd83}.serial{color:#bfa484;text-align:right;white-space:nowrap}.frame{position:relative;margin-top:17px;background:#0c1420;border:1px solid #b58b5b;box-shadow:0 0 0 6px #09131c,0 0 0 7px #795a3957,0 25px 80px #0008;overflow:hidden;aspect-ratio:16/10}.frame canvas{display:block;width:100%;height:100%;cursor:crosshair;touch-action:pan-y}.controls{display:grid;grid-template-columns:1.6fr .86fr .86fr 1.5fr;gap:22px;margin-top:23px}.setting-title{color:#d5b489;margin:0 0 8px}.choices,.actions{display:flex;flex-wrap:wrap;gap:6px}.choices button,.actions button{min-height:41px;background:#16293a;color:#e7cfaa;border:1px solid #866846;padding:9px 11px;font:11px Georgia,serif;cursor:pointer;white-space:nowrap;transition:background .18s}.choices button[aria-pressed=true]{background:#d3a266;color:#132330;border-color:#ebcc95}.choices button:hover,.actions button:hover{background:#355166}.setting{display:flex;gap:9px;align-items:center;margin-top:8px}.setting input{accent-color:#e1ad70;min-width:40px;width:100%}.number{color:#e9c78a;min-width:30px;text-align:right}.footer{border-top:1px solid #987c5b55;margin-top:20px;padding-top:12px;color:#a89c8c;display:flex;justify-content:space-between;gap:20px}.footer p{margin:0}.footer b{color:#e5b980;font-weight:normal}button:focus-visible,input:focus-visible{outline:2px solid #ffdc9a;outline-offset:3px}
+@media(max-width:930px){.controls{grid-template-columns:1fr 1fr;gap:18px}.folio{padding:17px 18px 28px}}
+@media(max-width:600px){.folio{padding:14px 11px 24px}.header{align-items:start;gap:8px}.header h1{font-size:31px}.serial{font-size:8px;white-space:normal;max-width:85px}.frame{height:520px;aspect-ratio:auto}.frame canvas{position:absolute;left:50%;transform:translateX(-50%);height:100%!important;width:auto!important;max-width:none}.controls{margin-top:23px;grid-template-columns:1fr 1fr;gap:19px 12px}.choices button,.actions button{font-size:10px;padding:8px 8px;min-height:37px}.footer{display:block;font-size:9px}.footer p+p{margin-top:8px}}
+@media(prefers-reduced-motion:reduce){.frame{scroll-behavior:auto}}
+</style></head><body><main class="folio">
+<header class="header"><div><p class="overline">The ministry of impossible botany / portfolio XIII</p><h1>The Orchard of <em>Second Suns</em></h1></div><p class="serial">An illuminated automaton<br>three seasonal instruments<br>MMXXVI · No. 013</p></header>
+<div class="frame" id="frame"><canvas id="art" width="1280" height="800" role="img" aria-label="Animated antique engraving of an enormous fruiting tree. Clockwork courier birds deliver light to a living mathematical orchard of gold and colored leaves. Click the canopy to plant light."></canvas></div>
+<section class="controls" aria-label="Artwork controls"><div><p class="setting-title">01 / the orchard season</p><div class="choices" role="group" aria-label="Season"><button class="season" data-n="0" aria-pressed="true">I · The Grafting</button><button class="season" data-n="1" aria-pressed="false">II · The Fever</button><button class="season" data-n="2" aria-pressed="false">III · The Afterglow</button></div></div><div><label for="wind" class="setting-title">02 / courier rhythm</label><div class="setting"><input id="wind" type="range" min="20" max="100" value="58"><span class="number" id="windNumber">58</span></div></div><div><label for="cargo" class="setting-title">03 / carried embers</label><div class="setting"><input id="cargo" type="range" min="1000" max="8000" value="3400" step="100"><span class="number" id="cargoNumber">3400</span></div></div><div><p class="setting-title">04 / field observations</p><div class="actions"><button id="sow">Release a sun</button><button id="lines" aria-pressed="false">Show veins</button><button id="pause" aria-pressed="false">Pause</button><button id="save">Collect PNG</button></div></div></section>
+<footer class="footer"><p>AN EMBER IS GIVEN TO EACH OF FOUR NEIGHBOURS WHEN A BRANCH HOLDS FOUR. THE ORCHARD NEVER CREATES LIGHT FROM NOTHING.</p><p><b>TOUCH THE CANOPY TO PLANT LIGHT</b> · 1–3 / S / V / P / E</p></footer></main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('art'),ctx=canvas.getContext('2d',{alpha:false}),W=1280,H=800;
+const themes=[
+ {name:'THE FIRST GRAFTING',subtitle:'I · A LANTERN PLANTED IN WINTER',bg:'#0c1c2a',bg2:'#1c3440',dark:'#07121c',ink:'#d4cfb4',gold:'#d6a568',moon:'#fff1c9',leaf:['#1a3444','#417078','#8ab2a1','#dfba79'],petal:'#c7c8ae',blossom:'#f2d09b',bird:'#edcc94'},
+ {name:'THE FEVER ORCHARD',subtitle:'II · THE NIGHT LEARNS TO BURN',bg:'#251824',bg2:'#492833',dark:'#100c17',ink:'#ecd3bd',gold:'#e5a66a',moon:'#fff1cc',leaf:['#492536','#8e4850','#cc8171','#f1bc86'],petal:'#e5b09e',blossom:'#f9ad85',bird:'#ffd49e'},
+ {name:'THE LONG AFTERGLOW',subtitle:'III · WHAT THE BRANCHES REMEMBER',bg:'#112727',bg2:'#284543',dark:'#071a1e',ink:'#e4e8c9',gold:'#d6bf8d',moon:'#f5e9b8',leaf:['#284b50','#557e78','#98b9a4','#e4d7a1'],petal:'#bcd4bd',blossom:'#e7dfa7',bird:'#eae4ba'}
+];
+const NX=124,NY=70,S=NX*NY,values=new Uint32Array(S),mask=new Uint8Array(S),queued=new Uint8Array(S),glow=new Float32Array(S);let queue=[],at=0,season=0,seconds=0,frame=0,paused=window.matchMedia('(prefers-reduced-motion: reduce)').matches,showVeins=false,bursts=[],injected=0,lost=0,topples=0,landings=0,retained=0;
+const cg={x:236,y:214,w:760,h:399};
+const seedHash=i=>{let k=Math.imul((i^0x9e3779b9),0x85ebca6b);k^=k>>>13;k=Math.imul(k,0xc2b2ae35);return(k^(k>>>16)>>>0)/4294967295};
+const prng=i=>{let v=(i*197631+9277)|0;v=(v<<13)^v;return 1-((v*(v*v*15731+789221)+1376312589)&0x7fffffff)/1073741824};
+const ell=(u,v)=>{let th=Math.atan2(v,u),r=Math.hypot(u,v);return r<(1+.065*Math.sin(9*th+Math.cos(4*th))+.095*Math.sin(th*5+2))};
+for(let y=0;y<NY;y++)for(let x=0;x<NX;x++){let u=(x/(NX-1)-.5)*2,v=(y/(NY-1)-.5)*2.06;mask[y*NX+x]=ell(u,v)?1:0}
+const theme=()=>themes[season];const line=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()};const ellipse=(x,y,rx,ry)=>{ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2)};
+function write(s,x,y,size=13,color='#d6ae7c',align='left',tracking=0,font='Georgia'){ctx.fillStyle=color;ctx.font=`${size}px ${font}`;ctx.textAlign=align;ctx.textBaseline='alphabetic';if(!tracking){ctx.fillText(s,x,y);return}let width=ctx.measureText(s).width+Math.max(0,s.length-1)*tracking;if(align==='center')x-=width/2;if(align==='right')x-=width;ctx.textAlign='left';for(const ch of s){ctx.fillText(ch,x,y);x+=ctx.measureText(ch).width+tracking}}
+function deliver(x,y,n){x=Math.round(x);y=Math.round(y);const index=y*NX+x;if(x<0||y<0||x>=NX||y>=NY||!mask[index])return false;values[index]+=n;injected+=n;landings++;if(values[index]>=4&&!queued[index]){queued[index]=1;queue.push(index)}bursts.push({x:cg.x+x/(NX-1)*cg.w,y:cg.y+y/(NY-1)*cg.h,t:0});return true}
+function settle(budget){let processed=0;while(at<queue.length&&processed<budget){let i=queue[at++];queued[i]=0;let k=(values[i]/4)|0;if(k<1)continue;values[i]-=4*k;topples+=k;glow[i]=Math.min(1,glow[i]+.48);let xx=i%NX,yy=(i/NX)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){let x=xx+dx,y=yy+dy,j=y*NX+x;if(x<0||y<0||x>=NX||y>=NY||!mask[j]){lost+=k;continue}values[j]+=k;glow[j]=Math.min(1,glow[j]+.1);if(values[j]>=4&&!queued[j]){queued[j]=1;queue.push(j)}}if(values[i]>=4&&!queued[i]){queued[i]=1;queue.push(i)}processed++}if(at>18000){queue=queue.slice(at);at=0}}
+function count(){retained=0;for(let i=0;i<S;i++)retained+=values[i]}
+function reset(n){season=n;document.querySelectorAll('.season').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===n)));values.fill(0);queued.fill(0);glow.fill(0);queue=[];at=0;seconds=0;frame=0;injected=lost=topples=landings=retained=0;bursts=[];
+ let deposits=[[[38,36,6500],[81,37,9000],[61,23,6000],[61,51,5000]],[[37,29,9000],[79,31,8000],[61,45,7000],[85,47,5000]],[[38,40,5500],[78,35,10000],[61,48,7500],[66,23,6500]]][n];for(let d of deposits)deliver(...d);settle(500000);count();draw()}
+function background(T){let gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,T.bg);gr.addColorStop(.7,T.bg2);gr.addColorStop(1,T.dark);ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+ const glowBack=ctx.createRadialGradient(615,368,45,630,350,620);glowBack.addColorStop(0,T.gold+'20');glowBack.addColorStop(.7,T.bg+'00');glowBack.addColorStop(1,'#00000000');ctx.fillStyle=glowBack;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<1850;i++){let x=seedHash(i*17+12)*W,y=seedHash(i*27+45)*H;ctx.globalAlpha=.06+seedHash(i+2)*.12;ctx.fillStyle=i%4?'#f5dfb1':'#05070b';ctx.fillRect(x,y,.55+seedHash(i*2)*1.2,.45)}ctx.globalAlpha=1;
+ ctx.strokeStyle=T.gold;ctx.lineWidth=1;ctx.globalAlpha=.5;ctx.strokeRect(23,22,1234,756);ctx.globalAlpha=.25;ctx.strokeRect(31,30,1218,740);ctx.globalAlpha=1;
+ for(let i=0;i<53;i++){let x=42+i*22.8;ctx.strokeStyle=T.gold;ctx.globalAlpha=.31;line(x,36,x,45);line(x,755,x,764)}ctx.globalAlpha=1;
+ // Instrumental moon and star sectors, behind the leaves
+ ctx.save();ctx.translate(672,378);ctx.strokeStyle=T.gold;ctx.globalAlpha=.10;ctx.lineWidth=1;for(let r=90;r<535;r+=52){ellipse(0,0,r,r);ctx.stroke()}for(let i=0;i<36;i++){let a=i*Math.PI/18;line(0,0,Math.cos(a)*530,Math.sin(a)*530)}ctx.restore();ctx.globalAlpha=1;
+ ctx.save();ctx.shadowColor=T.moon;ctx.shadowBlur=45;ctx.fillStyle=T.moon;ellipse(1067,186,48,48);ctx.fill();ctx.restore();ctx.fillStyle=T.bg;ellipse(1081,172,43,43);ctx.fill();ctx.globalAlpha=.55;ctx.strokeStyle=T.gold;ellipse(1067,186,60,60);ctx.stroke();ctx.globalAlpha=1;
+ const sx=[96,121,150,182,203,211,1084,1114,1160,1203,1167,1109];for(let i=0;i<sx.length;i++){let sy=215+(seedHash(i+383)*330);ctx.fillStyle=T.ink;ctx.globalAlpha=.2+.45*seedHash(i+5);ctx.fillRect(sx[i],sy,1.2,1.2)}ctx.globalAlpha=1;
+ // Letterpress title and accompanying metadata
+ write('THE ORCHARD OF',74,99,14,T.gold,'left',2.5);write('SECOND',72,139,45,T.ink,'left',1);write('SUNS',72,182,45,T.ink,'left',2);ctx.strokeStyle=T.gold;ctx.globalAlpha=.6;line(73,198,322,198);ctx.globalAlpha=1;
+ write('FIELD BOOK XIII',1090,89,11,T.gold,'left',1.1,'monospace');write('THE ASTRAL HUSBANDRY',1090,112,10,T.ink,'left',0.5,'monospace');write('COLLECTION · MMXXVI',1090,130,10,T.ink,'left',.6,'monospace');
+}
+function horizon(T){ctx.save();let y=648;let gradient=ctx.createLinearGradient(0,y,0,790);gradient.addColorStop(0,T.dark+'44');gradient.addColorStop(1,T.dark);ctx.fillStyle=gradient;ctx.beginPath();ctx.moveTo(38,720);for(let x=38;x<=1250;x+=12){let h=669+29*Math.sin(x*.007)+14*Math.sin(x*.02);ctx.lineTo(x,h)}ctx.lineTo(1250,790);ctx.lineTo(38,790);ctx.fill();ctx.strokeStyle=T.gold;ctx.globalAlpha=.22;ctx.beginPath();for(let x=47;x<1225;x+=5){let y=680+27*Math.sin(x*.007)+12*Math.sin(x*.02);if(x===47)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();ctx.globalAlpha=1;
+ for(let i=0;i<19;i++){let x=57+i*60,y=707+8*Math.sin(i*.3);ctx.strokeStyle=T.gold;ctx.globalAlpha=.2;line(x,y,x+25,y-5);line(x+9,y+7,x+9,y-12)}ctx.restore();
+ // Terraces and engraved hand-planted rows
+ ctx.save();ctx.strokeStyle=T.gold;ctx.globalAlpha=.37;for(let k=0;k<7;k++){let y=692+k*13;ctx.beginPath();ctx.moveTo(40,y+25);ctx.bezierCurveTo(370,y-16,770,y+14,1240,y-12);ctx.stroke()}ctx.restore();
+}
+function roots(T){ctx.save();ctx.translate(616,661);ctx.strokeStyle=T.gold;ctx.globalAlpha=.34;ctx.lineWidth=1;for(let i=0;i<27;i++){let a=(i/26)*Math.PI-.12;let x=Math.cos(a)*270,y=38+Math.sin(a)*92;ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(x*.3,22+20*Math.sin(i*.7),x*.63,7+25*Math.cos(i),x,y);ctx.stroke();for(let j=0;j<5;j++){let tx=x*(j+.5)/5,ty=y*(j+.5)/5;line(tx,ty,tx+(i%2?7:-8),ty+18)}}ctx.restore();ctx.globalAlpha=1;
+}
+function branch(T,x,y,len,ang,level,seed){if(level<=0||len<12)return;let nx=x+Math.cos(ang)*len,ny=y+Math.sin(ang)*len;ctx.lineWidth=Math.max(.7,level*1.58);ctx.strokeStyle=level>4?'#372b2a':T.gold;ctx.globalAlpha=level>3?.8:.38;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+Math.cos(ang+.13)*len*.48,y+Math.sin(ang+.13)*len*.48,nx,ny);ctx.stroke();if(level>3){ctx.lineWidth=Math.max(.6,level*.28);ctx.strokeStyle=T.gold;ctx.globalAlpha=.5;line(x+1,y,nx+1,ny)}ctx.globalAlpha=1;
+ let spread=.32+.22*seedHash(seed+8);branch(T,nx,ny,len*(.68+.08*seedHash(seed+4)),ang-spread,level-1,seed*2+1);branch(T,nx,ny,len*(.62+.1*seedHash(seed+18)),ang+spread,level-1,seed*2+2);if(level>4)branch(T,nx,ny,len*.49,ang+(.19*(seed%2?1:-1)),level-2,seed*2+3)}
+function trunk(T){ctx.save();const brown=ctx.createLinearGradient(562,0,660,0);brown.addColorStop(0,T.dark);brown.addColorStop(.48,'#7b5539');brown.addColorStop(1,T.dark);ctx.fillStyle=brown;ctx.strokeStyle=T.gold;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(565,672);ctx.bezierCurveTo(592,611,584,515,571,465);ctx.bezierCurveTo(576,407,582,387,618,366);ctx.bezierCurveTo(644,387,660,436,647,482);ctx.bezierCurveTo(628,550,645,614,660,672);ctx.closePath();ctx.fill();ctx.stroke();
+ for(let i=0;i<47;i++){let xx=580+i%8*8,yy=398+Math.floor(i/8)*41;ctx.strokeStyle=T.gold;ctx.globalAlpha=.2;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(xx,yy);ctx.bezierCurveTo(xx-14,yy+24,xx+11,yy+38,xx,yy+45);ctx.stroke()}ctx.globalAlpha=1;
+ // Draw branching skeletal structure beneath the luminous canopy
+ branch(T,613,400,115,-Math.PI/2,7,7);branch(T,612,435,99,-2.35,6,13);branch(T,625,430,104,-.81,6,24);branch(T,602,480,94,-2.8,5,35);branch(T,641,479,101,-.36,5,51);ctx.restore();
+}
+function canopy(T){ctx.save();ctx.globalAlpha=.13;ctx.fillStyle=T.leaf[1];ellipse(615,398,405,226);ctx.fill();ctx.globalAlpha=1;
+ // Each visible illuminated leaf is also one genuine four-neighbour sandpile cell.
+ const cw=cg.w/(NX-1),ch=cg.h/(NY-1);for(let i=0;i<S;i++){if(!mask[i])continue;let x=i%NX,y=(i/NX)|0,v=values[i],j=(x*17+y*31)%7;let px=cg.x+x*cw,py=cg.y+y*ch;let flick=.84+.15*Math.sin(seconds*.64+px*.04+py*.02);ctx.fillStyle=v?T.leaf[Math.min(3,v)]:T.leaf[0];ctx.globalAlpha=v?(0.58+.25*flick):.34;ctx.save();ctx.translate(px,py);ctx.rotate(-.55+seedHash(i*11)*1.1);let w=2.35+(v?1.4:.4),h=2.7+(v?1.2:.3);ctx.beginPath();ctx.moveTo(-w,0);ctx.quadraticCurveTo(-w*.4,-h*.85,0,-h);ctx.quadraticCurveTo(w*.4,-h*.83,w,0);ctx.quadraticCurveTo(w*.5,h*.82,0,h);ctx.quadraticCurveTo(-w*.5,h*.83,-w,0);ctx.fill();if(v===3||glow[i]>.45){ctx.fillStyle=T.bird;ctx.globalAlpha=.1+.45*glow[i];ctx.fillRect(-.8,-.8,1.6,1.6)}ctx.restore();if(glow[i]>0)glow[i]*=.994}
+ ctx.globalAlpha=1;
+ // Engraved foliage sprays and freely hanging fruit bells
+ for(let i=0;i<68;i++){let a=i*2.399963,r=seedHash(i*9+2)*.92,xx=615+Math.cos(a)*r*387,yy=404+Math.sin(a)*r*204;if(!ell((xx-615)/390,(yy-405)/225))continue;ctx.strokeStyle=T.gold;ctx.globalAlpha=.27;ctx.lineWidth=.9;line(xx-5,yy+7,xx+5,yy-6);ctx.globalAlpha=.35;ctx.fillStyle=T.petal;ellipse(xx+5,yy-7,2.5,5);ctx.fill()}
+ ctx.globalAlpha=1;
+ for(let i=0;i<23;i++){let a=i*2.39997,rad=.15+.79*seedHash(i*4+93),x=615+Math.cos(a)*rad*350,y=403+Math.sin(a)*rad*160;if(!ell((x-615)/390,(y-403)/225))continue;let s=7+seedHash(i*18+9)*8;ctx.strokeStyle=T.gold;ctx.globalAlpha=.63;line(x,y-24,x,y-8);ctx.globalAlpha=1;ctx.save();ctx.shadowBlur=10;ctx.shadowColor=T.bloom||T.blossom;ctx.fillStyle=i%3?T.blossom:T.petal;ellipse(x,y,s*.76,s);ctx.fill();ctx.restore();ctx.strokeStyle=T.gold;ctx.globalAlpha=.9;ellipse(x,y,s*.8,s);ctx.stroke();ellipse(x-2,y-2,s*.28,s*.46);ctx.stroke();ctx.globalAlpha=1;}
+ ctx.restore();}
+function overBoughs(T){
+ // The outer limbs are laid over the tessellated light field to reveal that the
+ // sandpile forms a tree rather than a freestanding astronomical disc.
+ ctx.save();const limbs=[
+ [607,589,539,484,368,414,276,336,6.7],
+ [623,580,692,479,801,387,917,351,5.9],
+ [602,537,556,415,475,339,423,266,5.8],
+ [627,532,679,409,728,308,761,245,5.8],
+ [607,500,584,373,560,285,583,232,4.2],
+ [621,494,641,370,683,301,693,241,4.2],
+ [597,551,523,469,462,458,338,474,4.8],
+ [641,561,715,487,797,472,886,513,4.8]
+ ];
+ for(let i=0;i<limbs.length;i++){
+  let [x1,y1,cx1,cy1,cx2,cy2,x2,y2,w]=limbs[i];ctx.strokeStyle=T.dark;ctx.globalAlpha=.70;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x2,y2);ctx.stroke();ctx.strokeStyle=T.gold;ctx.globalAlpha=.40;ctx.lineWidth=1.15;ctx.stroke();
+  for(let j=1;j<7;j++){let t=j/7,mt=1-t,px=mt*mt*mt*x1+3*mt*mt*t*cx1+3*mt*t*t*cx2+t*t*t*x2,py=mt*mt*mt*y1+3*mt*mt*t*cy1+3*mt*t*t*cy2+t*t*t*y2;
+   let dir=(j+i)%2?1:-1,tx=px+dir*(19+9*j),ty=py-(12+6*j);ctx.strokeStyle=T.gold;ctx.globalAlpha=.32;ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(px,py);ctx.quadraticCurveTo(px+dir*8,py-12,tx,ty);ctx.stroke();
+   ctx.globalAlpha=.65;ctx.fillStyle=T.petal;ellipse(tx+dir*2,ty-2,2.4,4.1);ctx.fill();
+  }
+ }
+ ctx.restore();
+}
+function couriers(T){let targets=[[34,32],[91,32],[65,49]],now=seconds*(Number(document.getElementById('wind').value)/58)*.3;for(let k=0;k<3;k++){let f=(now*.47+k/3)%1,phase=(f*2*Math.PI);let x=390+k*250+Math.cos(phase)*118,y=202+Math.sin(phase)*40+Math.sin(phase*2+k)*25;let wing=Math.sin(seconds*12+k*1.4);
+ ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(phase)*.14);ctx.strokeStyle=T.gold;ctx.globalAlpha=.23;ctx.lineWidth=.8;ellipse(0,0,45,30);ctx.stroke();ctx.globalAlpha=1;
+ // articulated courier bird
+ ctx.save();ctx.shadowColor=T.bird;ctx.shadowBlur=13;ctx.fillStyle=T.bird;ellipse(0,-1,15,7);ctx.fill();ctx.restore();ctx.fillStyle=T.gold;ctx.beginPath();ctx.moveTo(12,-3);ctx.lineTo(21,-2);ctx.lineTo(12,1);ctx.fill();ctx.strokeStyle=T.ink;ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(-4,0);ctx.quadraticCurveTo(-18,-27-Math.abs(wing)*10,-49,-25-Math.abs(wing)*10);ctx.quadraticCurveTo(-37,-4,-4,0);ctx.stroke();ctx.beginPath();ctx.moveTo(-4,0);ctx.quadraticCurveTo(-27,17+Math.abs(wing)*8,-47,19+Math.abs(wing)*8);ctx.quadraticCurveTo(-24,7,-4,0);ctx.stroke();ctx.strokeStyle=T.gold;for(let n=0;n<5;n++)line(-11-n*6,1,-17-n*7,-5-(n%3)*2);
+ // small suspended amber cargo
+ ctx.strokeStyle=T.gold;line(3,6,3,16);ctx.fillStyle=T.blossom;ellipse(3,20,5,5);ctx.fill();ctx.restore();}
+}
+function instrumentation(T){
+ // left panel: decorative planet and planting diagram
+ ctx.strokeStyle=T.gold;ctx.globalAlpha=.48;ctx.lineWidth=1;ellipse(122,432,62,62);ctx.stroke();ellipse(122,432,48,48);ctx.stroke();ctx.globalAlpha=.23;for(let r=14;r<46;r+=12){ellipse(122,432,r,r);ctx.stroke()}ctx.globalAlpha=.8;ctx.fillStyle=T.bird;ellipse(122,432,7,7);ctx.fill();ctx.globalAlpha=1;ctx.save();ctx.translate(122,432);ctx.rotate(seconds*.07);line(-57,0,57,0);line(0,-57,0,57);ctx.restore();write('LUX  /  IV',122,523,10,T.gold,'center',1,'monospace');write('GRAFTING DIAL',122,544,10,T.ink,'center',.45,'monospace');
+ // right panel: real mathematical receipt, not decorative dummy values
+ const bx=1015,by=298,bw=217,bh=321;ctx.fillStyle=T.dark+'c9';ctx.fillRect(bx,by,bw,bh);ctx.strokeStyle=T.gold;ctx.strokeRect(bx,by,bw,bh);ctx.globalAlpha=.52;ctx.strokeRect(bx+6,by+6,bw-12,bh-12);ctx.globalAlpha=1;write('LEDGER OF LIGHT',bx+bw/2,by+37,14,T.gold,'center',1.4);line(bx+20,by+53,bx+bw-20,by+53);let rows=[['COURIERS LANDED',landings],['SOWED EMBERS',injected],['BRANCH TOPPLINGS',topples],['EMBERS IN LEAF',retained],['LOST AT EDGE',lost]];rows.forEach(([label,value],i)=>{let y=by+84+i*44;write(label,bx+17,y,8.5,T.gold,'left',.72,'monospace');write(String(value).padStart(i===0?3:6,'0'),bx+bw-17,y+18,19,T.ink,'right',.8);ctx.globalAlpha=.23;line(bx+18,y+25,bx+bw-18,y+25);ctx.globalAlpha=1});write('THE SUM OF ALL LIGHT IS KEPT',bx+bw/2,by+305,8.7,T.gold,'center',.2,'monospace');
+ // pedagogic diagram: visual mathematical toppling on left side
+ write('FOUR MAKE ONE FALL',62,588,10,T.gold,'left',.9,'monospace');let ox=127,oy=631;ctx.strokeStyle=T.gold;ctx.globalAlpha=.6;for(let [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]){ctx.strokeRect(ox+dx*20-9,oy+dy*20-9,18,18)}ctx.globalAlpha=1;ctx.fillStyle=T.ink;for(let [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ellipse(ox+dx*20,oy+dy*20,3,3);ctx.fill()}write('4',ox,oy+4,12,T.ink,'center');
+}
+function printDetails(T){ctx.strokeStyle=T.gold;ctx.globalAlpha=.45;line(75,735,1188,735);ctx.globalAlpha=1;write('HORTUS LUCIS / A COLLECTION OF IMPOSSIBLE FRUITS',76,753,10,T.gold,'left',1.1,'monospace');write(T.name,1186,747,15,T.ink,'right',1.3);write(T.subtitle,1186,765,9.5,T.gold,'right',1.05,'monospace');
+ // Scrolled ornament and cross-hatched bottom border
+ ctx.strokeStyle=T.gold;ctx.globalAlpha=.35;for(let i=0;i<24;i++){let x=370+i*23;line(x,745,x+10,751)}ctx.globalAlpha=1;
+ if(showVeins){ctx.strokeStyle=T.ink;ctx.globalAlpha=.30;for(let i=0;i<19;i++){let x=cg.x+i*cg.w/18;line(x,cg.y-8,x,cg.y+cg.h+8)}for(let i=0;i<12;i++){let y=cg.y+i*cg.h/11;line(cg.x-10,y,cg.x+cg.w+10,y)}ctx.globalAlpha=1;write('COLONY GRID 124 × 70 / ORTHOGONAL CONSERVATION',656,210,11,T.gold,'center',.4,'monospace')}
+ for(let b of bursts){if(b.t>2)continue;ctx.strokeStyle=T.blossom;ctx.lineWidth=1.7;ctx.globalAlpha=(1-b.t/2)*.58;ellipse(b.x,b.y,8+b.t*52,8+b.t*30);ctx.stroke()}ctx.globalAlpha=1;
+}
+function draw(){ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';let T=theme();background(T);horizon(T);roots(T);trunk(T);canopy(T);overBoughs(T);couriers(T);instrumentation(T);printDetails(T)}
+function update(dt){seconds+=dt;frame++;let speed=Number(document.getElementById('wind').value)/58;let old=seconds-dt,c=seconds,period=11.5/speed;for(let k=0;k<3;k++){let a=(old/period+k*.32),b=(c/period+k*.32);if(Math.floor(a)!==Math.floor(b)){let dest=[[37,34],[83,34],[63,48]][k];deliver(dest[0],dest[1],Number(document.getElementById('cargo').value))}}
+ settle(5800);for(let burst of bursts)burst.t+=dt;if(bursts.length>30)bursts=bursts.slice(-30);count()}
+let previous=0;function tick(now){let dt=previous?Math.min((now-previous)/1000,.15):.017;previous=now;if(!paused)update(dt);if(!paused && frame%2===0)draw();requestAnimationFrame(tick)}
+function plant(px,py){let rect=canvas.getBoundingClientRect(),x=(px-rect.left)/rect.width*W,y=(py-rect.top)/rect.height*H;if(window.innerWidth<=600){let actualW=canvas.clientWidth,shift=(canvas.clientWidth-document.getElementById('frame').clientWidth)/2;x=(px-rect.left)/actualW*W}let ix=Math.round((x-cg.x)/cg.w*(NX-1)),iy=Math.round((y-cg.y)/cg.h*(NY-1));if(deliver(ix,iy,Number(document.getElementById('cargo').value)))settle(11000);count();draw()}
+canvas.addEventListener('pointerdown',ev=>{if(ev.button!==0)return;plant(ev.clientX,ev.clientY)});
+document.querySelectorAll('.season').forEach(b=>b.addEventListener('click',()=>reset(+b.dataset.n)));
+function sow(){const d=[[38,30],[81,37],[64,46]][landings%3];deliver(...d,Number(document.getElementById('cargo').value));settle(12000);count();draw()}
+document.querySelector('#sow').addEventListener('click',sow);document.querySelector('#lines').addEventListener('click',()=>{showVeins=!showVeins;let b=document.querySelector('#lines');b.textContent=showVeins?'Hide veins':'Show veins';b.setAttribute('aria-pressed',String(showVeins));draw()});
+function setPause(v){paused=v;let b=document.querySelector('#pause');b.textContent=paused?'Resume':'Pause';b.setAttribute('aria-pressed',String(paused));draw()}
+document.querySelector('#pause').addEventListener('click',()=>setPause(!paused));
+for(let id of ['wind','cargo'])document.getElementById(id).addEventListener('input',e=>document.getElementById(id+'Number').textContent=e.target.value);
+function exportPng(){draw();let a=document.createElement('a');a.download=`the-orchard-of-second-suns-plate-${season+1}.png`;a.href=canvas.toDataURL('image/png');a.click()}
+document.getElementById('save').addEventListener('click',exportPng);
+window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;if(['1','2','3'].includes(e.key))reset(+e.key-1);if(e.key.toLowerCase()==='s')sow();if(e.key.toLowerCase()==='v')document.getElementById('lines').click();if(e.key.toLowerCase()==='p')setPause(!paused);if(e.key.toLowerCase()==='e')exportPng()});
+window.__art={status:()=>{count();return {season,injected,lost,retained,topples,landings,pending:queue.length-at,massError:injected-lost-retained}},advance:update,deliver,reset,draw,settle,count};
+reset(0);setPause(paused);requestAnimationFrame(tick);
+})();
+</script></body></html>
