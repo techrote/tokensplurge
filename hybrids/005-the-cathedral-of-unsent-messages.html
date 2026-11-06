@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071a28">
+<title>The Cathedral of Unsent Messages — a living glass circuit</title>
+<style>
+:root{color-scheme:dark;--bg:#081824;--gold:#dab988;--paper:#f6dfb8}*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;min-height:100svh;color:var(--paper);font-family:Georgia,'Times New Roman',serif;background:radial-gradient(ellipse at 52% 13%,#233a4c 0%,#0c1c29 50%,#060f19 100%)}main{margin:auto;max-width:1800px;min-height:100svh;padding:13px clamp(10px,2vw,34px) 12px;display:flex;flex-direction:column;gap:12px}.header{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:70px;border-top:1px solid #b98c55a9;padding-top:9px}.kicker,.edition,.stat,.label,button,.smallcaps,.note{font-family:'Courier New',monospace;letter-spacing:.125em;text-transform:uppercase}.kicker{font-size:10px;color:#b9cbca}.heading{font-size:clamp(25px,2.75vw,43px);font-variant:small-caps;letter-spacing:.015em;line-height:1.14}.edition{font-size:9px;color:#b0a28b;text-align:right;line-height:1.7}.center{flex:1;display:grid;place-items:center;min-height:0}.frame{width:100%;max-width:1580px;position:relative;padding:5px;background:#071623;border:1px solid #977653;box-shadow:0 0 0 7px #152734,0 0 0 8px #71543866,0 25px 65px #000b}.frame:before,.frame:after{content:'✦';color:#b99463;position:absolute;top:-7px;font-size:12px}.frame:before{left:13px}.frame:after{right:13px}canvas{width:100%;height:min(calc(100svh - 247px),780px);min-height:440px;display:block;background:#071724;touch-action:none;cursor:crosshair}.controls{display:grid;grid-template-columns:minmax(190px,1.25fr) minmax(190px,.8fr) minmax(290px,1.3fr);gap:18px;align-items:center;min-height:79px}.prose{font-style:italic;font-size:13px;line-height:1.48;color:#bac5c5;max-width:440px}.prose em{font-style:normal;color:#f2cc9c}.sliders{display:flex;gap:12px}.field{width:50%;min-width:88px}.label{display:flex;justify-content:space-between;gap:5px;font-size:9px;color:#baa57e}.label output{color:#fbe2b0}input[type=range]{width:100%;height:19px;accent-color:#dfb678;cursor:pointer}.buttons{display:flex;flex-wrap:wrap;justify-content:end;gap:5px}button{background:#152d39;color:#e7d7b9;border:1px solid #967954b8;min-height:35px;padding:8px 10px;font-size:10px;letter-spacing:.04em;cursor:pointer}button:hover,button[aria-pressed=true]{background:#dfbd89;color:#10242f}button:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid #f7e4b3;outline-offset:3px}.bottom{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #856b4e77;padding-top:8px}.stat{font-size:9px;color:#aca89b}.stat strong{font-weight:normal;color:#f4c789}.a11y{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+@media(max-width:1020px){.controls{grid-template-columns:1fr 1fr;gap:10px}.prose{grid-column:1/-1;max-width:none;text-align:center}.buttons{justify-content:end}}
+@media(max-width:650px){main{padding:10px 9px 14px;gap:8px}.header{min-height:58px}.heading{font-size:21px}.kicker,.edition{font-size:8px;letter-spacing:.02em}.edition{max-width:104px}.center{flex:none}.frame{padding:3px}canvas{height:min(64svh,640px);min-height:375px}.controls{grid-template-columns:1fr;gap:8px}.prose{font-size:11px;line-height:1.35}.sliders{width:100%}.buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.buttons button{font-size:9px;padding:6px 2px}.bottom{flex-wrap:wrap;justify-content:center;text-align:center}.stat{font-size:8px}}
+</style></head>
+<body><main>
+<header class="header"><div><div class="kicker">The Institute of Unreceived Correspondence · Vol. V</div><div class="heading">The Cathedral of Unsent Messages</div></div><div class="edition">A circuit in stained glass<br>192 speaking panes / no recipient</div></header>
+<div class="center"><div class="frame"><canvas id="work" tabindex="0" role="img" aria-label="An intricate Art Deco cathedral rose window made from 192 conductive glass cells. Living electrical signals follow its leaded tracery, lighting the building. Touch the glass to send a message."></canvas></div></div>
+<div class="controls"><div class="prose">The glass remembers every letter, but never the address. <em>Touch a pane to send a signal</em>; the leadwork decides whether it survives.</div><div class="sliders"><div class="field"><label class="label" for="tempo">Dispatch <output id="tempoText">1.00</output></label><input id="tempo" type="range" min="0.25" max="2.50" step="0.05" value="1"></div><div class="field"><label class="label" for="luster">Lustre <output id="lusterText">0.85</output></label><input id="luster" type="range" min="0.20" max="1.50" step="0.05" value="0.85"></div></div><nav class="buttons" aria-label="Artwork controls"><button data-plate="0" aria-pressed="true">I · Vigil</button><button data-plate="1" aria-pressed="false">II · Crossing</button><button data-plate="2" aria-pressed="false">III · Arrival</button><button id="send">Send</button><button id="pause" aria-pressed="false">Stillness</button><button id="export">Collect PNG</button></nav></div>
+<footer class="bottom"><span class="stat">LIVE ELECTRONS <strong id="heads">000</strong> · DISPATCHED <strong id="sent">0000</strong></span><span class="stat" id="state">THE WINDOWS HAVE NOT YET LEARNED AN ADDRESS</span></footer><div class="a11y" id="announce" role="status" aria-live="polite"></div>
+</main>
+<script>
+(()=>{'use strict';
+const c=document.getElementById('work'),g=c.getContext('2d',{alpha:false});if(!g)return;
+const $=s=>document.querySelector(s),T=Math.PI*2,PI=Math.PI,clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),rnd=n=>{let v=Math.sin(n*127.1+15.13)*43758.545;return v-Math.floor(v)};
+const plates=[
+ {title:'I · THE VIGIL',sub:'THE LETTERS WAIT BEHIND BLUE GLASS',sky:['#061b2c','#183249','#3b3c4c'],wall:'#20384a',stone:'#526075',ink:'#071a2b',trim:'#b8ac91',glass:['#176f8a','#368594','#5b7897','#916c76','#cb9c7c'],live:'#c8ffff',tail:'#ee8192',gold:'#e9c58b',halo:'#4accdb',rate:1.0},
+ {title:'II · THE CROSSING',sub:'MESSAGES CROSS IN THE ROSE',sky:['#140f34','#3b2e55','#72536b'],wall:'#343152',stone:'#80708a',ink:'#10152e',trim:'#c6a9bb',glass:['#715eac','#b37eab','#5997aa','#c07e87','#ecbb9f'],live:'#fff0f2',tail:'#e5a5e6',gold:'#f0bbba',halo:'#d48fe8',rate:1.6},
+ {title:'III · THE ARRIVAL',sub:'THE LIGHT HAS BECOME ITS OWN REPLY',sky:['#18354a','#847074','#e0a47b'],wall:'#4d5967',stone:'#ac968a',ink:'#182d3d',trim:'#e4c9a2',glass:['#438f9c','#e5b273','#e28c72','#b9a1af','#f1d8a8'],live:'#fff8c9',tail:'#f5b786',gold:'#ffe5ae',halo:'#ffcf91',rate:2.1}
+];
+let scene=0,tempo=1,luster=.85,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,W=1280,H=800,portrait=false,dpr=1,center={x:640,y:318,r:193},tick=0,dispatched=0,t=0,last=0,acc=0,raf=0,hover=-1,nodes=[],links=[],stars=[],shock=null,canvasRect=null;
+const headColor=v=>v===2?'head':v===3?'tail':'wire';
+function L(x,y,X,Y,color,w=1){g.beginPath();g.strokeStyle=color;g.lineWidth=w;g.moveTo(x,y);g.lineTo(X,Y);g.stroke()}
+function circle(x,y,r,fill,stroke=null,w=1){g.beginPath();g.arc(x,y,r,0,T);if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=w;g.stroke()}}
+function txt(s,x,y,font,col,align='left'){g.font=font;g.fillStyle=col;g.textAlign=align;g.fillText(s,x,y)}
+function linePath(points,fill,stroke=null,width=1){g.beginPath();points.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.strokeStyle=stroke;g.lineWidth=width;g.stroke()}}
+function arc(x,y,r,a,b,col,w=1){g.strokeStyle=col;g.lineWidth=w;g.beginPath();g.arc(x,y,r,a,b);g.stroke()}
+function rosePoint(s,r){const a=(s-.5)*T/24-PI/2,dist=center.r*(.20+.095*r);return {x:center.x+Math.cos(a)*dist,y:center.y+Math.sin(a)*dist,angle:a,dist}}
+function initialize(){nodes=[];links=[];stars=[];for(let r=0;r<8;r++)for(let s=0;s<24;s++){const pos=rosePoint(s,r);nodes.push({s,r,...pos,v:1,adj:[],pulse:0,shade:rnd(s*77+r*36)})}
+ const connect=(i,j)=>{if(i===j||nodes[i].adj.includes(j))return;nodes[i].adj.push(j);nodes[j].adj.push(i);links.push([i,j])};
+ // Wireworld's conductor/head/tail transition runs on the physical leadwork graph.
+ // Circumferential leads are continuous; selected stone ribs provide radial bridges.
+ for(let r=0;r<8;r++)for(let s=0;s<24;s++){const i=r*24+s;connect(i,r*24+(s+1)%24);if(r<7&&(s%3===0||(r>=4&&s%4===1)||(scene===2&&s%2===0)))connect(i,(r+1)*24+s)}
+ for(let i=0;i<190;i++)stars.push([rnd(i*51)*W,rnd(i*33+5)*H*.52,rnd(i*8+7)]);
+ tick=0;dispatched=0;acc=0;for(let k=0;k<4;k++)nodes[(k*6+scene*2)%24+24*(2+(k%3))].v=2;
+}
+function step(){const old=nodes.map(n=>n.v),fresh=old.map((v,i)=>{if(v===2)return 3;if(v===3)return 1;let n=0;for(const j of nodes[i].adj)if(old[j]===2)n++;return n===1||n===2?2:1});for(let i=0;i<nodes.length;i++){nodes[i].v=fresh[i];nodes[i].pulse=Math.max(nodes[i].pulse*.91,fresh[i]===2?1:0)}tick++;const interval=Math.max(3,Math.round(17/tempo));if(tick%interval===0){const s=(Math.floor(tick/interval)*7+scene*5)%24;for(const r of [0,3,6]){nodes[r*24+s].v=2;nodes[r*24+s].pulse=1}dispatched++;}if(tick%2===0)updateReadout()}
+function inject(index,quiet=false){index=clamp(index|0,0,nodes.length-1);for(const i of [index,...nodes[index].adj.slice(0,2)]){nodes[i].v=2;nodes[i].pulse=1}shock={x:nodes[index].x,y:nodes[index].y,at:t};dispatched++;if(!quiet)$('#announce').textContent='A message entered pane '+(index+1);updateReadout();draw()}
+function updateReadout(){const h=nodes.filter(n=>n.v===2).length;$('#heads').textContent=String(h).padStart(3,'0');$('#sent').textContent=String(dispatched).padStart(4,'0');$('#state').textContent=h>40?'THE CATHEDRAL SPEAKS IN MANY TONGUES':h>4?'THE GLASS IS PASSING A LETTER':'THE WINDOWS HAVE NOT YET LEARNED AN ADDRESS'}
+function setPlate(n){scene=n;tempo=plates[n].rate;$('#tempo').value=tempo;$('#tempoText').textContent=tempo.toFixed(2);document.querySelectorAll('[data-plate]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.plate===n)));initialize();updateReadout();$('#announce').textContent='Opened '+plates[n].title;draw()}
+function resize(){const r=c.getBoundingClientRect();dpr=Math.min(2,window.devicePixelRatio||1);c.width=Math.max(2,Math.round(r.width*dpr));c.height=Math.max(2,Math.round(r.height*dpr));portrait=r.height/r.width>1.2;W=portrait?780:1280;H=portrait?1120:800;center=portrait?{x:390,y:390,r:214}:{x:640,y:335,r:208};initialize();draw()}
+function floorAndSky(p){const grad=g.createLinearGradient(0,0,0,H);p.sky.forEach((v,i)=>grad.addColorStop(i/2,v));g.fillStyle=grad;g.fillRect(0,0,W,H);
+ const mx=portrait?610:1003,my=portrait?142:142,mr=portrait?73:88;let glow=g.createRadialGradient(mx,my,5,mx,my,mr*5);glow.addColorStop(0,p.gold+'66');glow.addColorStop(1,p.gold+'00');g.fillStyle=glow;g.fillRect(0,0,W,H);circle(mx,my,mr,p.gold+'a6');circle(mx,my,mr-5,p.sky[1]+'79');for(let i=0;i<18;i++)circle(mx+(rnd(i*8)-.5)*mr*1.5,my+(rnd(i*31)-.5)*mr*1.5,2+rnd(i*7)*9,p.sky[0]+'44');
+ for(const s of stars)circle(s[0],s[1],s[2]>.9?1.5:.55,p.gold+Math.round(90+s[2]*100).toString(16).padStart(2,'0'));
+ // distant civic skyline: an architectural inheritance of Source A.
+ for(let lay=0;lay<3;lay++){g.fillStyle=lay===0?p.sky[1]:lay===1?p.wall:p.ink;const base=H*(portrait?.76:.70)+lay*25;g.beginPath();g.moveTo(0,H);g.lineTo(0,base);for(let i=0;i<70;i++){const x=i*W/70,hi=32+rnd(lay*91+i*31)*118;g.lineTo(x,base);g.lineTo(x,base-hi);g.lineTo(x+W/78,base-hi);g.lineTo(x+W/78,base)}g.lineTo(W,H);g.fill()}
+ const fy=H*(portrait?.83:.825);g.fillStyle='#07151fe8';g.fillRect(0,fy,W,H-fy);for(let i=0;i<45;i++){let y=fy+i*(H-fy)/45;L(0,y,W,y,p.trim+'17',.5)}for(let i=0;i<58;i++){let x=rnd(i*24)*W,y=fy+rnd(i*98)*(H-fy);L(x,y,x+30,y-2,p.gold+'19',.8)}
+}
+function pointed(x,y,w,h,fill,stroke,sw=2){g.beginPath();g.moveTo(x-w/2,y+h);g.lineTo(x-w/2,y+h*.37);g.quadraticCurveTo(x-w/2,y+h*.12,x,y);g.quadraticCurveTo(x+w/2,y+h*.12,x+w/2,y+h*.37);g.lineTo(x+w/2,y+h);g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=sw;g.stroke()}}
+function architecture(p){const {x,y,r}=center,base=portrait?H*.833:H*.852;
+ // monumental nave elevation, roof and flying buttresses. Not a remake of the city's facade.
+ const w=r*2.56,top=y-r*.95;
+ linePath([[x-w*.63,base],[x-w*.63,top+r*.35],[x-w*.3,top-r*.19],[x,top-r*.61],[x+w*.3,top-r*.19],[x+w*.63,top+r*.35],[x+w*.63,base]],p.wall,p.trim+'ce',2.8);
+ // central copper ribs and stepped neo-gothic gable.
+ for(let k=0;k<4;k++){const rw=w*(.63+k*.07),yy=top+r*(.2+k*.09);L(x-rw,yy,x,top-r*.64+k*9,p.trim+'56',1.2);L(x,top-r*.64+k*9,x+rw,yy,p.trim+'56',1.2)}
+ for(let k=0;k<6;k++){const xx=x+(k-2.5)*w*.17;L(xx,top+r*.48,xx,base,p.trim+'38',1.2);for(let j=0;j<14;j++){let yy=top+r*.46+j*(base-top-r*.46)/14;L(xx-6,yy,xx+6,yy,p.trim+'25',.75)}}
+ // slim copper pinnacles and illuminated side chapels.
+ for(const side of [-1,1]){
+ const ax=x+side*(w*.62),ty=top+r*.08;pointed(ax,ty,r*.32,base-ty,p.ink,p.trim+'c1',2);for(let i=0;i<5;i++){const yy=ty+49+i*(base-ty-68)/5;pointed(ax,yy,r*.18,45,p.sky[1],p.trim+'6e',1);L(ax,yy+7,ax,yy+43,p.gold+'59',.8)}
+ const px=ax+side*16;L(px,ty-29,px,ty+11,p.gold,1.8);circle(px,ty-31,3,p.gold);L(ax-side*5,ty+base*.05,ax+side*19,ty+base*.05,p.gold+'af',1);
+ // tower clock and sound tubes respond to electron population.
+ const sy=base-r*.31;for(let k=0;k<6;k++){L(ax-r*.12,sy+k*13,ax+r*.12,sy+k*13,p.trim+'45',1)}
+ }
+ // recessed doors, grilles and crowd shadows.
+ for(let k=0;k<5;k++){const xx=x+(k-2)*r*.40,ww=r*.26;pointed(xx,base-r*.64,ww,r*.64,p.ink,p.trim+'a8',1.5);for(let j=0;j<5;j++)L(xx-ww*.44+j*ww*.22,base-r*.38,xx-ww*.44+j*ww*.22,base,p.trim+'45',1.2);circle(xx,base-r*.1,3,p.gold+'87')}
+ for(let i=0;i<115;i++){const xx=x+(rnd(i*17)-.5)*w*1.2,yy=base-rnd(i*13)*r*.1;circle(xx,yy,2+rnd(i*12)*2,p.ink)}
+ // marble course and engraved pilasters.
+ for(let i=0;i<7;i++){const yy=top+r*.6+i*(base-top-r*.6)/7;L(x-w*.61,yy,x+w*.61,yy,p.trim+'30',1)}
+ for(let k=0;k<10;k++){let xx=x-w*.57+k*w*1.14/9;for(let j=0;j<18;j++)circle(xx,top+r*.6+j*26,1.2,p.gold+'41')}
+}
+function rose(p){const {x,y,r}=center;const active=nodes.filter(n=>n.v===2).length/192;
+ let aura=g.createRadialGradient(x,y,r*.16,x,y,r*1.32);aura.addColorStop(0,p.halo+Math.round((.20+active*.6)*255).toString(16).padStart(2,'0'));aura.addColorStop(1,p.halo+'00');g.fillStyle=aura;g.fillRect(x-r*1.5,y-r*1.5,3*r,3*r);
+ circle(x,y,r+25,p.ink,p.trim,3);circle(x,y,r+16,p.wall,p.gold,2);circle(x,y,r+6,p.ink,p.trim,1.4);
+ for(let k=0;k<80;k++){let a=k*T/80;L(x+Math.cos(a)*(r+17),y+Math.sin(a)*(r+17),x+Math.cos(a)*(r+(k%5===0?29:23)),y+Math.sin(a)*(r+(k%5===0?29:23)),p.trim+'a0',k%5===0?1.5:.6)}
+ // each sector forms 8 individually addressable conductive panes, physically placed in the rose.
+ for(const n of nodes){const a1=(n.s-1)*T/24-PI/2+.007,a2=n.s*T/24-PI/2-.007;
+  const inner=r*(.16+.095*n.r),outer=inner+r*.084;const shade=p.glass[Math.floor((n.s/3+n.r*1.2)%p.glass.length)];
+  g.beginPath();g.arc(x,y,outer,a1,a2);g.arc(x,y,inner,a2,a1,true);g.closePath();g.fillStyle=shade;g.globalAlpha=.79;g.fill();g.globalAlpha=1;
+  const b=g.createRadialGradient(n.x,n.y,1,n.x,n.y,33);const pow=n.v===2?1.0:n.v===3?.64:.1+n.pulse*.55;b.addColorStop(0,(n.v===3?p.tail:p.live)+Math.round(pow*200*luster).toString(16).padStart(2,'0'));b.addColorStop(1,p.live+'00');g.fillStyle=b;g.fillRect(n.x-35,n.y-35,70,70);
+  g.strokeStyle=p.trim+'82';g.lineWidth=.9;g.stroke();g.globalAlpha=.48;L(x+Math.cos(a1)*(inner+4),y+Math.sin(a1)*(inner+4),x+Math.cos(a2)*(outer-4),y+Math.sin(a2)*(outer-4),p.gold+'ac',.7);g.globalAlpha=1;
+ }
+ // Electrical leadwork includes genuine adjacency, not ornamental disconnected overlay.
+ for(const [i,j] of links){const a=nodes[i],b=nodes[j];if(i%24===23&&j%24===0){}let col=p.trim+'78',width=.7;if(a.v===2||b.v===2){col=p.live+'d5';width=2.2}if(a.v===3||b.v===3){col=p.tail+'9c';width=1.3}L(a.x,a.y,b.x,b.y,col,width)}
+ for(const n of nodes){const col=n.v===2?p.live:n.v===3?p.tail:p.gold+'bf';circle(n.x,n.y,n.v===2?2.9:1.6,col);if(n.v===2)circle(n.x,n.y,7,p.live+'2c');if(hover===n.r*24+n.s)circle(n.x,n.y,12,null,p.live,2)}
+ // Gothic rosette ring and compass enamel.
+ for(let k=0;k<24;k++){let a=k*T/24-PI/2;L(x+Math.cos(a)*r*.16,y+Math.sin(a)*r*.16,x+Math.cos(a)*r*.88,y+Math.sin(a)*r*.88,p.gold+'9c',1.1)}
+ circle(x,y,r*.16,p.ink,p.gold,2.6);circle(x,y,r*.105,p.wall,p.trim,1.2);for(let k=0;k<12;k++){let a=k*T/12+t*.045;L(x+Math.cos(a)*r*.06,y+Math.sin(a)*r*.06,x+Math.cos(a)*r*.12,y+Math.sin(a)*r*.12,p.gold,1)}circle(x,y,8,p.live);circle(x,y,3,p.ink);
+ // Four stone evangelists and archival numerals.
+ for(let k=0;k<4;k++){const a=k*PI/2-PI/2,xx=x+Math.cos(a)*(r+45),yy=y+Math.sin(a)*(r+45);circle(xx,yy,15,p.wall,p.gold,1);txt(['N','E','S','W'][k],xx,yy+4,'12px Georgia',p.gold,'center')}
+ if(shock){const age=t-shock.at;if(age<1.3)circle(shock.x,shock.y,age*115,null,p.live+Math.round((1-age/1.3)*180).toString(16).padStart(2,'0'),2);else shock=null}
+}
+function sidePanels(p){const {x,y,r}=center,base=portrait?H*.835:H*.85;
+ const offset=portrait?r*1.49:r*1.72;for(const side of [-1,1]){const ax=x+side*offset;
+ const h=r*.97,ww=r*.55;pointed(ax,y-r*.21,ww,h,p.ink,p.trim+'9a',2);pointed(ax,y-r*.12,ww*.77,h*.82,p.sky[1],p.gold+'7e',1.2);
+ for(let j=0;j<7;j++){const yy=y-r*.12+j*h*.09,half=ww*.31*(.2+j*.09);L(ax-half,yy,ax+half,yy,p.gold+'67',1);if(j%2===0){for(let k=-2;k<=2;k++)circle(ax+k*half/2,yy,2.2,p.gold+'78')}}
+ const lit=nodes.filter(n=>n.v===2&&n.s%2===(side===1?0:1)).length;const br=Math.min(1,lit/18);
+ for(let j=0;j<7;j++){const yy=y+r*.08+j*20;let glow=g.createRadialGradient(ax,yy,0,ax,yy,18);glow.addColorStop(0,p.live+Math.round((br*.6+.2)*220).toString(16).padStart(2,'0'));glow.addColorStop(1,p.live+'00');g.fillStyle=glow;g.fillRect(ax-20,yy-20,40,40);circle(ax,yy,3.5,p.gold)}
+ // delicately engraved signal registers.
+ txt(side<0?'INBOUND':'OUTBOUND',ax,y+r*.74,'12px Georgia',p.gold,'center');L(ax-ww*.32,y+r*.77,ax+ww*.32,y+r*.77,p.trim+'8f');
+ for(let i=0;i<12;i++){const yy=y+r*.83+i*7;L(ax-ww*.32,yy,ax-ww*.32+rnd(i*7+side*41)*ww*.65,yy,p.trim+'53',.7)}
+ }
+ // engraved title plaques, calibrated scale, and a living dial.
+ const left=portrait?23:36,top=portrait?H*.065:H*.1;
+ txt('DEPARTMENT OF IMPOSSIBLE DELIVERY',left,top,'12px Courier New',p.gold);L(left,top+14,left+310,top+14,p.trim+'82',1);txt('A / CORRESPONDENCE RECEIVED BY GLASS',left,top+35,'10px Courier New',p.trim);
+ const dy=portrait?H*.72:H*.75,dx=x,rr=portrait?35:41;circle(dx,dy,rr,p.ink,p.gold,1.4);circle(dx,dy,rr-7,p.wall,p.trim,1);for(let k=0;k<32;k++){const a=k*T/32;L(dx+Math.cos(a)*(rr-5),dy+Math.sin(a)*(rr-5),dx+Math.cos(a)*(rr-(k%4===0?15:10)),dy+Math.sin(a)*(rr-(k%4===0?15:10)),p.trim,k%4===0?1.2:.6)}const heads=nodes.filter(n=>n.v===2).length;const needle=clamp(heads/65,0,1)*PI*.9+PI*.05;L(dx,dy,dx+Math.sin(needle)*rr*.68,dy+Math.cos(needle)*rr*.68,p.live,2);circle(dx,dy,4,p.gold);txt('ELECTRONS',dx,dy+rr+20,'10px Courier New',p.trim,'center');
+ // print edition details and quiet spectral map legend.
+ txt(plates[scene].title,portrait?W*.5:W*.79,portrait?H*.1:H*.13,'italic 19px Georgia',p.gold,portrait?'center':'left');txt(plates[scene].sub,portrait?W*.5:W*.79,portrait?H*.122:H*.158,'10px Courier New',p.trim,portrait?'center':'left');
+ txt('COPPER / CONDUCTOR',left,H-47,'10px Courier New',p.trim);circle(left+160,H-51,4,p.gold);txt('CYAN / HEAD',left+185,H-47,'10px Courier New',p.trim);circle(left+290,H-51,4,p.live);txt('ROSE / TAIL',left+320,H-47,'10px Courier New',p.trim);circle(left+410,H-51,4,p.tail);
+ txt('PLATE '+String(scene+1).padStart(2,'0')+' OF 03  ·  AN ELECTRIC RELIQUARY',W-24,H-23,'10px Courier New',p.trim,'right');
+}
+function ink(){for(let i=0;i<840;i++){const x=rnd(i*89)*W,y=rnd(i*13+15)*H;g.fillStyle=i%3===0?'#fff':'#020912';g.globalAlpha=i%3===0?.032:.05;g.fillRect(x,y,rnd(i*9)> .95?2:.7,.8)}g.globalAlpha=1;g.strokeStyle='#d9bd8973';g.lineWidth=1.2;g.strokeRect(13.5,13.5,W-27,H-27);g.strokeStyle='#d9bd8938';g.strokeRect(20.5,20.5,W-41,H-41)}
+function draw(){const p=plates[scene];g.setTransform(c.width/W,0,0,c.height/H,0,0);floorAndSky(p);architecture(p);sidePanels(p);rose(p);ink()}
+function frame(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(!paused){t+=dt;acc+=dt;while(acc>=.085){acc-=.085;step()}}draw();raf=requestAnimationFrame(frame)}
+function pointer(e){const r=c.getBoundingClientRect();const x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;let idx=0,dist=1e10;nodes.forEach((n,i)=>{const d=(n.x-x)**2+(n.y-y)**2;if(d<dist){dist=d;idx=i}});return dist<center.r**2*.13?idx:(Math.hypot(x-center.x,y-center.y)<center.r+24?idx:-1)}
+let drawing=false,lastTouched=-1;c.addEventListener('pointerdown',e=>{drawing=true;try{c.setPointerCapture(e.pointerId)}catch{}const n=pointer(e);if(n>=0){inject(n);lastTouched=n}});c.addEventListener('pointermove',e=>{hover=pointer(e);if(drawing&&hover>=0&&hover!==lastTouched){inject(hover,true);lastTouched=hover}});for(const ev of ['pointerup','pointercancel','pointerleave'])c.addEventListener(ev,()=>{drawing=false;hover=-1;lastTouched=-1});
+$('#tempo').addEventListener('input',e=>{tempo=Number(e.target.value);$('#tempoText').textContent=tempo.toFixed(2)});$('#luster').addEventListener('input',e=>{luster=Number(e.target.value);$('#lusterText').textContent=luster.toFixed(2);draw()});document.querySelectorAll('[data-plate]').forEach(b=>b.addEventListener('click',()=>setPlate(+b.dataset.plate)));$('#send').addEventListener('click',()=>inject(24*3+(tick*7)%24));function toggle(){paused=!paused;$('#pause').setAttribute('aria-pressed',String(paused));$('#pause').textContent=paused?'Awaken':'Stillness';$('#announce').textContent=paused?'All signals held in place':'The letters travel again'}$('#pause').addEventListener('click',toggle);
+function save(){draw();const a=document.createElement('a');a.download='cathedral-of-unsent-messages-plate-'+(scene+1)+'.png';a.href=c.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()}$('#export').addEventListener('click',save);
+document.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;let action=true;if(['Digit1','Digit2','Digit3'].includes(e.code))setPlate(+e.code.slice(-1)-1);else if(e.code==='Space'){toggle()}else if(e.code==='KeyS')inject(24*3+(tick*7)%24);else if(e.code==='KeyE')save();else action=false;if(action)e.preventDefault()});
+const ro=new ResizeObserver(resize);ro.observe(c);resize();updateReadout();raf=requestAnimationFrame(frame);window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
+})();
+</script>
+</body></html>
