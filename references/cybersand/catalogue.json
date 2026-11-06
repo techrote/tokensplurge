@@ -163,7 +163,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/rivers-desktop.png",
         "detail": "captures/rivers-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/editions/002-where-the-rivers-were.html"
     },
@@ -193,7 +195,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/estuary-desktop.png",
         "detail": "captures/estuary-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/hybrids/002-the-estuary-that-learns.html"
     },
@@ -223,7 +227,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/railway-desktop.png",
         "detail": "captures/railway-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/editions/010-the-midnight-railway-of-elsewhere.html"
     },
@@ -253,7 +259,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/beacon-desktop.png",
         "detail": "captures/beacon-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/editions/005-below-the-beacon.html"
     },
@@ -283,7 +291,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/city-desktop.png",
         "detail": "captures/city-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/editions/007-a-city-practicing-dawn.html"
     },
@@ -312,7 +322,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/orchard-desktop.png",
         "detail": "captures/orchard-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/editions/013-the-orchard-of-second-suns.html"
     },
@@ -341,7 +353,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/cathedral-desktop.png",
         "detail": "captures/cathedral-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/hybrids/005-the-cathedral-of-unsent-messages.html"
     },
@@ -370,7 +384,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/choir-desktop.png",
         "detail": "captures/choir-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/hybrids/003-the-choir-of-drowned-bells.html"
     },
@@ -400,7 +416,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/weather-house-desktop.png",
         "detail": "captures/weather-house-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/editions/012-the-house-that-held-the-weather.html"
     },
@@ -429,7 +447,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/freight-desktop.png",
         "detail": "captures/freight-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/hybrids/008-the-freight-of-small-suns.html"
     },
@@ -458,7 +478,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/unfallen-rain-desktop.png",
         "detail": "captures/unfallen-rain-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/hybrids/007-the-archive-of-unfallen-rain.html"
     },
@@ -486,7 +508,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/strata-study-desktop.png",
         "detail": "captures/strata-study-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/lineage/023-strata.html"
     },
@@ -514,7 +538,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/terraform-study-desktop.png",
         "detail": "captures/terraform-study-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/salvage/063-terraform.html"
     },
@@ -542,7 +568,9 @@
         "method": "local Chromium/Playwright exact pinned HTML",
         "desktop": "captures/truchet-study-desktop.png",
         "detail": "captures/truchet-study-detail.png",
-        "status": "planned"
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "14-of-14 source-pinned Chromium PNG captures, exact Git blob checked; see report for per-image SHA-256"
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/f9deae20ded26e959f2096ba9fed9a0e3b61a6ed/salvage/060-truchet-loops.html"
     }
