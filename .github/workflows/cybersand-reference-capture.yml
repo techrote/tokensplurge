@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: cybersand-reference-capture-${{ github.ref }}
+  group: cybersand-reference-capture-lightweight-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
       - name: Install pinned Playwright and Chromium
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Capture or reuse exact-revision artwork and verify PNGs
         run: |
           if node references/cybersand/tools/verify.cjs --require-captures; then
