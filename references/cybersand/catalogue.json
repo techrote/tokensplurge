@@ -749,7 +749,7 @@
         "method": "local Chromium/Playwright exact per-entry source HTML",
         "desktop": "captures/ambulant-kilns-desktop.png",
         "detail": "captures/ambulant-kilns-detail.png",
-        "status": "pending",
+        "status": "captured",
         "report": "captures/report.json",
         "evidence": "Original PR #48 reports author-executed Chromium; independent repo-hosted source-pinned desktop/detail PNGs and SHA-256 are pending. Not native Godot or human quality acceptance."
       },
