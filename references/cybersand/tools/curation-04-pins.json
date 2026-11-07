@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "from_commit": "179b8ba6df6d1bc59b8c27b512c1432b9ea37844",
+  "description": "Curation-04 original source identity and 2 published Chromium image paths remain immutable after promotion.",
+  "entries": [
+    {
+      "id": "breathing-citadel",
+      "repo": "techrote/tokensplurge",
+      "kind": "inspiration",
+      "ref": "2f38d84ef7ffd03cd51e44057dda3aeb1c03b657",
+      "path": "environments/007-the-breathing-citadel-source.html",
+      "blob_sha": "767d23bccae92eb312a79722c33358a33af1e6d6",
+      "capture_files": [
+        "captures/breathing-citadel-desktop.png",
+        "captures/breathing-citadel-detail.png"
+      ]
+    }
+  ]
+}
