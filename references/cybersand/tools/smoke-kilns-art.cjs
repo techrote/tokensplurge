@@ -9,7 +9,7 @@ const cat=JSON.parse(fs.readFileSync(path.join(__dirname,'..','catalogue.json'),
 const item=cat.references.find(x=>x.id==='ambulant-kilns');
 assert.ok(item&&item.capture.status==='captured','source-pinned kiln PNGs pending');
 const bytes=execFileSync('git',['show',item.ref+':'+item.path],{cwd:root,maxBuffer:8*1024*1024});
-assert.equal(crypto.createHash('sha1').update(Buffer.from('blob '+bytes.length+'\\0')).update(bytes).digest('hex'),item.blob_sha,'Git source blob mismatch');
+assert.equal(crypto.createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex'),item.blob_sha,'Git source blob mismatch');
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'ts-kilns-test-')),html=path.join(tmp,'art.html');
 fs.writeFileSync(html,bytes);
 async function run(browser,width,height,dpr){
