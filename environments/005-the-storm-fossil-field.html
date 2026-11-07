@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b111a"><title>Storm Fossil Field — Environment Laboratory 005</title>
+<style>
+:root {color-scheme:dark;--bg:#0a1017;--panel:#141b22;--ink:#e7ddc8;--dim:#a49d8c;--line:#4b5e63;--green:#a6dacd;--accent:#e7a579}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(ellipse at 50% -12%,#24313c 0%,#0c121b 52%,#080e15 100%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1504px;margin:auto;padding:24px clamp(12px,3vw,44px) 48px}.mast{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end;margin-bottom:18px}.eyebrow,.issue,.tiny,.group-title,.stamp,.note,.readout{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.15em;text-transform:uppercase}.eyebrow{color:var(--green);font-size:10px;margin:0 0 11px}.mast h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(36px,5vw,74px);font-weight:400;line-height:.94;letter-spacing:-.055em;margin:0}.mast h1 i{font-weight:400;color:#e8b18c}.issue{font-size:10px;line-height:1.8;text-align:right;color:#bfb5a1;white-space:nowrap}.issue b{font-weight:500;color:var(--green)}.frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border:1px solid #536567;box-shadow:0 0 0 5px #0d1520,0 0 0 6px #40505854,0 28px 70px #0009;background:#07101c}.frame canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.overlay{position:absolute;top:17px;left:20px;pointer-events:none;display:flex;align-items:center;gap:9px;color:#e5d0afab;font:9px ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase;text-shadow:0 1px 6px #000}.overlay:before{content:'';height:1px;width:25px;background:#ddaf82}.corner{position:absolute;bottom:14px;right:15px;color:#cfd9c880;font:9px ui-monospace,monospace;letter-spacing:.16em;pointer-events:none}.controls{display:grid;grid-template-columns:1.35fr 1.15fr auto;align-items:stretch;gap:22px;padding:22px 0 18px;border-bottom:1px solid #6972755c}.group{min-width:0}.group-title{font-size:10px;color:#e7b48e;margin:0 0 12px}.sliderrow{display:flex;gap:12px;align-items:center}.sliderrow input{accent-color:#b4e1d9;min-width:40px;width:100%;cursor:pointer}.readout{font-size:11px;color:#bde5db;min-width:44px;text-align:right}.buttons{display:flex;flex-wrap:wrap;gap:8px}.buttons button{background:#19232d;border:1px solid #536a6c;color:#d6dcd2;min-height:39px;padding:8px 12px;font:11px ui-monospace,monospace;letter-spacing:.045em;cursor:pointer;transition:background .18s,border-color .18s}.buttons button:hover{background:#2c4247;border-color:#a6d7d1}.buttons button[aria-pressed=true]{background:#b7d9d1;color:#102127;border-color:#e6e9d8}.buttons button:focus-visible,input:focus-visible{outline:2px solid #ffd0a2;outline-offset:3px}.actions{align-self:end;justify-content:end}.actions button{white-space:nowrap}.status{display:flex;align-items:start;justify-content:space-between;gap:22px;margin-top:15px;color:#b0aa9d}.status p{margin:0;font:11px/1.75 ui-monospace,monospace}.status strong{font-weight:500;color:#ecb98a}.footerline{font-size:11px;color:#77878a;margin-top:25px;font-style:italic}
+@media(max-width:900px){main{padding:20px 18px 38px}.mast h1{font-size:clamp(39px,6vw,58px)}.controls{grid-template-columns:1fr 1fr}.actions{grid-column:1/-1;justify-content:start}.status{flex-direction:column;gap:7px}}
+@media(max-width:580px){main{padding:16px 10px 30px}.mast{margin-bottom:16px;align-items:start;grid-template-columns:1fr auto}.mast h1{font-size:39px;line-height:.99}.issue{font-size:8px;letter-spacing:.07em;white-space:normal;max-width:84px}.eyebrow{font-size:9px;max-width:240px}.frame{height:512px;aspect-ratio:auto}.controls{grid-template-columns:1fr;gap:17px;padding-top:19px}.actions{grid-column:auto}.group-title{margin-bottom:9px}.buttons button{font-size:11px;padding:8px 10px;min-height:40px}.status p{font-size:10px}.overlay{font-size:8px;left:12px;top:12px}.corner{font-size:7px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<header class="mast"><div><p class="eyebrow">Field reports from an impossible climate / 005</p><h1>The Storm <i>Fossil Field</i></h1></div><div class="issue">ENVIRONMENT<br>LABORATORY <b>005</b><br>6 NOV 2026<br>SPECULATIVE FOLIO</div></header>
+<div class="frame" id="frame"><canvas id="world" role="img" aria-label="An immense branching glass lightning fossil rises from an iron-black volcanic salt flat. Tiny ceramic dwellings and grounding towers cluster below its glowing branches, while storms and charged mineral dust move through the scene. Touch the landscape to awaken the mineral."></canvas><div class="overlay">A thunderstorm, mineralised</div><div class="corner">16 : 09 / FIELD OF STATIC MEMORY</div></div>
+<section class="controls" aria-label="Artwork controls">
+<div class="group"><p class="group-title">01 / residual charge</p><div class="sliderrow"><input aria-label="Residual charge" id="charge" type="range" min="0" max="100" value="66" step="1"><span class="readout" id="chargeVal">66%</span></div></div>
+<div class="group"><p class="group-title">02 / atmospheric state</p><div class="buttons" role="group" aria-label="Weather"><button id="still" aria-pressed="false">CLEARING</button><button id="storm" aria-pressed="true">SQUALL</button></div></div>
+<div class="group"><p class="group-title">03 / field instruments</p><div class="buttons actions"><button id="ignite" title="Send an electrical pulse through the fossil">DISCHARGE</button><button id="pause" aria-pressed="false">PAUSE</button><button id="save">SAVE PNG</button></div></div>
+</section>
+<div class="status"><p><strong id="caption">A city built beside the instant before thunder.</strong> Fine crystalline scars trace where an ancient electrical storm struck the iron sea.</p><p id="live" aria-live="polite">TAP / CLICK THE LANDSCAPE TO RELEASE A STORED PULSE</p></div>
+<div class="footerline">An original speculative environment. Atmospheric and electrical motion are illustrative Canvas2D effects, not CyberSand engine materials or validated physical simulation.</div>
+</main>
+<script>
+(() => {'use strict';
+const W=1600,H=900,canvas=document.querySelector('#world'),frame=document.querySelector('#frame'),ctx=canvas.getContext('2d',{alpha:false});
+const chargeEl=document.querySelector('#charge'),chargeVal=document.querySelector('#chargeVal'),live=document.querySelector('#live');
+let charge=.66,storm=true,paused=false,time=0,last=0,flash=0,pulses=[],camera={s:1,ox:0,oy:0},dim={w:0,h:0},dpr=1;
+const TAU=2*Math.PI, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
+function rnd(seed){let a=seed|0;return function(){a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=(t+Math.imul(t^t>>>7,61|t))^t;return ((t^t>>>14)>>>0)/4294967296}}
+const r=rnd(16059),grain=Array.from({length:2500},()=>[r()*W,635+r()*320,r(),r()]),dust=Array.from({length:320},()=>[r()*W,r()*H,r(),r()]),skySpecks=Array.from({length:230},()=>[r()*W,r()*580,r(),r()]);
+const chips=Array.from({length:380},()=>[r()*W,700+r()*240,r()*14+1,r()]);
+const houses=[];for(const [x,y,n,sc] of [[330,676,15,.85],[540,690,16,.78],[735,687,17,.95],[1185,682,19,1],[1395,718,17,.84]]){for(let i=0;i<n;i++){houses.push({x:x+(r()-.5)*185,y:y+(r()-.5)*28,w:(7+r()*17)*sc,h:(13+r()*25)*sc,t:r(),glow:r()>.52})}}
+const orange='#f6af75',glacial='#a6eee7';
+const fossils=[
+{w:49,path:[[945,709],[930,651],[965,583],[952,522],[996,451],[978,381],[1015,310],[996,257],[1058,186]]},
+{w:35,path:[[979,392],[909,355],[880,294],[821,266],[783,194],[718,158],[675,95]]},
+{w:31,path:[[1014,313],[1088,282],[1131,218],[1211,203],[1270,137],[1353,103]]},
+{w:21,path:[[963,515],[871,484],[824,431],[751,412],[707,357],[637,343]]},
+{w:18,path:[[1040,226],[1053,147],[1118,99],[1134,45]]},
+{w:17,path:[[825,265],[844,197],[824,143],[843,75]]},
+{w:16,path:[[1182,205],[1203,144],[1192,92],[1230,44]]},
+{w:12,path:[[1114,240],[1145,270],[1197,264],[1235,300]]},
+{w:14,path:[[906,355],[880,393],[808,365],[771,377]]},
+{w:11,path:[[783,193],[726,210],[677,188],[621,203]]},
+{w:12,path:[[997,454],[1089,443],[1127,399],[1189,390]]}
+];
+const minorFossils=[{w:19,path:[[250,702],[265,646],[239,603],[279,567],[273,527],[316,502]]},{w:13,path:[[264,613],[214,582],[203,544],[173,529]]},{w:17,path:[[1414,734],[1424,690],[1412,648],[1449,612],[1460,570]]}];
+const fractals=[];for(let k=0;k<fossils.length;k++){const f=fossils[k];for(let i=1;i<f.path.length-1;i++){if(r()<.18)continue;const [x,y]=f.path[i];const slope=r()>.45?1:-1,len=(13+r()*55)*(f.w/49+.32);fractals.push({w:Math.max(2,f.w*(.08+r()*.17)),path:[[x,y],[x+slope*len*.62,y-len*.54],[x+slope*len,y-len*(1.1+r()*.5)]]})}}
+const pathLength=points=>points.slice(1).reduce((z,p,i)=>z+Math.hypot(p[0]-points[i][0],p[1]-points[i][1]),0);fossils.forEach(f=>f.len=pathLength(f.path));
+function poly(pts,close=true){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);if(close)ctx.closePath()}
+function fill(pts,color){ctx.fillStyle=color;poly(pts);ctx.fill()}
+function stroke(pts,color,w=1){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';poly(pts,false);ctx.stroke()}
+function ellipse(x,y,rx,ry,c){ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,TAU);ctx.fill()}
+function grad(x0,y0,x1,y1,stops){let g=ctx.createLinearGradient(x0,y0,x1,y1);for(const [p,c] of stops)g.addColorStop(p,c);return g}
+function rad(x,y,radius,colors){let g=ctx.createRadialGradient(x,y,0,x,y,radius);for(const [p,c] of colors)g.addColorStop(p,c);return g}
+const ground=y=>690+23*Math.sin(y*.006)+11*Math.sin(y*.021+2.1)+4*Math.cos(y*.063);
+function sky(){ctx.fillStyle=grad(0,0,0,880,[[0,'#090f1d'],[.21,'#253241'],[.43,'#725049'],[.67,'#b07152'],[.83,'#293039'],[1,'#131921']]);ctx.fillRect(0,0,W,H);
+ctx.fillStyle=rad(1080,285,500,[[0,'#e5a37469'],[.22,'#d57d4a41'],[.6,'#9a5b4124'],[1,'#9c452500']]);ctx.fillRect(420,0,1180,700);
+ctx.fillStyle=rad(1108,332,126,[[0,'#ffe0ae8a'],[.44,'#f4ad7a6b'],[.62,'#db987530'],[1,'#e7ad7a00']]);ctx.fillRect(935,160,390,345);ellipse(1103,328,75,75,'#d9a07b42');
+// Diagonal bands of ancient cloud strata, with intentional areas of clear sky.
+for(let i=0;i<34;i++){let y=50+i*15+Math.sin(i*1.13)*21,x=(i%3)*-160-110;ctx.beginPath();ctx.moveTo(x,y);for(let j=0;j<=13;j++){let xx=x+j*170, yy=y-xx*.125+Math.sin(j*.73+i)*13;ctx.lineTo(xx,yy)}ctx.lineTo(1680,y-200+32);ctx.lineTo(-130,y+18);ctx.closePath();ctx.fillStyle=i%5===0?'#121e304d':i%3===0?'#1f26343a':'#e6a5770b';ctx.fill()}
+for(let i=0;i<52;i++){let x=((i*293+19)%1740)-100,y=42+(i*47)%490;let line=[];for(let j=0;j<11;j++)line.push([x+j*20,y-j*2.7+Math.sin(j*.86+i*.47)*4]);ctx.globalAlpha=.045+(.08*(i%5)/5);stroke(line,i%2?'#ead8c0':'#101722',2+(i%5)*3)}ctx.globalAlpha=1;
+for(let i=0;i<skySpecks.length;i++){const [x,y,b,d]=skySpecks[i];let a=(1-y/600)*.29*(.2+b);ctx.globalAlpha=a;ellipse(x,y,.5+d*1.3,.5+d*.75,'#fce4c5')}ctx.globalAlpha=1;
+// Larger low hanging shelf clouds, not just random haze.
+for(let k=0;k<6;k++){let yy=420+k*33,ar=Array.from({length:38},(_,i)=>{let xx=i*49-70;return [xx,yy+Math.sin(i*.42+k*.6)*11+Math.sin(i*1.3+k)*7-xx*.015]});ctx.strokeStyle=k%2?'#2529382a':'#dca37c25';ctx.lineWidth=6+k*3;poly(ar,false);ctx.stroke()}}
+function rCloud(i){return (Math.sin(i*139.23)*47321.92)%1+1}
+function farLandscape(){fill([[0,623],[78,581],[152,598],[227,545],[277,565],[351,546],[430,575],[521,532],[584,574],[679,539],[750,564],[855,549],[946,571],[1033,526],[1126,556],[1190,512],[1262,536],[1320,518],[1390,574],[1503,547],[1600,579],[1600,810],[0,810]],'#222b31');
+for(let j=0;j<16;j++){let x=j*113-70,yy=575+Math.sin(j*.9)*22;fill([[x-30,yy+30],[x+12,yy-15],[x+49,yy-6],[x+71,yy+31]],j%3===0?'#454547':'#30373c');stroke([[x-17,yy+21],[x+12,yy-15],[x+49,yy-6]],'#ba8f7460',1.1)}
+ctx.fillStyle=grad(0,525,0,705,[[0,'#ca846238'],[.4,'#ab73552b'],[1,'#1c293800']]);ctx.fillRect(0,522,W,230);
+for(let i=0;i<140;i++){let x=i*13-20,y=610+17*Math.sin(i*.29);stroke([[x,y],[x+3,y-8-((i*41)%13)],[x+6,y]],i%4===0?'#c58a6a40':'#b7a48d23',.5)}
+}
+function basalt(){let upper=[];for(let x=-20;x<=1620;x+=24)upper.push([x,ground(x)]);fill([[0,900],...upper,[1600,900]],'#161d26');
+// Broad terraced geology and iron seams.
+for(let k=0;k<12;k++){const yy=701+k*21;let line=[];for(let x=0;x<=1600;x+=25)line.push([x,yy+Math.sin(x*.008+k*.47)*12+Math.sin(x*.021+k)*4]);stroke(line,k%4===0?'#a36b5047':'#53606836',k%4===0?2:1)}
+// Triangular interlocking basalt slabs.
+for(let row=0;row<9;row++){let y=705+row*27;for(let col=0;col<30;col++){let x=col*56+Math.sin(row*5+col)*12-24;if(y>ground(x)+1){const m=(row*11+col)%6;fill([[x,y],[x+32,y-8],[x+64,y+8],[x+22,y+24]],['#283039','#303339','#352d30','#202931','#31353a','#292d32'][m]);stroke([[x,y],[x+32,y-8],[x+64,y+8]],'#5f5e5c33',.9)}}}
+// Giant diagonal fissures cut the plate rather than a uniform tiled floor.
+const fissures=[[[0,815],[138,776],[273,816],[422,788],[515,832],[702,819]],[[702,900],[773,826],[850,842],[900,769],[1018,774]],[[1085,900],[1181,831],[1285,845],[1396,794],[1600,829]]];
+for(let a=0;a<fissures.length;a++){stroke(fissures[a],'#090e18',13);stroke(fissures[a],'#8f5f493d',2);for(let i=0;i<fissures[a].length-1;i++){let [x,y]=fissures[a][i];if(i%2===0)stroke([[x+17,y+5],[x-20,y+27]],'#0d151f',4)}}
+for(const [x,y,b,d] of grain){if(y<ground(x))continue;ctx.globalAlpha=.15+b*.43;ctx.fillStyle=b>.84?'#c5a283':b>.56?'#7b8580':'#465458';ctx.fillRect(x,y,1+d*2.2,.6+d*1.4)}ctx.globalAlpha=1;
+for(let i=0;i<chips.length;i++){let [x,y,w,z]=chips[i];if(y<ground(x))continue;fill([[x,y],[x+w,y-3-w*.24],[x+w*1.4,y+1],[x-2,y+4]],z>.82?'#b17756a1':z>.55?'#5464697d':'#232a35')}
+}
+function contactGlow(){ctx.fillStyle=rad(950,697,278,[[0,`rgba(209,232,187,${.25*charge})`],[.25,`rgba(102,205,194,${.14*charge})`],[.68,'#6ba8a40c'],[1,'#66baba00']]);ctx.fillRect(560,350,780,550);
+for(let j=0;j<28;j++){let rr=10+j*6.5;ctx.strokeStyle=`rgba(174,232,218,${charge*(.21-j*.005)})`;ctx.lineWidth=j%6===0?2.6:.75;ctx.beginPath();ctx.ellipse(942,714,rr*1.6,rr*.22,0,Math.PI*.08,Math.PI*.91);ctx.stroke()}
+for(let i=0;i<130;i++){let a=i*.52,rr=16+(i%37)*3.3;let x=945+Math.cos(a)*rr*1.75,y=721+Math.sin(a)*rr*.26;ellipse(x,y,1.4+((i*7)%5)*.11,.55+((i*11)%7)*.06,i%3?'#add5c67c':'#f4c49270')}}
+function pathShape(points,width){const normals=[];for(let i=0;i<points.length;i++){let prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)],vx=next[0]-prev[0],vy=next[1]-prev[1],len=Math.hypot(vx,vy)||1;normals.push([-vy/len,vx/len])}
+const left=[],right=[];for(let i=0;i<points.length;i++){let w=width*(1-.68*i/(points.length-1))*(i===0?1.03:1)*(1+Math.sin(i*2.5)*.10);left.push([points[i][0]+normals[i][0]*w/2,points[i][1]+normals[i][1]*w/2]);right.push([points[i][0]-normals[i][0]*w/2,points[i][1]-normals[i][1]*w/2])}return {left,right,perimeter:[...left,...right.reverse()]}}
+function glass(path,w,opacity=1,seed=0){let shp=pathShape(path,w),left=shp.left,right=[...shp.right].reverse();ctx.save();ctx.globalAlpha=opacity;
+// Outer dark mineral casing, with slightly offset deep-oxide edge.
+ctx.shadowBlur=0;poly(shp.perimeter);ctx.lineWidth=Math.max(2,w*.28);ctx.lineJoin='miter';ctx.strokeStyle='#0a1723';ctx.stroke();ctx.fillStyle='#19333d';ctx.fill();
+poly(shp.perimeter);ctx.fillStyle=grad(path[0][0]-75,path[0][1],path.at(-1)[0]+85,path.at(-1)[1],[[0,'#112b35'],[.23,'#2d6068'],[.48,charge>.3?'#79c6ba':'#3e7776'],[.7,'#3d8c8b'],[1,'#a6d7cb']]);ctx.fill();
+for(let i=0;i<path.length-1;i++){let mid=[mix(left[i][0],right[i][0],.34),mix(left[i][1],right[i][1],.34)];let next=[mix(left[i+1][0],right[i+1][0],.34),mix(left[i+1][1],right[i+1][1],.34)];fill([left[i],left[i+1],next,mid],i%3===0?'#c4efda78':'#b6dbce40');fill([mid,next,right[i+1],right[i]],i%2===0?'#0d364482':'#13636d6c');stroke([left[i],mid,right[i+1]],'#d8f0db47',.7);if(i%3===1)stroke([right[i],next],orange+'65',.9)}
+stroke(left,'#b9f5eeb5',Math.max(.65,w*.045));stroke(right,'#0b222a',Math.max(1,w*.14));stroke(path,'#caf0dd42',Math.max(1,w*.036));
+for(let i=1;i<path.length-1;i++)if((i+seed)%2===0){let x=path[i][0],y=path[i][1];stroke([[x-6,y+5],[x+3,y-8],[x+12,y-15]],'#0b263a91',Math.max(1,w*.045))}
+ctx.restore()}
+function glassAll(){// Backlit diffraction halos are spatially bounded; not a full-screen glow wash.
+ctx.save();ctx.globalCompositeOperation='screen';ctx.shadowColor='#67ebdf';ctx.shadowBlur=24+charge*23;ctx.globalAlpha=.13+.18*charge;for(const f of fossils){stroke(f.path,'#9bf2df',Math.max(2,f.w*.45))}ctx.restore();
+minorFossils.forEach((f,i)=>glass(f.path,f.w,.45,i));for(const f of fossils)glass(f.path,f.w,.94);for(const f of fractals)glass(f.path,f.w,.62);
+// At the strike-point the petrified bolt breaks into grounded shards rather than ending in air.
+for(let i=0;i<46;i++){let a=i*2.399,rad=19+(i%11)*7,x=943+Math.cos(a)*rad*1.26,y=718+Math.sin(a)*rad*.25,sz=2+(i%8)*2.4;
+fill([[x-sz*.5,y],[x,y-sz*1.8],[x+sz*.6,y-sz*.16],[x+sz,y+1]],i%5===0?'#b3e8de9f':'#315760c9');
+stroke([[x,y-sz*1.8],[x+sz*.6,y-sz*.16]],'#c8e5d18d',.8)}
+// Striations inside large crystal surfaces, like minerals grown along the strike.
+for(const f of fossils.slice(0,5)){for(let j=1;j<f.path.length-1;j++){let [x,y]=f.path[j],q=f.path[j+1],a=Math.atan2(q[1]-y,q[0]-x);ctx.save();ctx.translate(x,y);ctx.rotate(a);for(let m=0;m<4;m++){stroke([[m*5,-f.w*.13],[5+m*6,f.w*.16]],m%2?'#f3ceb36e':'#062c3980',.8)}ctx.restore()}}
+}
+function minuteStructures(){// Earthing villages are biased away from the focal fulgurite socket.
+// Thin black iron bridges across obsidian clefts.
+const spans=[[[389,691],[467,681],[523,689]],[[1100,686],[1182,672],[1273,685]]];for(const path of spans){stroke(path,'#17232b',11);stroke(path,'#a88971',3);for(let i=0;i<path.length-1;i++){let p=path[i],q=path[i+1];for(let k=0;k<8;k++){let xx=mix(p[0],q[0],k/8),yy=mix(p[1],q[1],k/8);stroke([[xx,yy-3],[xx,yy+5]],'#be957569',.9)}}}
+// White clay lightning jars, each with burnt bands and irregular little apertures.
+for(let i=0;i<houses.length;i++){let h=houses[i],x=h.x,y=h.y;if(h.x>840&&h.x<1040)continue;ctx.save();ctx.translate(x,y);let w=h.w,ht=h.h;fill([[-w*.55,0],[-w*.52,-ht*.78],[-w*.35,-ht],[w*.39,-ht],[w*.54,-ht*.77],[w*.53,0]],h.t>.6?'#c0b29b':'#978f86');fill([[-w*.52,-ht*.78],[0,-ht*1.22],[w*.53,-ht*.77]],h.t>.5?'#d4b9a4':'#706d70');fill([[w*.2,-ht*.91],[w*.54,-ht*.76],[w*.5,-ht*.02],[w*.22,-ht*.02]],'#453e45a8');stroke([[-w*.48,-ht*.36],[w*.43,-ht*.36]],'#5e5356',1.3);stroke([[-w*.39,-ht*.16],[w*.35,-ht*.16]],'#eadac76b',.8);if(h.glow){ellipse(-w*.09,-ht*.58,1.5,3.6,'#efb47e');ctx.fillStyle=rad(-w*.09,-ht*.58,w,[[0,'#ffcb8996'],[1,'#e5a06700']]);ctx.fillRect(-w,-ht*1.2,w*2,ht*1.5)}else{fill([[-w*.18,-ht*.65],[w*.04,-ht*.65],[w*.04,-ht*.41],[-w*.18,-ht*.41]],'#313b43')}ctx.restore()}
+// Copper grounding pylons and glass collector cages: functional-looking but fictional.
+for(const [x,y,ht] of [[297,668,72],[594,683,105],[760,689,79],[1200,684,115],[1329,702,92],[1513,711,64]]){stroke([[x,y],[x-1,y-ht]],'#100e1c',8);stroke([[x,y],[x-1,y-ht]],'#bc7658',3);stroke([[x-12,y-ht*.44],[x+12,y-ht*.44]],'#a67e60',2);stroke([[x-8,y-ht*.73],[x+7,y-ht*.73]],'#b2a296',1.1);fill([[x-10,y-ht],[x-3,y-ht-19],[x+6,y-ht-19],[x+12,y-ht]],'#abb6b2');stroke([[x-3,y-ht-17],[x+6,y-ht-17]],'#efcbad',1.4);for(let k=0;k<4;k++)stroke([[x-9+k*6,y-ht+3],[x-3+k*6,y-ht-14]],'#31545d',1.2);ellipse(x+1,y-ht-22,2.4,2.4,'#d7e4db')}
+// Three terraced observatory bins cut into the ground.
+for(const [x,y] of [[460,718],[717,718],[1232,738]]){for(let k=0;k<3;k++){stroke([[x-31+k*8,y+5+k*5],[x+23+k*7,y+5+k*5]],'#bda1816d',1.4)}fill([[x-18,y+2],[x-14,y-10],[x+13,y-10],[x+18,y+2]],'#9f8c77');ellipse(x,y-12,10,4,'#34464a');stroke([[x-9,y-12],[x+9,y-12]],'#e7c19a',1)}
+}
+function foreground(){fill([[0,830],[93,799],[161,824],[253,801],[332,851],[411,817],[508,869],[591,842],[667,900],[0,900]],'#121721');fill([[1010,900],[1081,838],[1159,851],[1244,820],[1342,856],[1436,811],[1535,844],[1600,824],[1600,900]],'#101820');
+for(let i=0;i<92;i++){let x=i*19-10,y=826+(i%6)*13+Math.sin(i*.72)*17;if(x>700&&x<1050)continue;stroke([[x,y+13],[x+3,y-2],[x+6,y-8]],i%3===0?'#aa81665a':'#485b5c73',1);if(i%5===0)fill([[x,y],[x+7,y-3],[x+13,y+5]],'#ad79575c')}
+// Fossilised powder basin and cracked shallow reflections.
+for(let k=0;k<54;k++){let x=690+(k*73%590),y=776+(k*11%66);let w=11+(k%5)*9;stroke([[x,y],[x+w,y+Math.sin(k)*2]],k%5===0?'#9dd5c654':'#c09a7250',.8)}
+// Foreground glass debris with asymmetric faceting.
+for(let k=0;k<83;k++){let rr=rnd(k*73+204)(),x=(k*139%1630)-15,y=814+(k*19%109),w=2+rr*13;fill([[x,y],[x+w*.15,y-rr*18-5],[x+w,y-rr*5],[x+w*.6,y+4]],k%7===0?'#90b3a5a6':'#3b637073');stroke([[x,y],[x+w*.15,y-rr*18-5]],'#b6e1d665',.8)}
+// Vignette darkens periphery while keeping central form readable.
+ctx.fillStyle=rad(890,465,985,[[0,'#08131b00'],[.51,'#07101a00'],[.8,'#040b1560'],[1,'#030811cf']]);ctx.fillRect(0,0,W,H)}
+function glints(){let speed=storm?1:.25;for(const [x,y,s,z] of dust){let dx=(x+time*(5+s*33)*speed)%1710-50,dy=y+Math.sin(time*.75+s*19+x)*3;if(dy>790)continue;let op=(.05+.22*s)*(storm?1:.4);ctx.globalAlpha=op;ellipse(dx,dy,1+s*1.5,.5+s*.55,z>.7?'#f5c3a2':'#cfede6');if(storm&&s>.64)stroke([[dx-3,dy-1],[dx-12-s*8,dy+2]],'#cdb39a',.8)}ctx.globalAlpha=1;
+for(let j=0;j<66;j++){let v=j*.88+time*.15,x=1000+Math.cos(v*1.62)*190,y=400+Math.sin(v*.93)*270;let a=(Math.sin(time*(.8+(j%7)*.18)+j*2.1)+1)*.5;ctx.globalAlpha=a*.18*charge;ellipse(x,y,1.2+j%3,1.2+j%2,j%3?'#a5eeec':'#ffd5b6')}ctx.globalAlpha=1}
+function position(points,fraction){let t=clamp(fraction,0,1),L=pathLength(points),target=L*t;for(let j=0;j<points.length-1;j++){let p=points[j],q=points[j+1],d=Math.hypot(q[0]-p[0],q[1]-p[1]);if(target<=d)return [mix(p[0],q[0],target/d),mix(p[1],q[1],target/d)];target-=d}return points.at(-1)}
+function discharge(){for(const pulse of pulses){let p=fossils[pulse.branch];let loc=position(p.path,pulse.t);ctx.save();ctx.globalCompositeOperation='screen';ctx.fillStyle=rad(loc[0],loc[1],39+flash*20,[[0,'#f6ffdfc7'],[.23,'#d0ffe6a1'],[.65,'#5cebc647'],[1,'#63d6df00']]);ctx.fillRect(loc[0]-64,loc[1]-64,128,128);ellipse(loc[0],loc[1],3+flash*4,3+flash*4,'#f2ffe6');ctx.restore()}
+if(flash>0){ctx.fillStyle=`rgba(195,237,227,${flash*.13})`;ctx.fillRect(0,0,W,H)}}
+function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,dim.w,dim.h);ctx.fillStyle='#0b1520';ctx.fillRect(0,0,dim.w,dim.h);ctx.save();ctx.translate(camera.ox,camera.oy);ctx.scale(camera.s,camera.s);sky();farLandscape();basalt();contactGlow();glassAll();minuteStructures();foreground();glints();discharge();ctx.restore()}
+function resize(){let rc=frame.getBoundingClientRect();dim.w=rc.width;dim.h=rc.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(dim.w*dpr);canvas.height=Math.round(dim.h*dpr);let mobile=dim.w<620;let s=Math.max(dim.w/W,dim.h/H);if(!mobile)s=Math.min(dim.w/W,dim.h/H);camera.s=s;camera.ox=dim.w/2-(mobile?966:800)*s;camera.oy=dim.h/2-(mobile?452:450)*s;draw()}
+function step(now){if(!last)last=now;let dt=Math.min(.05,(now-last)/1000);last=now;if(!paused){time+=dt;flash=Math.max(0,flash-dt*1.1);for(const p of pulses)p.t+=dt*p.speed; pulses=pulses.filter(p=>p.t<1.05)}draw();requestAnimationFrame(step)}
+function pulse(){flash=.83;for(let i=0;i<6;i++)pulses.push({branch:i,t:0,speed:.34+i*.037});pulses=pulses.slice(-24);live.textContent='CHARGE RELEASING / THE STONE REMEMBERS';draw()}
+function setWeather(s){storm=s;document.querySelector('#still').setAttribute('aria-pressed',String(!s));document.querySelector('#storm').setAttribute('aria-pressed',String(s));document.querySelector('#caption').textContent=storm?'A city built beside the instant before thunder.':'After the squall, the black basin can finally hear itself.';live.textContent=storm?'SQUALL / CHARGED SILICA DRIFT':'CLEARING / THE FOSSIL HOLDS ITS SHAPE';draw()}
+chargeEl.addEventListener('input',()=>{charge=Number(chargeEl.value)/100;chargeVal.textContent=chargeEl.value+'%';draw()});document.querySelector('#storm').addEventListener('click',()=>setWeather(true));document.querySelector('#still').addEventListener('click',()=>setWeather(false));document.querySelector('#ignite').addEventListener('click',pulse);document.querySelector('#pause').addEventListener('click',()=>{paused=!paused;document.querySelector('#pause').textContent=paused?'RESUME':'PAUSE';document.querySelector('#pause').setAttribute('aria-pressed',String(paused));live.textContent=paused?'FIELD HELD / ALL MOTION SUSPENDED':'FIELD ANIMATING / FOSSIL HOLDING';draw()});frame.addEventListener('pointerdown',e=>{const rc=canvas.getBoundingClientRect(),x=(e.clientX-rc.left-camera.ox)/camera.s,y=(e.clientY-rc.top-camera.oy)/camera.s;if(x>=0&&x<=W&&y>=0&&y<=H){pulse()}});
+document.querySelector('#save').addEventListener('click',()=>{draw();const a=document.createElement('a');a.download='storm-fossil-field-005.png';a.href=canvas.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();live.textContent=`PNG EXPORTED / ${canvas.width} × ${canvas.height}`});
+window.addEventListener('resize',resize);resize();if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){paused=true;document.querySelector('#pause').textContent='RESUME';document.querySelector('#pause').setAttribute('aria-pressed','true')}requestAnimationFrame(step);
+})();
+</script>
+</body></html>
