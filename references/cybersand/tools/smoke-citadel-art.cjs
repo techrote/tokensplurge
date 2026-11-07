@@ -9,7 +9,7 @@ const cat=JSON.parse(fs.readFileSync(path.join(__dirname,'..','catalogue.json'),
 const item=cat.references.find(x=>x.id==='breathing-citadel');
 assert.ok(item&&item.capture.status==='captured','source-pinned new Chromium captures still pending');
 const bytes=execFileSync('git',['show',item.ref+':'+item.path],{cwd:root,maxBuffer:8*1024*1024});
-const blob=crypto.createHash('sha1').update(Buffer.from('blob '+bytes.length+'\\0')).update(bytes).digest('hex');
+const blob=crypto.createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex');
 assert.equal(blob,item.blob_sha,'selected readable source Git blob mismatch');
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'cybersand-curation-vent-')),html=path.join(tmp,'art.html');
 fs.writeFileSync(html,bytes);
