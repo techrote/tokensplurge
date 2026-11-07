@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090f19">
+<title>The Reliquary of the Last Lightning — Edition XXIV</title>
+<style>
+:root{color-scheme:dark;--ink:#eee5d0;--dim:#a6afa9;--mint:#9ee9db;--copper:#edb18a}*{box-sizing:border-box}html{background:#080d15}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#203444,#090f19 65%,#060a11);color:var(--ink);font-family:Georgia,'Times New Roman',serif}main{max-width:1560px;margin:auto;padding:22px clamp(12px,3vw,46px) 40px}.top{display:flex;align-items:end;justify-content:space-between;gap:22px;margin-bottom:22px}.eyebrow,.folio,.minor,.buttons,.readout,.note,.rule,.captions,.stat{font-family:ui-monospace,'SFMono-Regular',Consolas,monospace;text-transform:uppercase;letter-spacing:.16em}.eyebrow{color:#a4d2c6;font-size:10px;margin:0 0 9px}.title{font-weight:400;letter-spacing:-.047em;line-height:.95;font-size:clamp(35px,5.2vw,76px);margin:0}.title em{font-style:italic;color:#edbc99}.folio{text-align:right;font-size:10px;line-height:1.9;color:#a9bdba;white-space:nowrap}.folio b{color:#f7ce9d;font-weight:400}.stage{position:relative;width:100%;height:min(65vw,840px);min-height:450px;overflow:hidden;border:1px solid #6b7471;box-shadow:0 0 0 6px #0e1720,0 0 0 7px #6b74624a,0 30px 75px #000c;background:#0d1a28}.stage canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}.stage:before{position:absolute;inset:9px;border:1px solid #c0c6ac3b;content:'';pointer-events:none}.stage .plate-note{position:absolute;left:25px;top:22px;color:#e3decbab;font:9px ui-monospace,monospace;letter-spacing:.23em;pointer-events:none}.stage .plate-number{position:absolute;right:21px;bottom:18px;color:#d9d8b8a8;font:10px ui-monospace,monospace;letter-spacing:.2em;pointer-events:none}.controls{display:grid;grid-template-columns:1fr 1.25fr auto;align-items:end;gap:25px;border-bottom:1px solid #60716c68;padding:24px 0 22px}.minor{color:#bdb19d;font-size:10px;margin-bottom:13px}.buttons{display:flex;gap:7px;flex-wrap:wrap}.buttons button{cursor:pointer;background:#18252b;border:1px solid #60716a;color:#d6dacf;padding:11px 13px;min-height:42px;font:10px ui-monospace,monospace;letter-spacing:.08em;white-space:nowrap}.buttons button:hover{background:#2c4b51}.buttons button[aria-pressed=true]{color:#07141c;background:#b5dfd3;border-color:#f8dfaf}button:focus-visible,input:focus-visible{outline:2px solid #ffca91;outline-offset:3px}.range{display:flex;align-items:center;gap:10px}.range input{accent-color:#acd8ce;flex:1;width:100%}.readout{min-width:37px;text-align:right;color:#aee7d8;font-size:11px}.under{display:flex;justify-content:space-between;gap:20px;padding:17px 0 2px;align-items:start}.captions{font-size:10px;letter-spacing:.095em;line-height:1.8;color:#aeb9b2;max-width:75ch}.captions b{color:#efc49a;font-weight:500}.stat{font-size:9px;color:#8faaa9;line-height:1.85;text-align:right;white-space:nowrap}.foot{font-style:italic;color:#839596;font-size:12px;margin-top:25px;line-height:1.6}@media(max-width:900px){.controls{grid-template-columns:1fr 1fr}.actions{grid-column:1/-1}.stage{height:62vw}}@media(max-width:600px){main{padding:16px 11px 28px}.top{align-items:start;gap:6px}.title{font-size:39px}.folio{font-size:8px;letter-spacing:.05em;max-width:95px;white-space:normal}.eyebrow{font-size:8px}.stage{height:565px;min-height:0}.controls{grid-template-columns:1fr;gap:16px;padding:18px 0}.actions{grid-column:auto}.buttons button{padding:10px 9px;font-size:10px}.under{display:block}.stat{text-align:left;margin-top:10px}.stage .plate-note{left:14px;top:16px;font-size:8px}.foot{font-size:11px}}
+</style>
+</head>
+<body>
+<main><header class="top"><div><p class="eyebrow">A natural history of impossible storms / plate xxiv</p><h1 class="title">The Reliquary <em>of the<br>Last Lightning</em></h1></div><div class="folio">AURORAL SURVEY<br><b>06 · XI · 2026</b><br>GLASS / IRON / MEMORY</div></header>
+<div class="stage" id="stage"><canvas id="art" role="img" aria-label="A monumental hollow lightning fossil becomes a luminous glass reliquary above a dark iron sea. Tiny galleries and bell towers stand among copper bridges as energy courses through mineral branches."></canvas><div class="plate-note">I / THE WEATHER THAT NEVER ENDED</div><div class="plate-number">ARCHIVE · 024 / 1600 × 1000</div></div>
+<section class="controls" aria-label="Artistic controls"><div><div class="minor">01 / the hour of light</div><div class="buttons" id="modes"><button data-mode="0" aria-pressed="true">VESPER</button><button data-mode="1" aria-pressed="false">RESONANCE</button><button data-mode="2" aria-pressed="false">AFTERGLOW</button></div></div><div><div class="minor">02 / captive potential</div><div class="range"><input type="range" min="0" max="100" value="68" id="voltage" aria-label="Captive potential"><output class="readout" id="voltVal">68%</output></div></div><div class="actions"><div class="minor">03 / field instruments</div><div class="buttons"><button id="strike">RELEASE PULSE</button><button id="diagram" aria-pressed="false">ANNOTATE</button><button id="pause" aria-pressed="false">STILL</button><button id="save">SAVE PNG</button></div></div></section>
+<div class="under"><div class="captions"><b id="sceneName">VESPER — THE RELIC IS STILL AWAKE.</b> <span id="description">A mineral cathedral built within the glass left by an ancient discharge. Its inhabitants collect the sound of a storm that never struck twice.</span></div><div class="stat" id="status" aria-live="polite">TOUCH THE FOSSIL TO WAKE ITS CONDUCTIVE VEINS<br>1600 × 1000 / ORIGINAL MOVING ENGRAVING</div></div><p class="foot">A speculative illuminated folio. Conductive light and dust are artistic simulations, not an electrical-physics model or a CyberSand engine render. No external libraries, files or assets.</p></main>
+<script>
+(() => {'use strict';
+const W=1600,H=1000,canvas=document.getElementById('art'),stage=document.getElementById('stage'),ctx=canvas.getContext('2d',{alpha:false});
+const TAU=Math.PI*2, PI=Math.PI, s=(x)=>Math.sin(x), c=(x)=>Math.cos(x), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
+function rng(seed){return ()=>{seed|=0;seed=(seed+0x6d2b79f5)|0;let t=Math.imul(seed^seed>>>15,1|seed);t=(t+Math.imul(t^t>>>7,61|t))^t;return ((t^t>>>14)>>>0)/4294967296}}
+const r=rng(76132);let mode=0,voltage=.68,paused=matchMedia('(prefers-reduced-motion:reduce)').matches,annotated=false,now=0,last=0,pulse=0,point=[840,400],cw=0,ch=0,ratio=1,sc=1,offx=0,offy=0;
+const colors=[{sky:['#071220','#183247','#4a5160','#895c52','#151f2c'],mineral:'#a2ede2',deep:'#225e6a',rim:'#f4c497',ground:'#101923',glass:'#9ff7e3',window:'#f9d7b5'}, {sky:['#090d20','#2c224a','#463767','#8a4960','#1c172d'],mineral:'#d6a9f5',deep:'#674b9c',rim:'#ffb8c7',ground:'#151627',glass:'#cdb3ff',window:'#ffc3a7'}, {sky:['#171e23','#3c4b46','#8a705b','#b08e61','#2b3031'],mineral:'#ffdba0',deep:'#9e8056',rim:'#ffe5b6',ground:'#302b2a',glass:'#d5e8ca',window:'#f4ead2'}];
+let pal=colors[mode];const debris=Array.from({length:1450},()=>({x:r()*W,y:675+r()*350,a:r(),b:r(),sz:r()*8+.4}));
+const motes=Array.from({length:510},()=>({x:r()*W,y:70+r()*800,z:r(),v:.28+r()*.72,p:r()*TAU}));
+const stars=Array.from({length:165},()=>({x:r()*W,y:r()*570,z:r()}));
+const fossil=[
+{w:75,pts:[[786,730],[787,665],[835,611],[814,548],[858,473],[823,412],[865,349],[849,287],[887,209],[859,136],[894,55]]},
+{w:41,pts:[[849,292],[765,255],[710,190],[644,154],[602,92],[544,46]]},
+{w:37,pts:[[863,348],[958,317],[1012,259],[1093,228],[1173,153],[1243,117],[1289,45]]},
+{w:29,pts:[[822,412],[714,401],[662,352],[585,345],[514,295],[482,247]]},
+{w:25,pts:[[857,473],[968,467],[1035,427],[1136,410],[1202,356]]},
+{w:18,pts:[[713,194],[741,126],[730,67]]},
+{w:19,pts:[[1091,229],[1102,142],[1138,84]]},
+{w:14,pts:[[970,466],[992,517],[1063,542]]},
+{w:15,pts:[[662,353],[635,277],[610,225]]},
+{w:12,pts:[[1172,153],[1233,187],[1290,179]]},
+{w:13,pts:[[835,613],[736,568],[680,550]]}
+];
+const branches=[];for(const f of fossil){for(let i=1;i<f.pts.length-1;i++){if(r()<.21)continue;let [x,y]=f.pts[i],sdir=r()>.52?1:-1,len=(18+r()*61)*(.55+f.w/75);branches.push({w:Math.max(2,f.w*(.12+r()*.1)),pts:[[x,y],[x+len*sdir*.65,y-len*.55],[x+len*sdir,y-len*(1.1+r()*.4)]]})}}
+function path(pts,close=false){ctx.beginPath();ctx.moveTo(...pts[0]);for(let i=1;i<pts.length;i++)ctx.lineTo(...pts[i]);if(close)ctx.closePath()}
+function stroke(pts,col,w=1){ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=col;ctx.lineWidth=w;path(pts);ctx.stroke()}
+function fill(pts,col){ctx.fillStyle=col;path(pts,true);ctx.fill()}
+function ellipse(x,y,rx,ry,col){ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,TAU);ctx.fill()}
+function grad(x0,y0,x1,y1,a){let g=ctx.createLinearGradient(x0,y0,x1,y1);for(const [p,v] of a)g.addColorStop(p,v);return g}
+function rad(x,y,R,a){let g=ctx.createRadialGradient(x,y,0,x,y,R);for(const [p,v] of a)g.addColorStop(p,v);return g}
+function line(x1,y1,x2,y2,col,w=1){stroke([[x1,y1],[x2,y2]],col,w)}
+function diamond(x,y,wx,hy,col){fill([[x,y-hy],[x+wx,y],[x,y+hy],[x-wx,y]],col)}
+function sky(){let a=pal.sky;ctx.fillStyle=grad(0,0,0,H,[[0,a[0]],[.26,a[1]],[.52,a[2]],[.72,a[3]],[1,a[4]]]);ctx.fillRect(0,0,W,H);
+ctx.fillStyle=rad(845,320,640,[[0,mode===0?'#c6b9b12c':mode===1?'#a797db36':'#ffe6a631'],[.48,'#9fc2b40b'],[1,'#bdbca600']]);ctx.fillRect(205,0,1270,930);
+for(let i=0;i<28;i++){let y=45+i*23,dx=i%3*50;ctx.beginPath();ctx.moveTo(-100,y+dx);for(let j=0;j<=10;j++){const x=-100+j*185;ctx.lineTo(x,y+dx-x*.13+s(j*.79+i*1.8)*9)}ctx.lineTo(1700,y+17);ctx.closePath();ctx.fillStyle=i%4===0?'#0b17212f':'#f2c39d0b';ctx.fill()}
+for(const p of stars){let f=.4+.6*(.5+.5*s(now*.36+p.z*9));ellipse(p.x,p.y,0.6+p.z*1.1,0.6+p.z*1.1,`rgba(234,242,225,${(.12+p.z*.42)*f})`)}
+// Mist shelves add scale, preserving an intentional central clear silhouette.
+for(let i=0;i<10;i++){let x=80+i*166,y=475+i%4*61;ctx.fillStyle=rad(x,y,235,[[0,'#a6c7ba1c'],[1,'#bfd6ce00']]);ctx.fillRect(x-240,y-150,480,310)}
+}
+function horizon(){fill([[0,655],[125,611],[222,631],[320,585],[420,613],[495,591],[580,636],[640,626],[743,670],[885,637],[1016,608],[1110,623],[1240,576],[1380,612],[1490,590],[1600,620],[1600,1000],[0,1000]],pal.ground);
+for(let k=0;k<6;k++){const y=643+k*15;ctx.beginPath();ctx.moveTo(0,y+8*s(k*7));for(let x=0;x<=1650;x+=10)ctx.lineTo(x,y+s(x*.013+k*2)*9+s(x*.04)*3);ctx.strokeStyle=k%2?'#7588801e':'#c5a58c2a';ctx.lineWidth=2+k*.3;ctx.stroke()}
+ctx.fillStyle=grad(0,670,0,1000,[[0,'#1c2b339e'],[.55,'#080f19'],[1,'#03090e']]);ctx.fillRect(0,665,1600,335);
+for(let k=0;k<15;k++){let y=683+k*21;line(0,y,1600,y+s(k*8)*9,k%2?'#b9a38c12':'#94afa819',1)}
+// The storm left scattered quartz agates across the lakebed.
+for(let k=0;k<74;k++){let rr=rng(1019+k*37),x=rr()*W,y=697+rr()*300,wx=2+rr()*8,hy=5+rr()*18;
+fill([[x-wx,y],[x-wx*.8,y-hy*.5],[x,y-hy],[x+wx*.8,y-hy*.2],[x+wx,y]],k%3?'#425957b6':'#bbad8a9c');line(x,y-hy,x,y-hy*.2,'#e8ceae8a',.55)}
+for(const p of debris){let y=p.y+s(p.x*.032)*7;stroke([[p.x-p.sz,y],[p.x+p.sz*(.9+p.b),y-1-p.sz*.18]],p.a>.7?'#d9aa8360':p.a>.35?'#56847c69':'#87998a3d',.4+p.a*.85)}
+for(let i=0;i<50;i++){let x=rng(i*223+43)()*W,y=710+(i*137)%260,rr=2+(i%7)*2;fill([[x-rr,y],[x+rr*.8,y-rr*.8],[x+rr*1.5,y+rr*.6],[x-rr*.7,y+rr]],i%3?'#4e6e6a50':'#b894736c')}
+}
+function ruinedSpire(x,y,height,scale=1){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);fill([[-25,0],[-22,-height*.5],[-15,-height*.53],[-15,-height*.81],[-4,-height],[4,-height],[15,-height*.81],[15,-height*.53],[22,-height*.5],[25,0]],'#112933');fill([[-15,-height*.81],[0,-height-30],[15,-height*.81]],'#bca77c');line(0,-height-30,0,-height-40,'#e5c796',1);for(let n=0;n<4;n++){let yy=-height*.15-n*height*.18;ellipse(0,yy,3,7,n%2?'#e9c4a7':'#aae9d4');line(-16,yy+10,16,yy+10,'#b4a48b',.9)}line(-25,0,25,0,'#ebbe8d88',2);ctx.restore()}
+function village(){const sets=[[270,711,1],[465,735,.7],[1198,718,.98],[1418,744,.8]];for(let k=0;k<sets.length;k++){let [baseX,baseY,scale]=sets[k];ctx.save();ctx.translate(baseX,baseY);ctx.scale(scale,scale);
+// grounded housing deliberately differs in silhouette and density across shores.
+for(let i=0;i<17+k*2;i++){let x=(i-8)*21+s(i*3.7+k)*5,y=(i%4)*4;let h=14+(i*19+k*11)%38;fill([[x-11,y],[x-11,y-h],[x,y-h-14],[x+12,y-h],[x+12,y]],i%4===0?'#5b514b':'#2e3940');stroke([[x-11,y-h],[x,y-h-14],[x+12,y-h]],'#db9e78',1.3);for(let n=0;n<2;n++)ellipse(x-3+n*7,y-h*.57,1.8,3,i%4===0?'#a9e7d9':'#ffd39c')}ctx.restore()}
+for(const [x,y,h,z] of [[140,724,95,.75],[545,729,120,.82],[1150,715,138,1.05],[1510,749,105,.74]])ruinedSpire(x,y,h,z);
+// Copper suspended walkways across the fossil mouth, with cast shadow, cables and bridge planks.
+for(const [x1,y1,x2,y2,sl] of [[435,628,680,576,11],[1000,588,1220,646,13],[685,568,997,530,17],[610,469,947,478,9]]){
+ctx.beginPath();ctx.moveTo(x1,y1);ctx.quadraticCurveTo((x1+x2)/2,(y1+y2)/2+sl,x2,y2);ctx.strokeStyle='#d8ad7f';ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.moveTo(x1,y1-24);ctx.quadraticCurveTo((x1+x2)/2,(y1+y2)/2-60,x2,y2-24);ctx.strokeStyle='#e5b98c7e';ctx.lineWidth=1;ctx.stroke();for(let j=0;j<=16;j++){let t=j/16,x=mix(x1,x2,t),y=mix(y1,y2,t)+4*sl*t*(1-t);line(x,y-29-(1-t)*t*35,x,y-3,'#c69b79b0',.9)}
+}
+}
+function fossilForm(){// Fractured mineral boughs carry faceted glaze and off-axis relief rather than a simple luminous line.
+const all=branches.concat(fossil);for(let n=all.length-1;n>=0;n--){let f=all[n],w=f.w;ctx.save();ctx.lineJoin='miter';ctx.lineCap='round';stroke(f.pts,'#071823',w+17);stroke(f.pts,'#906d6e',w+8);stroke(f.pts,pal.deep,w+3);stroke(f.pts,pal.mineral,w*.65);stroke(f.pts,'#ffffff5a',Math.max(1.6,w*.08));
+for(let j=1;j<f.pts.length;j++){let [x0,y0]=f.pts[j-1],[x1,y1]=f.pts[j];let dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len;fill([[x0+nx*w*.35,y0+ny*w*.35],[x1+nx*w*.3,y1+ny*w*.3],[x1-nx*w*.19,y1-ny*w*.19],[x0-nx*w*.16,y0-ny*w*.16]],j%2?'#ffffff23':'#0c434b75');line(x0+nx*w*.41,y0+ny*w*.41,x1+nx*w*.41,y1+ny*w*.41,'#ffe7c690',.9);for(let v=0;v<4;v++){let t=(v+.45)/4,x=mix(x0,x1,t),y=mix(y0,y1,t);line(x-nx*w*.25,y-ny*w*.25,x+nx*w*.25,y+ny*w*.25,v%2?'#ffe8b973':'#071a2a8a',1)}}ctx.restore()}
+// Hairline mineral striae and spall marks radiate from the impact, subordinate to the primary silhouette.
+for(let m=0;m<115;m++){let rr=rng(2030+m*17),angle=rr()*TAU,radn=80+rr()*270,x=811+c(angle)*radn,y=653+s(angle)*radn*.65;
+line(x,y,x+c(angle)*(4+rr()*17),y+s(angle)*(7+rr()*20),'#a7f3dc48',.65)}
+for(let i=0;i<240;i++){let q=rng(i+835),x=500+q()*820,y=50+q()*620;if(i%4===0){diamond(x,y,1+q()*3,2+q()*5,i%3?'#c8f7de5c':'#efc8a058')}}
+}
+function geometry(){// A hanging octagonal chapel, a new secondary focal point inside the lightning's natural arch.
+const cx=841,cy=408;ctx.save();ctx.translate(cx,cy);
+ctx.fillStyle=rad(0,0,235,[[0,pal.glass+'76'],[.42,pal.glass+'16'],[1,'#74eccc00']]);ctx.fillRect(-245,-240,490,490);
+let outer=[],inner=[];for(let j=0;j<12;j++){let a=-PI/2+j*TAU/12;outer.push([c(a)*160,s(a)*196]);inner.push([c(a)*125,s(a)*154])}fill(outer,'#0b202cce');stroke(outer,'#d6a779',11);stroke(outer,'#f0c99b',3);
+for(let i=0;i<12;i++){let p=outer[i],q=outer[(i+1)%12];for(let j=0;j<4;j++){let t=(j+.5)/4,x=mix(p[0],q[0],t),y=mix(p[1],q[1],t);ellipse(x,y,1.7,1.7,'#fff4d8');ellipse(x,y,3.7,3.7,'#71473866')}}fill(inner,grad(-130,-190,130,180,[[0,'#d0f2d77b'],[.45,pal.deep+'d4'],[1,'#121e3dbb']]));stroke(inner,'#f1ddb0',3);
+for(let j=0;j<12;j++){let a=-PI/2+j*TAU/12,b=a+TAU/12;fill([[c(a)*10,s(a)*10],[c(a)*122,s(a)*151],[c(b)*122,s(b)*151]],j%3===0?'#ffcc9f46':j%2?'#1a7c8f61':'#9edac75f');line(c(a)*17,s(a)*19,c(a)*125,s(a)*154,'#e4cba5',2)}
+// Glazed roses: each wedge has irregular, engraved lightning-vein anatomy.
+for(let k=0;k<12;k++){let a=-PI/2+(k+.5)*TAU/12;for(let j=0;j<10;j++){
+let r0=33+j*9,ox=c(a)*r0,oy=s(a)*r0*1.23,delta=s(k*4.2+j*9)*.06;
+line(ox,oy,ox+c(a+.65+delta)*(5+j%3*2),oy+s(a+.65+delta)*(7+j%3*2),j%3===0?'#fee6bf8a':'#b6ecdb4d',.65);
+if(j%3===1)diamond(ox,oy,1.5,3,j%2?'#f0caa58c':'#caf6e78c')}}
+for(let rr of [115,91,61,36]){ctx.beginPath();ctx.ellipse(0,0,rr,rr*1.21,0,0,TAU);ctx.strokeStyle='#e9cda88c';ctx.lineWidth=1.5;ctx.stroke()}
+for(let j=0;j<24;j++){let a=j*TAU/24;line(c(a)*64,s(a)*78,c(a+1.2)*113,s(a+1.2)*135,'#a0e8d873',.85)}
+ctx.save();ctx.rotate(now*.018);for(let j=0;j<16;j++){let a=j*TAU/16;diamond(c(a)*70,s(a)*85,2.5,6,j%2?'#f3c69c':'#bcfff0')}ctx.restore();ellipse(0,0,32,42,'#192636');ctx.fillStyle=rad(0,0,36,[[0,'#fff4d9'],[.18,pal.window],[.58,pal.glass],[1,pal.glass+'00']]);ctx.fillRect(-36,-36,72,72);ellipse(0,0,7,9,'#ffffff');
+ctx.restore();
+// Mineral choir and metalwork ring: radial cables hang from the window into the shore.
+for(let j=0;j<11;j++){let x=593+j*46;line(x,528,840+(x-840)*.35,560+(j%3)*19,'#f2c59a6f',1);ellipse(x,526,2.1,2.1,'#f7d2a7')}
+// Seven bell lanterns within the enclosing boughs.
+for(const [x,y,z] of [[648,317,.85],[723,205,.66],[1075,319,.93],[1129,209,.7],[538,464,.75],[1145,473,.64],[837,636,.75]]){
+ctx.save();ctx.translate(x,y);ctx.scale(z,z);fill([[-17,19],[-16,-7],[-20,-7],[0,-35],[20,-7],[16,-7],[17,19]],'#20303a');fill([[-18,-7],[0,-37],[18,-7]],'#e6b98b');stroke([[-15,-7],[-15,19],[15,19],[15,-7]],'#e2aa77',2);ellipse(0,1,9,13,pal.window);ellipse(0,2,3.8,7,'#ffffdf');line(-24,21,24,21,'#e6c096',3);line(0,-38,0,-50,'#e9d6ae',1);ellipse(0,-51,3,3,'#fff0c4');ctx.restore()}
+}
+function floor(){// Crystalline undercroft, cathedral stairs, central reflection and tiny pilgrims.
+ctx.fillStyle=rad(842,713,270,[[0,pal.glass+'55'],[.5,'#62dacf0b'],[1,'#83d7cc00']]);ctx.fillRect(390,560,900,410);
+fill([[595,735],[695,689],[999,687],[1090,736],[1025,761],[674,761]],'#34484b');stroke([[595,735],[695,689],[999,687],[1090,736]],'#efc18e',4);for(let k=0;k<12;k++){let y=741+k*10;line(690-k*9,y,990+k*9,y,'#c1b29c8a',1)}
+// Weathered stairs: uneven seams and chisel marks catch the retained lightning.
+for(let j=0;j<75;j++){let x=661+(j*73)%373,y=738+(j*29)%116;line(x,y,x+4+j%9,y-1,'#e8ca9b43',.7)}
+for(let i=0;i<95;i++){let x=670+(i*79)%348,y=763+(i%8)*12,radn=2+(i%6);diamond(x,y,radn*.6,radn*1.25,i%3?'#95d1c65e':'#efc39a78')}
+for(let i=0;i<34;i++){let x=593+(i*53)%490,y=765+(i*29)%70;line(x,y,x-2,y-4,'#c0c6ac',1);ellipse(x-2,y-8,2,2,'#edc9a3')}
+// Tide-like electrical memory in the black salt flats, not literal water.
+for(let k=0;k<44;k++){let x=540+(k*119)%720,y=810+(k*33)%188;line(x,y,x+8+k%7*4,y+s(now*.9+k)*2,`rgba(181,232,214,${.04+(k%5)*.027})`,.65)}
+}
+function engravings(){// Front engraved brass framework and field annotation.
+const rim='#d4b287';for(let i=0;i<16;i++){let x=27+i*103;line(x,0,x,12,'#d8be9b7a',1);line(x,H-14,x,H,'#d8be9b7a',1)}for(let i=0;i<11;i++){let y=25+i*93;line(0,y,12,y,'#d8be9b7a',1);line(W-13,y,W,y,'#d8be9b7a',1)}
+ctx.strokeStyle='#e6cba05e';ctx.lineWidth=1;ctx.strokeRect(22,22,W-44,H-44);ctx.strokeStyle='#c8baa33f';ctx.strokeRect(31,31,W-62,H-62);
+for(const [x,y,xdir,ydir] of [[45,45,1,1],[1555,45,-1,1],[45,955,1,-1],[1555,955,-1,-1]]){ctx.save();ctx.translate(x,y);ctx.scale(xdir,ydir);line(0,59,0,0,'#dbc599',2);line(0,0,65,0,'#dbc599',2);for(let j=1;j<=4;j++){ctx.beginPath();ctx.arc(0,0,j*12,0,PI/2);ctx.strokeStyle='#c6aa8490';ctx.stroke()}ctx.restore()}
+ctx.font='11px Georgia';ctx.fillStyle='#efe0b9a4';ctx.textAlign='left';ctx.fillText('REL. XXIV',65,88);ctx.textAlign='right';ctx.fillText('SILICATE · CUSTODIA',1535,88);
+ctx.textAlign='left';ctx.font='12px ui-monospace,monospace';ctx.fillStyle='#f5d4a796';ctx.fillText('THE LAST LIGHTNING / FIG. 07',78,938);ctx.textAlign='right';ctx.fillText('CUSTODIAL EPOCH · 11.06',1512,938);
+// Compass dial in bottom-left corner.
+ctx.save();ctx.translate(180,816);for(let j=0;j<24;j++){let a=j*TAU/24;line(c(a)*47,s(a)*47,c(a)*(j%3?53:60),s(a)*(j%3?53:60),'#d9c89d9a',1)}ctx.beginPath();ctx.arc(0,0,67,0,TAU);ctx.strokeStyle='#beaa8f8e';ctx.stroke();diamond(0,0,7,40,'#b8e6d8');diamond(0,0,7,-40,'#eec7a6');ellipse(0,0,5,5,'#fff2dd');ctx.font='12px Georgia';ctx.textAlign='center';ctx.fillStyle='#e2d1ad';ctx.fillText('N',0,-77);ctx.restore();
+}
+function conductive(){// Pressure pulse appears to move along the authored mineral routes.
+const intensity=.2+voltage*.8,edges=fossil.slice(0,5);ctx.save();ctx.globalCompositeOperation='screen';for(let i=0;i<edges.length;i++){let pts=edges[i].pts,phase=(now*.21+ i*.16+pulse*.33)%1,total=0;for(let j=1;j<pts.length;j++)total+=Math.hypot(pts[j][0]-pts[j-1][0],pts[j][1]-pts[j-1][1]);let d=phase*total,seg=0;for(let j=1;j<pts.length;j++){let l=Math.hypot(pts[j][0]-pts[j-1][0],pts[j][1]-pts[j-1][1]);if(d>=seg&&d<=seg+l){let t=(d-seg)/l,x=mix(pts[j-1][0],pts[j][0],t),y=mix(pts[j-1][1],pts[j][1],t);ctx.fillStyle=rad(x,y,38+voltage*43,[[0,pal.window],[.14,pal.glass+'a0'],[.57,pal.glass+'31'],[1,pal.glass+'00']]);ctx.fillRect(x-90,y-90,180,180);ellipse(x,y,4+voltage*3,4+voltage*3,'#fff9e6');break}seg+=l}}
+for(const p of motes){let x=(p.x+s(now*p.v+p.p)*15+W)%W,y=(p.y-now*(.8+p.v)*(12+voltage*16)+H*30)%H;let a=(.1+p.z*.3)*intensity;ellipse(x,y,p.z*1.6+0.2,p.z*1.6+.2,`rgba(${mode===1?'235,188,250':mode===2?'255,220,168':'151,238,218'},${a})`)}
+if(pulse>0){ctx.fillStyle=rad(point[0],point[1],300*(1-pulse*.4),[[0,'#fffde6a8'],[.19,pal.glass+'74'],[.55,pal.glass+'1b'],[1,pal.glass+'00']]);ctx.fillRect(point[0]-300,point[1]-300,600,600);for(let j=0;j<7;j++){let a=j*TAU/7+now*.25,R=(1-pulse)*270;line(point[0]+c(a)*R*.3,point[1]+s(a)*R*.3,point[0]+c(a)*R,point[1]+s(a)*R,pal.window+'b0',1.3)}}ctx.restore()}
+function annotations(){ctx.save();ctx.setLineDash([5,7]);ctx.strokeStyle='#f2d3a7a6';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(842,408,217,254,0,0,TAU);ctx.stroke();ctx.setLineDash([]);line(1046,326,1290,256,'#ebd2ac',1);line(1290,256,1395,256,'#ebd2ac',1);line(739,204,520,138,'#ebd2ac',1);line(520,138,390,138,'#ebd2ac',1);line(935,684,1260,807,'#ebd2ac',1);ctx.fillStyle='#f2dcbf';ctx.font='15px ui-monospace,monospace';ctx.textAlign='left';ctx.fillText('01 / ROSE OF FULGURITE',1303,245);ctx.textAlign='right';ctx.fillText('02 / FRACTURE SPINES',508,128);ctx.textAlign='left';ctx.fillText('03 / KEEPERS OF CHARGE',1274,815);ctx.restore()}
+function render(){pal=colors[mode];ctx.setTransform(ratio,0,0,ratio,0,0);ctx.fillStyle='#091521';ctx.fillRect(0,0,cw,ch);ctx.save();ctx.translate(offx,offy);ctx.scale(sc,sc);sky();horizon();fossilForm();village();geometry();floor();conductive();engravings();if(annotated)annotations();ctx.restore()}
+function resize(){let b=stage.getBoundingClientRect();cw=b.width;ch=b.height;ratio=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(cw*ratio);canvas.height=Math.round(ch*ratio);let mobile=cw<600;sc=mobile?ch/H:Math.min(cw/W,ch/H);offx=cw*.5-(mobile?852:800)*sc;offy=ch*.5-500*sc;render()}
+function tick(t){if(!last)last=t;let dt=Math.min(.05,(t-last)/1000);last=t;if(!paused){now+=dt;pulse=Math.max(0,pulse-dt*.65)}render();requestAnimationFrame(tick)}
+function setMode(n){mode=n;document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.mode)===n)));const labels=['VESPER — THE RELIC IS STILL AWAKE.','RESONANCE — THE RELIC BEGINS TO SING.','AFTERGLOW — NO STORM IS EVER ENTIRELY OVER.'];const descriptions=['A mineral cathedral built within the glass left by an ancient discharge. Its inhabitants collect the sound of a storm that never struck twice.','Through violet glass the residual charge conducts like a remembered hymn; each bell becomes a place to gather a little silence.','At daybreak the frozen branches retain their last amber embers, and the iron sea holds the shadow of lightning.'];document.getElementById('sceneName').textContent=labels[n];document.getElementById('description').textContent=descriptions[n];render()}
+function release(x=842,y=408){point=[x,y];pulse=1;document.getElementById('status').innerHTML='RELIC DISCHARGING / STORED LIGHT RELEASED<br>WATCH THE GLOW MOVE ALONG ITS VEINS';render()}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(Number(b.dataset.mode))));document.getElementById('voltage').addEventListener('input',e=>{voltage=Number(e.target.value)/100;document.getElementById('voltVal').value=e.target.value+'%';render()});document.getElementById('strike').addEventListener('click',()=>release());document.getElementById('diagram').addEventListener('click',e=>{annotated=!annotated;e.target.setAttribute('aria-pressed',String(annotated));render()});document.getElementById('pause').addEventListener('click',e=>{paused=!paused;e.target.textContent=paused?'RESUME':'STILL';e.target.setAttribute('aria-pressed',String(paused));render()});stage.addEventListener('pointerdown',e=>{let rect=canvas.getBoundingClientRect();let x=(e.clientX-rect.left-offx)/sc,y=(e.clientY-rect.top-offy)/sc;if(x>=0&&x<=W&&y>=0&&y<=H)release(x,y)});document.getElementById('save').addEventListener('click',()=>{render();let a=document.createElement('a');a.download='reliquary-of-the-last-lightning-024.png';a.href=canvas.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();document.getElementById('status').textContent='EXPORTED / '+canvas.width+' × '+canvas.height+' PNG'});window.addEventListener('resize',resize);resize();if(paused){let b=document.getElementById('pause');b.textContent='RESUME';b.setAttribute('aria-pressed','true')}requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
