@@ -4,6 +4,7 @@ const hash40=/^[0-9a-f]{40}$/;
 const curation01=require('./curation-01-pins.json');
 const curation02=require('./curation-02-pins.json');
 const curation03=require('./curation-03-pins.json');
+const curation04=require('./curation-04-pins.json');
 const rel=/^(editions|folios|hybrids|nocturnes|tapestries|theatres|salvage|lineage|environments)\/[a-zA-Z0-9._/-]+$/;
 function safePath(p){return typeof p==='string'&&rel.test(p)&&!p.split('/').some(x=>x===''||x==='.'||x==='..');}
 function assertCatalogue(c,baseline){
@@ -51,6 +52,11 @@ function assertCatalogue(c,baseline){
   assert.ok(x,'previous curated reference removed: '+b.id);
   for(const p of ['repo','kind','ref','path','blob_sha'])assert.equal(x[p],b[p],b.id+' curation-03 identity changed');
   assert.deepEqual([x.capture?.desktop,x.capture?.detail],b.capture_files,b.id+' curation-03 PNG filenames changed');
+ }
+ for(const b of curation04.entries){
+  const x=c.references.find(e=>e.id===b.id);assert.ok(x,'previous curated reference removed: '+b.id);
+  for(const p of ['repo','kind','ref','path','blob_sha'])assert.equal(x[p],b[p],b.id+' curation-04 identity changed');
+  assert.deepEqual([x.capture?.desktop,x.capture?.detail],b.capture_files,b.id+' curation-04 PNG filenames changed');
  }
  return {total:c.references.length,capturable:c.references.filter(x=>x.capture).length};
 }

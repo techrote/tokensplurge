@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "edition": "2026-11-07-curation-04",
+  "edition": "2026-11-07-curation-05",
   "created_utc": "2026-11-07",
   "status": "source-curated-browser-evidence-not-human-or-native-accepted",
   "pinned_sources": [
@@ -718,6 +718,42 @@
         "evidence": "Actual source-pinned Playwright Chromium full 1440×900 and detail 768×480 PNGs generated at run 42326228347, recorded under captures/report.json with per-image SHA-256 and original Git blob verification. Independent desktop/mobile Canvas pixel and export checks passed; not native CyberSand Godot or human artistic acceptance."
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/2f38d84ef7ffd03cd51e44057dda3aeb1c03b657/environments/007-the-breathing-citadel-source.html"
+    },
+    {
+      "id": "ambulant-kilns",
+      "title": "The Ambulant Kilns — inhabited fired-earth migration",
+      "kind": "inspiration",
+      "repo": "techrote/tokensplurge",
+      "ref": "57b7c7ff09caff703dadc3073122157ed16e49e7",
+      "path": "environments/009-the-ambulant-kilns.html",
+      "blob_sha": "21394e73678e08407aff41f2071ae7fc539eaf60",
+      "tags": [
+        "architecture",
+        "geology",
+        "industry",
+        "migration",
+        "narrative",
+        "scale"
+      ],
+      "priority": "secondary",
+      "design_principle": "Moving habitation becomes a geological author: staggered industrial silhouettes, suspended domestic scale and vitrified track evidence suggest place and history through repeated transformative passage.",
+      "cybersand_translation": "Pose a stationary, source-bound native-cell scene that reveals phases of industrial relocation through fixed foundations, abandoned heat-scarred routes and communities at different scales; do not imply moving kilns, heating physics or real terrain transformation are implemented.",
+      "copy_boundary": "Do not reproduce the three walking terracotta furnaces, their leg joints, fired trail profiles, exact mountain skyline, ceramic house silhouettes, orange/slate palette, light placement, inscriptions, UI or Canvas algorithms.",
+      "target_collections": [
+        "Emberglass Fumaroles",
+        "Dust Meridian",
+        "Ironroot Necropolis",
+        "Fallow Carnival"
+      ],
+      "capture": {
+        "method": "local Chromium/Playwright exact per-entry source HTML",
+        "desktop": "captures/ambulant-kilns-desktop.png",
+        "detail": "captures/ambulant-kilns-detail.png",
+        "status": "captured",
+        "report": "captures/report.json",
+        "evidence": "Original PR #48 reports author-executed Chromium; independent repo-hosted source-pinned desktop/detail PNGs and SHA-256 are pending. Not native Godot or human quality acceptance."
+      },
+      "source_url": "https://github.com/techrote/tokensplurge/blob/57b7c7ff09caff703dadc3073122157ed16e49e7/environments/009-the-ambulant-kilns.html"
     }
   ],
   "source_revision_policy": "source identity is immutable on each entry; pinned_sources are historical snapshot anchors only"
