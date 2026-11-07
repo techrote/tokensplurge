@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Suture of Winter — an interactive environment</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1722;--panel:#0d1b28dd;--line:#8dafb54d;--ink:#edf5ed;--sub:#a6bdc9;--accent:#f0bd79}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);width:100%;height:100%;overflow:hidden;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#ui{position:fixed;top:clamp(10px,2vw,26px);left:clamp(10px,2vw,26px);width:min(344px,calc(100vw - 20px));padding:19px 20px 17px;background:linear-gradient(145deg,#071521ed,#102a39de);border:1px solid #b5d4dd43;box-shadow:0 14px 50px #020c16a8;backdrop-filter:blur(14px);border-radius:10px;z-index:3;max-height:calc(100dvh - 22px);overflow:auto}
+.eyebrow{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:#b1dddb;font-weight:800}.eyebrow span{color:var(--accent)}h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-.045em;font-size:clamp(25px,3.6vw,36px);line-height:1.03;margin:10px 0 10px;color:#f6ede0}.dek{font-family:Georgia,serif;line-height:1.5;font-size:13px;color:#c7d4d8;margin:0 0 18px}.group{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin:15px 0 5px;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#e7e8de}.val{color:#f8c58d;letter-spacing:.02em;font-variant-numeric:tabular-nums}input[type=range]{width:100%;height:17px;accent-color:#e2b47d;cursor:pointer;touch-action:pan-y}.buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:17px}button{background:#1c3542;color:#e8efed;border:1px solid #d7ddca4f;border-radius:5px;font-size:11px;padding:10px 4px;cursor:pointer;font-family:inherit;transition:background .2s}button:hover,button:focus-visible{background:#315568;outline:1px solid #f5c58e}button[aria-pressed=true]{border-color:#f2be84;color:#ffd7a2;background:#315165}.note{font-size:10px;color:#a3b6c0;margin-top:15px;line-height:1.55}.note strong{color:#dae4e8}#meta{position:fixed;right:24px;bottom:21px;z-index:1;max-width:min(420px,50vw);font-size:11px;line-height:1.5;letter-spacing:.07em;color:#d9e3e1b8;text-align:right;text-shadow:0 2px 8px #06111c}#meta b{font-family:Georgia,serif;font-size:15px;letter-spacing:0;font-weight:normal;color:#f8dcb4}
+@media(max-width:680px){#ui{top:9px;left:9px;width:min(268px,calc(100vw - 18px));padding:12px 13px;max-height:min(54dvh,440px)}.eyebrow{font-size:8px}h1{font-size:23px;margin:6px 0}.dek{font-size:11px;line-height:1.3;margin-bottom:6px}.group{font-size:9px;margin:8px 0 2px}.buttons{margin-top:9px;gap:4px}button{font-size:9px;padding:7px 2px}.note{display:none}#meta{right:10px;bottom:10px;font-size:8px;max-width:180px}#meta b{font-size:11px}}
+@media(max-height:570px){.dek,.note{display:none}#ui{padding:12px;max-height:95dvh}.group{margin:6px 0 2px}}
+</style>
+</head>
+<body>
+<canvas id="world" aria-label="Interactive illustrated glacial escarpment stitched with copper tension bridges"></canvas>
+<section id="ui" aria-label="Artwork controls">
+<div class="eyebrow">Fieldwork <span>№ 006</span> / impossible geologies</div>
+<h1>The Suture<br>of Winter</h1>
+<p class="dek">An alpine fault held together by antique tension bridges. Pull the continents apart; watch the light travel through their wounds.</p>
+<label class="group" for="strain">Continental strain <output id="strainV" class="val">37%</output></label><input id="strain" type="range" min="0" max="100" value="37">
+<label class="group" for="warmth">Thermal seep <output id="warmthV" class="val">24%</output></label><input id="warmth" type="range" min="0" max="100" value="24">
+<div class="buttons"><button id="light" aria-pressed="false">Nightfall</button><button id="pause" aria-pressed="false">Pause</button><button id="save">Save PNG</button></div>
+<div class="note"><strong>Intervene:</strong> touch or click the fault to send a stress wave through the riveted bridges. A changing strain tears the ice field; heat wakes the fracture veins.<br><br>This is authored browser concept art, not CyberSand's material or physics renderer.</div>
+</section>
+<div id="meta"><b>THE UMBRAL DIVIDE · 71° NORTH</b><br>PALEO-GLACIAL / TENSION ARCHIVE · ERA VII</div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('world'),ctx=canvas.getContext('2d',{alpha:false});
+const $=id=>document.getElementById(id);const S={strain:.37,warmth:.24,night:false,paused:false,time:0,frame:0,pulses:[],pointer:null};
+const W=1600,H=1000,TAU=Math.PI*2;
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=t=>{t=clamp(t);return t*t*(3-2*t)};
+const rand=(seed)=>{let a=seed|0;return()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296}};
+const rnd=rand(6006107),cracks=[],specks=[],snow=[],boulders=[],cliffLines=[],facets=[],villages=[],clouds=[];
+function seg(a,b,c,d,width,color){ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c,d);ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke()}
+function path(pts,fill,stroke=null,lw=1){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
+function ellipse(x,y,rx,ry,c,rotation=0){ctx.beginPath();ctx.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),rotation,0,TAU);ctx.fillStyle=c;ctx.fill()}
+function circ(x,y,r,c){ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fillStyle=c;ctx.fill()}
+function rgba(hex,a){let n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${n>>8&255},${n&255},${a})`}
+function gradient(x,y,r,colors){let g=ctx.createRadialGradient(x,y,0,x,y,r);colors.forEach(([p,c])=>g.addColorStop(p,c));return g}
+function faultX(y){return 825+112*Math.sin(y/235+.37)-.19*(y-500)}
+function faultWidth(y){return 95+(y/1000)*75+S.strain*(58+(y/1000)*90)}
+function leftX(y){return faultX(y)-faultWidth(y)*.5}function rightX(y){return faultX(y)+faultWidth(y)*.5}
+for(let i=0;i<390;i++){let y=165+rnd()*860;let side=rnd()<.5?-1:1,x=faultX(y)+side*(80+rnd()*890);cracks.push({x,y,side,len:8+rnd()*73,rot:(rnd()-.5)*1.8,w:.4+rnd()*1.65,branch:rnd(),n:rnd()})}
+for(let i=0;i<2150;i++){let x=rnd()*W,y=245+rnd()*755;specks.push({x,y,s:.25+rnd()*1.35,a:.06+rnd()*.4,h:rnd()})}
+for(let i=0;i<230;i++){snow.push({x:rnd()*W,y:rnd()*H,r:.4+rnd()*2.1,d:.18+rnd()*.85,p:rnd()*TAU})}
+for(let i=0;i<180;i++){let y=420+rnd()*600,x=rnd()*W;boulders.push({x,y,rx:2+rnd()*12,ry:1.1+rnd()*7,n:rnd(),a:rnd()})}
+for(let i=0;i<145;i++)cliffLines.push({x:rnd()*W,y:430+rnd()*570,l:15+rnd()*115,side:rnd()<.5?-1:1,n:rnd()});
+for(let i=0;i<280;i++){let x=rnd()*W,y=365+rnd()*670;facets.push({x,y,w:7+rnd()*62,h:5+rnd()*44,k:rnd(),o:rnd()})}
+for(let i=0;i<35;i++)clouds.push({x:rnd()*1800-100,y:30+rnd()*250,w:80+rnd()*230,h:8+rnd()*24,a:rnd()})
+for(let i=0;i<57;i++)villages.push({x:rnd()*1600,y:620+rnd()*300,z:rnd(),i})
+function drawSky(){const g=ctx.createLinearGradient(0,0,0,H);if(S.night){g.addColorStop(0,'#061220');g.addColorStop(.33,'#133443');g.addColorStop(.58,'#9b8798');g.addColorStop(1,'#58697c')}else{g.addColorStop(0,'#17283b');g.addColorStop(.22,'#526d80');g.addColorStop(.43,'#a4b9ba');g.addColorStop(.67,'#f4cba8');g.addColorStop(1,'#bad2cb')}ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+// solar aureole / atmospheric depth
+const sunX=S.night?1320:1190,sunY=S.night?160:238;
+ctx.fillStyle=gradient(sunX,sunY,S.night?260:470,[[0,S.night?'#b2d7c870':'#fff2d280'],[.25,S.night?'#5fb4c43a':'#ffcf9b53'],[1,'#ffffff00']]);ctx.fillRect(0,0,W,H);
+if(S.night){circ(sunX,sunY,31,'#c8e4dc');circ(sunX+12,sunY-7,28,'#193547');for(let k=0;k<85;k++){let x=(k*277.3)%W,y=(k*k*97.3)%410;if((x-sunX)**2+(y-sunY)**2>5000) circ(x,y,k%3===0?1.3:.8,'#d8f1e2b8')}}else {circ(sunX,sunY,38,'#fff2d9');ctx.fillStyle=gradient(sunX,sunY,86,[[0,'#f6e6d8b2'],[1,'#fff5d700']]);ctx.fillRect(sunX-86,sunY-86,172,172)}
+for(let c of clouds){ctx.fillStyle=S.night?'#c1cadb10':'#fff3dc20';ellipse(c.x+Math.sin(S.time*.025+c.a)*28,c.y,c.w,c.h,'#dde3e830');ellipse(c.x+c.w*.2,c.y+8,c.w*.72,c.h*.38,S.night?'#6caabb14':'#ffe8ca31')}
+}
+function mountains(){// separate signed-distance mountain silhouettes
+for(let p=0;p<4;p++){let base=330+p*92,col=(S.night?['#375267','#3c586a','#365366','#2d4859']:['#8aafb9','#7698a4','#536f82','#466378'])[p];ctx.beginPath();ctx.moveTo(-30,H);for(let x=-30;x<=W+30;x+=18){let wave=Math.sin(x*.0067+3*p)*78+Math.sin(x*.018+1.7*p)*39+Math.sin(x*.043+p)*16;let h=base+wave*(1-.15*p);ctx.lineTo(x,h)}ctx.lineTo(W+30,H);ctx.closePath();ctx.fillStyle=col;ctx.fill();ctx.strokeStyle=p===0?'#ecded07e':'#e4dfe527';ctx.lineWidth=p===0?2:.7;ctx.stroke();}
+// Atmospheric mist bands behind break
+for(let i=0;i<6;i++){let y=355+i*67;seg(0,y,W,y+20,18+i*2,S.night?'#a8c3d008':'#fff2d015')}
+}
+function iceFields(){// full valley glacier beneath fracture, left and right stratified planes
+const g=ctx.createLinearGradient(0,420,W,990);g.addColorStop(0,S.night?'#7995a0':'#e7e8d8');g.addColorStop(.48,S.night?'#9babb0':'#edf2e4');g.addColorStop(1,S.night?'#7aa3a6':'#c9e4dd');
+path([[-30,460],[370,427],[610,475],[leftX(475),470],[leftX(1030),1030],[-30,1030]],g);
+const gr=ctx.createLinearGradient(1100,490,1550,950);gr.addColorStop(0,S.night?'#88a1a7':'#c3dcd9');gr.addColorStop(.5,S.night?'#6e8c9b':'#b8d4cc');gr.addColorStop(1,S.night?'#466e89':'#87b3b9');
+path([[rightX(470),470],[1050,460],[1440,415],[1630,480],[1630,1040],[rightX(1030),1040]],gr);
+// Directional glacial flow strata
+ctx.save();ctx.beginPath();ctx.moveTo(-40,440);ctx.lineTo(leftX(445),445);for(let y=455;y<=1020;y+=12)ctx.lineTo(leftX(y),y);ctx.lineTo(-40,1020);ctx.clip();
+for(let k=0;k<105;k++){let y=450+k*7.9;ctx.beginPath();ctx.moveTo(-80,y+22*Math.sin(k*.13));ctx.bezierCurveTo(180,y-19,470,y+35,leftX(y)+35,y-7);ctx.strokeStyle=k%9===0?'#f5f1e2a0':k%3===0?'#668a8b3c':'#81b7b531';ctx.lineWidth=k%9===0?2:.8;ctx.stroke()}
+ctx.restore();
+ctx.save();ctx.beginPath();ctx.moveTo(rightX(445),445);ctx.lineTo(1700,420);ctx.lineTo(1700,1050);for(let y=1030;y>450;y-=12)ctx.lineTo(rightX(y),y);ctx.clip();
+for(let k=0;k<105;k++){let y=450+k*7.9;ctx.beginPath();ctx.moveTo(rightX(y)-25,y+10);ctx.bezierCurveTo(1130,y-20,1300,y+45,1700,y-30);ctx.strokeStyle=k%9===0?'#f3f9e0a4':k%3===0?'#3b7a833c':'#e6fcdf31';ctx.lineWidth=k%9===0?2:.8;ctx.stroke()}
+ctx.restore();
+// bevelled ice banks down the gap
+const L=[],R=[];for(let y=470;y<=1020;y+=13){L.push([leftX(y),y]);R.push([rightX(y),y])}
+path([...L,...L.slice().reverse().map(([x,y])=>[x-24-(y-470)*.035,y])],S.night?'#a6dbd78c':'#fcf8e3b1');
+path([...R,...R.slice().reverse().map(([x,y])=>[x+25+(y-470)*.03,y])],S.night?'#275970bb':'#669ca8a6');
+}
+function rift(){// broad deep rupture first, its walls then luminous stressed ice
+let p=[];for(let y=435;y<=1040;y+=10)p.push([leftX(y),y]);for(let y=1040;y>=435;y-=10)p.push([rightX(y),y]);
+const g=ctx.createLinearGradient(0,460,0,1050);g.addColorStop(0,S.night?'#051322':'#223d53');g.addColorStop(.5,S.night?'#051220':'#163f50');g.addColorStop(1,S.night?'#02111b':'#061d31');path(p,g);
+// cascading terraced walls in fault
+for(let i=0;i<33;i++){let y=476+i*17.6;let l=leftX(y),r=rightX(y),a=5+(i%4)*2;
+seg(l+a,y,r-a,y+14, i%6===0?11:3.5, i%4===0?'#68dcd17d':'#5c89956c');
+seg(l+8,y+5,l+24,y+24,3,'#defff36e');seg(r-9,y-5,r-25,y+20,3,'#214b70bd');
+if(i%3===0){for(let k=1;k<9;k++){let x=l+k*(r-l)/9,y0=y+Math.sin(k+i)*5;seg(x,y0,x-3,y0+8,1,'#b2d8d44d')}}
+}
+// thermal veins: persistent diagonal flicker only in actual fault
+ctx.save();ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.clip();
+ctx.lineCap='round';ctx.shadowBlur=20+S.warmth*36;ctx.shadowColor=S.night?'#fdb47c':'#ffe1a7';for(let v=0;v<10;v++){let a=v*31.2+S.time*.08;ctx.beginPath();for(let y=480;y<1030;y+=11){let x=faultX(y)+Math.sin(y*.034+v*1.8)*faultWidth(y)*.25 + (v-5)*9;let yy=y+Math.sin(a+y*.055)*7;if(y===480)ctx.moveTo(x,yy);else ctx.lineTo(x,yy)}ctx.lineWidth=.65+S.warmth*2.1;ctx.strokeStyle=rgba(v%2?'#fdb18e':'#7de1d8',.14+S.warmth*.5);ctx.stroke()}
+ctx.shadowBlur=0;ctx.restore();
+// cliff edge incision, broken subsidiary seams
+ctx.lineCap='butt';for(let y=470;y<1000;y+=8){let x=leftX(y),z=rightX(y),f=Math.sin(y*.11)*4;seg(x+f,y,x+f-4,y+5,1.7,'#e7ffedda');seg(z+f,y,z+f+5,y+4,1.7,'#05344fdb')}
+}
+function iceSurface(){// faceted glacial skin cut away from crevasse
+for(let f of facets){let x=f.x,y=f.y,side=x<faultX(y)?-1:1;if((side===-1&&x>leftX(y)-13)||(side===1&&x<rightX(y)+13))continue;
+let br=side===-1?f.k*10:20+f.k*20;let col=f.o>.85?`rgba(254,250,220,${.13+f.k*.19})`:f.o>.4?`rgba(22,77,94,${.028+f.k*.08})`:`rgba(70,151,160,${.06+f.k*.13})`;
+path([[x,y],[x+f.w*.6,y-f.h*.23],[x+f.w,y+f.h*.4],[x+f.w*.27,y+f.h]],col);
+if(f.o>.84)seg(x,y,x+f.w*.6,y-f.h*.23,.7,'#faffef77')
+}
+for(let c of cliffLines){let x=c.x,y=c.y;if(Math.abs(x-faultX(y))<faultWidth(y)*.58+5)continue;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+c.side*c.l*.5,y-c.l*.11,x+c.side*c.l,y+8);ctx.strokeStyle=c.n>.6?'#f3ffeb62':'#255f7661';ctx.lineWidth=c.n> .5?1:.8;ctx.stroke()}
+for(let c of cracks){let x=c.x,y=c.y;if(Math.abs(x-faultX(y))<faultWidth(y)*.62)continue;let st=Math.sin(c.rot)*c.len,dy=Math.cos(c.rot)*c.len;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+st*.52,y+dy*.4);ctx.lineTo(x+st,y+dy);ctx.strokeStyle=c.n>.65?'#f7fff0b3':'#19516b8a';ctx.lineWidth=c.w*(.65+S.strain);ctx.stroke();if(c.branch>.7){seg(x+st*.52,y+dy*.4,x+st*.52+st*.3,y+dy*.7,1,'#285a72a6')}}
+for(let a of boulders){if(Math.abs(a.x-faultX(a.y))<faultWidth(a.y)*.6)continue;let col=a.n>.45?'#567682':'#aac7c1';path([[a.x-a.rx,a.y+a.ry],[a.x-a.rx*.6,a.y-a.ry*.7],[a.x+a.rx*.4,a.y-a.ry],[a.x+a.rx,a.y+a.ry*.35]],col);seg(a.x-a.rx*.6,a.y-a.ry*.7,a.x+a.rx*.4,a.y-a.ry,.7,'#e6f1d5b8')}
+for(let s of specks){let x=s.x,y=s.y;if(Math.abs(x-faultX(y))<faultWidth(y)*.55)continue;circ(x,y,s.s,`rgba(233,247,232,${s.a})`)}
+}
+function pylon(x,y,scale,dir=1){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);const dark=S.night?'#354951':'#344954',hi='#e6b579',wire='#765942';
+// foundation / pilings
+path([[-17,10],[19,10],[27,18],[-25,18]],'#304d5e');for(let t of [-14,14]){seg(t,14,t+dir*2,37,4,'#243b49');seg(t-4,17,t+2,17,2,hi)}
+path([[-13,4],[-8,-67],[0,-78],[10,-67],[15,4]],dark,'#a67b52',2);
+path([[-8,-62],[1,-74],[9,-61],[1,-59]],hi);seg(-10,-26,12,-12,3,'#dcb281');seg(10,-26,-13,-12,3,wire);
+for(let t of [-53,-35,-15,5]){seg(-10,t,11,t,2,hi);circ(-10,t,2.2,'#fcda9f');circ(10,t,2.2,'#fcda9f')}
+seg(0,-73,dir*6,-94,2,'#dfc390');circ(dir*6,-95,4,'#ffe9b4');ctx.restore()}
+function bridge(y,index){let a=leftX(y)-45,b=rightX(y)+45,xm=(a+b)*.5;let scale=.64+(y-400)/730*.7,cy=y-12;const start=cy-17*scale;
+// hard shadow under physical connectors
+ctx.beginPath();ctx.moveTo(a,cy+14);ctx.quadraticCurveTo(xm,cy+50+S.strain*20,b,cy+14);ctx.strokeStyle='#061c2b65';ctx.lineWidth=14*scale;ctx.stroke();
+// anchor plate and engineering context
+pylon(a,cy,scale,-1);pylon(b,cy,scale,1);
+// upper load cables with catenary and rivets
+ctx.beginPath();ctx.moveTo(a,cy-49*scale);ctx.quadraticCurveTo(xm,cy+12+S.strain*18,b,cy-49*scale);ctx.lineWidth=2.4*scale;ctx.strokeStyle='#e4bd87';ctx.stroke();
+ctx.beginPath();ctx.moveTo(a,cy-19*scale);ctx.quadraticCurveTo(xm,cy+18+S.strain*22,b,cy-19*scale);ctx.lineWidth=5*scale;ctx.strokeStyle='#3b4b52';ctx.stroke();
+ctx.beginPath();ctx.moveTo(a,cy-13*scale);ctx.quadraticCurveTo(xm,cy+23+S.strain*22,b,cy-13*scale);ctx.lineWidth=2*scale;ctx.strokeStyle='#efd199';ctx.stroke();
+for(let k=1;k<15;k++){let t=k/15,x=lerp(a,b,t),d=4*t*(1-t);let deckY=cy-13*scale+(.32*d*(36+S.strain*22)),cableY=cy-49*scale+(.5*d*(62+S.strain*18));seg(x,cableY,x,deckY,1.3*scale,'#c59f70');if(k%2===0){circ(x,deckY,2.2*scale,'#f3c99c');seg(x,deckY+1,x,deckY+10*scale,.9,'#e2a75f')}}
+// hanging brass hazard lamps, sway when wave reaches
+for(let k of [3,8,12]){let t=k/15,x=lerp(a,b,t),d=4*t*(1-t),yy=cy-13*scale+(.32*d*(36+S.strain*22))+12*scale;let r=2.8+S.warmth*2+S.pulses.reduce((m,p)=>Math.max(m,Math.max(0,1-Math.abs(y-p.y)/180)*p.power),0)*3;ctx.fillStyle=gradient(x,yy,r*12,[[0,'#ffc98c66'],[1,'#f6b77a00']]);ctx.fillRect(x-r*12,yy-r*12,r*24,r*24);circ(x,yy,r,'#fff0ad')}
+// one small inspection gantry with safety orange
+if(index%2===0){let xx=a+35*scale;seg(xx,cy-63*scale,xx,cy-94*scale,2.3,'#3a4f58');path([[xx-9*scale,cy-67*scale],[xx+8*scale,cy-67*scale],[xx+5*scale,cy-80*scale],[xx-8*scale,cy-80*scale]],'#ca8863','#f5d6a0',.9)}
+}
+function architecture(){// bridge system traces climate gradient with decreasing interspan dimensions
+[558,668,791,925].forEach(bridge);
+// copper maintenance relays on both flanks, not generic skyscraper grid
+for(let v of villages){let x=v.x,y=v.y;if(Math.abs(x-faultX(y))<faultWidth(y)*.7+50)continue;if(y<680)continue;let n=v.z,sz=(.45+y/1050*.58)*(n>.81?1.3:.7);ctx.save();ctx.translate(x,y);ctx.scale(sz,sz);
+path([[-14,0],[-14,-21],[0,-38],[16,-21],[16,0]],n>.5?'#253e4b':'#425a61','#c89769',1.3);
+path([[-18,-20],[0,-42],[20,-19]],'#be8965','#f6d4aa',1.4);
+for(let j=-1;j<=1;j+=2){ctx.fillStyle=gradient(j*8,-16,30,[[0,'#ffdca360'],[1,'#ffba7000']]);ctx.fillRect(j*8-30,-46,60,60);ctx.fillStyle='#ffd9a1';ctx.fillRect(j*8-2,-22,4,6)}
+seg(-20,0,20,0,2,'#254759');seg(0,-42,0,-54,1,'#e1be89');ctx.restore()}
+// Crane silhouette perched at upper distance
+const xx=401,yy=513;seg(xx,yy,xx+12,yy-117,4,'#364c53');seg(xx+12,yy-117,xx+148,yy-117,3,'#d0a06f');seg(xx+12,yy-117,xx-52,yy-117,3,'#d0a06f');seg(xx+12,yy-117,xx+110,yy-80,1.2,'#f2d1a1');seg(xx+118,yy-115,xx+118,yy-52,1.2,'#d3c0a7');path([[xx+109,yy-55],[xx+129,yy-55],[xx+127,yy-43],[xx+110,yy-43]],'#bd835b');
+// distant wind markers and fenceposts
+for(let i=0;i<55;i++){let y=545+i*9.5,x=leftX(y)-80-((i*71)%160);if(x<120)continue;seg(x,y,x-1,y-11,1.1,'#516b76');seg(x-1,y-11,x+6,y-9,1,'#dfbb8b')}
+}
+function foreground(){// broken exposed bedrock / sedimentary eroded overburden
+const yy=925;path([[-20,915],[190,888],[320,921],[560,902],[leftX(1000)-18,1010],[-20,1020]],'#293f4b');
+path([[rightX(930)+85,940],[1240,904],[1450,930],[1620,885],[1630,1040],[rightX(1010),1040]],'#233c49');
+for(let side=0;side<2;side++){for(let i=0;i<80;i++){let x=side===0?20+(i*61)%600:1010+(i*79)%600,y=916+(i*47)%100;seg(x,y,x+(i%3-1)*21,y+4,.7,i%4?'#75949350':'#f3cda25e') }}
+// human scale stairs and outlook, near the lower-right edge
+const x=1300,y=920;path([[x-29,y+7],[x-23,y-25],[x+15,y-31],[x+34,y+7]],'#182f3e','#d5b17e',1.5);seg(x-23,y-25,x-9,y-43,2,'#a87859');seg(x+15,y-31,x+29,y-49,2,'#a87859');seg(x-9,y-43,x+29,y-49,1,'#e6c592');for(let j=0;j<7;j++){seg(x-30+j*9,y+15,x-25+j*9,y+11,1,'#f1cea4')}
+}
+function atmosphere(){// filmic bloom along separation, no destructive global composites
+const fault=faultX(780);ctx.fillStyle=gradient(fault,820,320,[[0,S.night?'#75e7d51d':'#fcdfad20'],[.62,'#c5e6dc09'],[1,'#ffffff00']]);ctx.fillRect(fault-320,500,640,500);
+for(let i=0;i<10;i++){let y=510+i*56;seg(0,y,W,y-10,4,S.night?'#cedddb08':'#fff9ef0b')}
+}
+function pulseOverlay(){for(let p of S.pulses){let age=S.time-p.t;if(age>3.6)continue;let rr=20+age*220,alpha=(1-age/3.6)*.55;ctx.beginPath();ctx.ellipse(p.x,p.y,rr,rr*.42,-.21,0,TAU);ctx.lineWidth=1.5;ctx.strokeStyle=`rgba(255,209,153,${alpha})`;ctx.stroke();ctx.beginPath();ctx.ellipse(p.x,p.y,rr*.65,rr*.27,-.21,0,TAU);ctx.strokeStyle=`rgba(101,224,220,${alpha*.7})`;ctx.stroke()}}
+function particles(){ctx.save();for(let p of snow){let x=(p.x+S.time*p.d*4)%W,y=(p.y+S.time*p.d*11)%H;let a=.26+.18*Math.sin(S.time*.5+p.p);ellipse(x,y,p.r,p.r*.6,`rgba(239,250,247,${a})`)}ctx.restore()}
+function display(){ctx.clearRect(0,0,W,H);drawSky();mountains();iceFields();rift();iceSurface();architecture();foreground();atmosphere();pulseOverlay();particles();
+// Vignette and soft paper grain
+let vg=ctx.createRadialGradient(795,475,180,795,480,980);vg.addColorStop(0,'#07162200');vg.addColorStop(.68,'#07162200');vg.addColorStop(1,S.night?'#000a20b0':'#0a243e8a');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+function resize(){let dpr=Math.min(window.devicePixelRatio||1,2),w=window.innerWidth,h=window.innerHeight;canvas.width=Math.max(1,Math.round(w*dpr));canvas.height=Math.max(1,Math.round(h*dpr));let s=Math.max(canvas.width/W,canvas.height/H),ox=(canvas.width-W*s)/2,oy=(canvas.height-H*s)/2;ctx.setTransform(s,0,0,s,ox,oy);S.view={s,ox,oy};display()}
+let last=performance.now();function animate(t){let dt=Math.min(.055,(t-last)/1000);last=t;if(!S.paused){S.time+=dt;S.pulses=S.pulses.filter(p=>S.time-p.t<3.6)}display();requestAnimationFrame(animate)}
+for(let id of ['strain','warmth'])$(id).addEventListener('input',e=>{S[id]=+e.target.value/100;$(id+'V').textContent=e.target.value+'%'});
+$('light').addEventListener('click',()=>{S.night=!S.night;$('light').textContent=S.night?'Daybreak':'Nightfall';$('light').setAttribute('aria-pressed',String(S.night))});
+$('pause').addEventListener('click',()=>{S.paused=!S.paused;$('pause').textContent=S.paused?'Resume':'Pause';$('pause').setAttribute('aria-pressed',String(S.paused))});
+$('save').addEventListener('click',()=>{try{const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='the-suture-of-winter-'+(S.night?'night':'day')+'.png';document.body.appendChild(a);a.click();a.remove()}catch(e){console.error('PNG export failed',e)}});
+canvas.addEventListener('pointerdown',e=>{let r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*(canvas.width/r.width),py=(e.clientY-r.top)*(canvas.height/r.height),x=(px-S.view.ox)/S.view.s,y=(py-S.view.oy)/S.view.s;S.pulses.push({x,y,t:S.time,power:1});S.pointer={x,y};if(S.pulses.length>12)S.pulses.shift()});
+window.addEventListener('resize',resize);resize();requestAnimationFrame(animate);
+window.__artState=()=>({time:S.time,strain:S.strain,warmth:S.warmth,night:S.night,paused:S.paused,pulses:S.pulses.length,canvas:[canvas.width,canvas.height]});
+})();
+</script></body></html>
