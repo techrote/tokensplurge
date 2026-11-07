@@ -47,6 +47,8 @@ jobs:
         run: node references/cybersand/tools/smoke-selected-art.cjs
       - name: Browser-smoke the newly curated source on actual desktop and mobile Canvas pixels
         run: node references/cybersand/tools/smoke-thirst-art.cjs
+      - name: Browser-smoke the new source-pinned living-architecture artwork
+        run: node references/cybersand/tools/smoke-citadel-art.cjs
       - name: Browser-smoke the single-file moodboard and filters
         run: node references/cybersand/tools/smoke-ui.cjs
       - name: Commit only capture assets to the isolated documentation branch
