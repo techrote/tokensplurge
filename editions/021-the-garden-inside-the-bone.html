@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101b2b"><title>The Garden Inside the Bone — TokenSplurge Edition XXI</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;height:100%;width:100%;overflow:hidden;background:#0e1726;color:#f3e8d2;font-family:ui-monospace,Consolas,monospace}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}#vignette{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 160px rgba(3,10,20,.75),inset 0 -40px 100px #0b1525a9}header{position:fixed;left:4.5vw;top:4.2vh;max-width:370px;text-shadow:0 2px 18px #0c1826e0;pointer-events:none}header small{display:block;color:#e5b78e;font-size:10px;letter-spacing:.24em}h1{font:normal clamp(35px,4vw,68px)/.92 Georgia,serif;letter-spacing:-.05em;margin:18px 0 15px}header p{max-width:300px;font:12px/1.8 Georgia,serif;color:#f1d8c5}#folio{position:fixed;top:4.8vh;right:4.5vw;text-align:right;color:#edcba5;line-height:1.8;letter-spacing:.14em;font-size:10px;text-shadow:0 2px 14px #08111c}#folio b{font-weight:normal;color:#bbdfbc}#line{position:fixed;bottom:111px;left:4.5vw;color:#f4d4a6;font:italic 15px Georgia,serif;letter-spacing:.05em;text-shadow:0 2px 15px #0b1725}#controls{position:fixed;left:4.5vw;bottom:3vh;right:4.5vw;display:flex;align-items:center;gap:7px;flex-wrap:wrap;z-index:5}.label{font-size:10px;letter-spacing:.11em;background:#101a28da;color:#e8cfb2;padding:12px 15px;border:1px solid #d7b98957;display:flex;gap:15px;align-items:center}.label output{color:#baf1ce}input[type=range]{width:120px;accent-color:#c8deaa}button{background:#141c2dcf;border:1px solid #e8d6ab68;color:#f3d8b4;padding:13px 16px;font:10px ui-monospace,monospace;letter-spacing:.1em;cursor:pointer}button:hover,button:focus-visible{background:#d4c29c;color:#15242c}button:focus-visible,input:focus-visible{outline:2px solid #fee6b1;outline-offset:2px}#scene{color:#e5d7ba;border-color:#d3b680}#hint{margin-left:auto;color:#d6bd9e;font:9px/1.7 ui-monospace,monospace;text-align:right;letter-spacing:.08em}@media(max-width:750px){header{left:12px;top:9px;max-width:270px;padding:8px 12px 15px 4px;background:linear-gradient(180deg,#0b1827eb,#102337b4 75%,transparent);border-radius:4px}header small{font-size:7px}h1{font-size:33px;margin:8px 0 8px}header p{font-size:10px;line-height:1.4;max-width:215px}#folio{right:15px;top:16px;font-size:8px}#folio span{display:none}#line{bottom:128px;left:16px;max-width:310px;font-size:12px}#controls{left:9px;right:9px;bottom:9px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.label{grid-column:1/-1;justify-content:space-between;padding:8px 9px;font-size:9px}input[type=range]{width:39vw}button{padding:12px 4px;font-size:9px;letter-spacing:0}#hint{display:none}}
+</style></head><body>
+<canvas id="art" role="img" aria-label="An immense luminous forest grows through the rib bones of an extinct migrating leviathan, an inhabited hanging garden overlooking a frozen salt sea. Detailed articulated pale bone, greenhouse dwellings, lanterns, botanical leaves and drifting luminous pollen."></canvas><div id="vignette"></div><header><small>TOKENSPLURGE / EDITION XXI / A LIVING FOLIO</small><h1>The Garden<br>Inside the Bone</h1><p>When the last migration ended, the keepers planted one seed in the hollow of a rib. They have been listening to it grow for a thousand winters.</p></header><aside id="folio"><span>ANATOMY OF A SECOND SPRING<br></span>PLATE <b id="plateNo">I / III</b><br>POLLEN <b id="particles">420</b> / GLOW <b id="glow">64%</b><br><span>CANVAS 2D · SINGLE-FILE EDITION</span></aside><div id="line">A forest cannot remember the creature. It can remember the journey.</div><footer id="controls"><button id="scene">I · MOONGLASS</button><div class="label">GARDEN LUMINANCE <input id="light" aria-label="Garden luminance" type="range" min="0" max="100" value="64"><output id="level">64%</output></div><button id="bloom">AWAKEN BLOOM</button><button id="still">STILL</button><button id="save">SAVE PNG</button><span id="hint">TOUCH THE GARDEN TO PLANT A MEMORY<br>DRAG TO TRACE THE OLD MIGRATION</span></footer>
+<script>
+(()=>{'use strict';
+const c=document.getElementById('art'),g=c.getContext('2d',{alpha:false}),$=id=>document.getElementById(id),TAU=2*Math.PI,W=1600,H=1000;
+let w=0,h=0,dpr=1,scale=1,ox=0,oy=0,scene=0,lum=.64,t=0,prev=0,still=matchMedia('(prefers-reduced-motion: reduce)').matches,burst=0,drag=false,imprints=[],animateId=0;
+function random(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}}
+const R=random(21065021),rr=(a,b)=>a+(b-a)*R(),pick=a=>a[Math.floor(R()*a.length)];
+const moods=[{name:'I · MOONGLASS',num:'I / III',sky:['#0b192e','#304963','#8b8295','#e7aa90'],mist:'#97babb',bone:'#e7d6c5',shade:'#756c79',green:'#82beae',light:'#aeecbf',flower:'#d9d7b2',star:1,poem:'A forest cannot remember the creature. It can remember the journey.'},{name:'II · FIRST SAP',num:'II / III',sky:['#273f48','#667f78','#d49e88','#f2c79a'],mist:'#d8d5b4',bone:'#f5dcc2',shade:'#997769',green:'#73a784',light:'#e2ecb4',flower:'#fff0ce',star:.28,poem:'In the thaw, a thousand tiny windows drink the dawn.'},{name:'III · EMBER POLLEN',num:'III / III',sky:['#1c152a','#613b58','#ad6d75','#eaaa6c'],mist:'#ce9993',bone:'#efd0bc',shade:'#885f67',green:'#9a9285',light:'#ffcf86',flower:'#ffe3ae',star:.78,poem:'Every lantern is a seed, and every seed a small returning sun.'}];
+const pollen=Array.from({length:420},(_,i)=>({x:rr(170,1530),y:rr(125,920),r:rr(.5,2.3),z:rr(.3,1.4),v:rr(.2,1),phase:rr(0,TAU),tone:i%5}));
+const starlight=Array.from({length:260},()=>({x:rr(0,1600),y:rr(5,550),z:rr(.15,1.5),p:R()}));
+const leaves=Array.from({length:790},(_,i)=>{let ang=rr(-Math.PI,Math.PI),rad=Math.sqrt(R());return {x:900+Math.cos(ang)*rad*385,y:374+Math.sin(ang)*rad*208,z:rr(.55,1.4),ang:rr(0,TAU),phase:rr(0,TAU),h:R(),i}}).filter(p=>p.x>550&&p.x<1345&&p.y>160&&p.y<575);
+const flowers=Array.from({length:115},()=>({x:rr(610,1280),y:rr(250,535),z:rr(1.5,4.7),p:rr(0,TAU)}));
+const rootFibres=Array.from({length:125},(_,i)=>({x:720+(i*79.541)%320,y:680+(i*17.223)%140,r:rr(2,6)}));
+const people=Array.from({length:23},(_,i)=>({x:480+i*27.3,y:745+Math.sin(i*.8)*13,z:rr(.8,1.3)}));
+function line(x,y,X,Y,color='#fff',width=1){g.beginPath();g.moveTo(x,y);g.lineTo(X,Y);g.lineWidth=width;g.strokeStyle=color;g.stroke()}
+function ball(x,y,r,fill){g.beginPath();g.arc(x,y,r,0,TAU);g.fillStyle=fill;g.fill()}
+function poly(a,fill,stroke=null,width=1){g.beginPath();g.moveTo(...a[0]);for(let i=1;i<a.length;i++)g.lineTo(...a[i]);g.closePath();if(fill){g.fillStyle=fill;g.fill()}if(stroke){g.lineWidth=width;g.strokeStyle=stroke;g.stroke()}}
+function curve(a,b,c,d,col,wd=1){g.beginPath();g.moveTo(...a);g.bezierCurveTo(...b,...c,...d);g.strokeStyle=col;g.lineWidth=wd;g.lineCap='round';g.stroke()}
+function glow(x,y,r,color,a=.3){let v=g.createRadialGradient(x,y,0,x,y,r);v.addColorStop(0,`rgba(${color},${a})`);v.addColorStop(.2,`rgba(${color},${a*.25})`);v.addColorStop(1,`rgba(${color},0)`);g.fillStyle=v;g.fillRect(x-r,y-r,r*2,r*2)}
+function dotText(s,x,y,size=12,color='#fff',align='left'){g.font=`${size}px Georgia,serif`;g.fillStyle=color;g.textAlign=align;g.fillText(s,x,y)}
+function gradient(y1,y2,stops){const v=g.createLinearGradient(0,y1,0,y2);stops.forEach((a,i)=>v.addColorStop(i/(stops.length-1),a));return v}
+function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,2);c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);scale=Math.max(w/W,h/H);ox=(w-W*scale)/2;oy=(h-H*scale)/2;draw()}
+function backdrop(m){g.fillStyle=gradient(0,H,m.sky);g.fillRect(0,0,W,H);
+// Layered atmospheric silk, crescent halo and pale disc.
+for(let k=0;k<27;k++){let yy=80+k*12;g.beginPath();g.moveTo(-30,yy);g.bezierCurveTo(400,yy-65+Math.sin(k)*40,1070,yy+25+Math.sin(k*2)*25,1630,yy-70);g.lineWidth=1+k*.25;g.strokeStyle=`rgba(247,214,206,${.008+k*.0006})`;g.stroke()}
+glow(1340,275,205,'255,219,187',.11);ball(1338,269,73,'#f6e1d4');ball(1366,244,66,m.sky[0]);
+for(let s of starlight){ball(s.x,s.y,s.z,`rgba(247,220,191,${m.star*(.1+s.p*.53)})`)}
+for(let i=0;i<5;i++){let y=610+i*42;g.beginPath();g.moveTo(-50,y+65);for(let x=-50;x<=1650;x+=50){g.lineTo(x,y+30*Math.sin(x*.003+i*.6)+20*Math.sin(x*.008+i*1.2))}g.lineTo(1650,940);g.lineTo(-50,940);g.fillStyle=['#7a718064','#5c657278','#55596299','#394653c2','#1e3445'][i];g.fill()}
+// cracked glacier landscape
+poly([[0,819],[130,799],[270,817],[420,787],[570,809],[745,794],[1020,829],[1250,800],[1430,819],[1600,794],[1600,1000],[0,1000]],'#1a3341');
+for(let i=0;i<230;i++){let x=(i*177.12)%1660-30,y=825+(i*93.91)%179;let width=15+(i%14)*2.3;line(x,y,x+width,y+((i%9)-4)*2,`rgba(212,220,208,${.034+(i%7)*.013})`,.8)}
+for(let k=0;k<6;k++){g.fillStyle=`rgba(229,200,179,${.015+(6-k)*.009})`;g.fillRect(0,690+k*30,1600,30)}
+}
+function boneBand(a,b,c,d,width,m){ // A single giant fossil rib built from layered bone, variable relief and corrosion
+curve(a,b,c,d,'#081e29b9',width+24);curve(a,b,c,d,m.shade,width+11);let v=g.createLinearGradient(a[0],0,c[0],0);v.addColorStop(0,m.shade);v.addColorStop(.25,m.bone);v.addColorStop(.52,'#f6ecdc');v.addColorStop(.79,m.bone);v.addColorStop(1,m.shade);curve(a,b,c,d,v,width);curve([a[0]-5,a[1]-3],[b[0]-9,b[1]-12],[c[0]-9,c[1]-8],[d[0]-6,d[1]-3],'rgba(255,251,229,.55)',2.5);
+}
+function fossils(m){
+// The composition turns the original horizontal ossuary into a single monumental botanical reliquary.
+// Fossil footings and hollow jaw-like foundation, in silhouette.
+poly([[230,809],[308,770],[367,752],[481,742],[597,759],[705,785],[779,785],[837,817],[790,861],[545,875],[345,856]],'#5e6366','#1c3441',6);
+poly([[267,806],[316,774],[400,768],[505,778],[605,790],[720,809],[687,830],[470,829]],'#d7c3b7','#796e72',4);
+for(let i=0;i<45;i++){let x=290+i*9.8,y=801+Math.sin(i*.2)*14;line(x,y,x+11,y+10,'rgba(82,63,67,.19)',1.5)}
+// Three posterior ribs in perspective, deliberately thinner and in mist.
+for(let j=3;j>=1;j--){let shift=j*86,alpha=.28+(3-j)*.09;g.globalAlpha=alpha;boneBand([445+shift,834],[260+shift,627],[473+shift,280],[800+shift,184],24,m);g.globalAlpha=1}
+// Main cathedral-scale arch with a strongly irregular cross-section, spanning from the frost to the upper right.
+boneBand([315,847],[158,531],[433,205],[773,153],61,m);
+boneBand([778,154],[1136,88],[1398,337],[1421,645],43,m);
+// Downward tibial spur, creating a protective hollow.
+boneBand([1420,644],[1403,715],[1335,797],[1237,831],33,m);
+// Fossil growth increments and longitudinal cartilage scarring; irregular incisions make the arch unmistakably organic.
+function bez(a,b,c,d,u){let q=1-u;return [q*q*q*a[0]+3*q*q*u*b[0]+3*q*u*u*c[0]+u*u*u*d[0],q*q*q*a[1]+3*q*q*u*b[1]+3*q*u*u*c[1]+u*u*u*d[1]]}
+for(let k=0;k<76;k++){let u=(k+.25)/76;let p=bez([315,847],[158,531],[433,205],[773,153],u),n=bez([315,847],[158,531],[433,205],[773,153],Math.min(1,u+.005));let a=Math.atan2(n[1]-p[1],n[0]-p[0])+Math.PI/2;let d=(k%7===0?22:9);line(p[0]+Math.cos(a)*d,p[1]+Math.sin(a)*d,p[0]+Math.cos(a)*(d+8),p[1]+Math.sin(a)*(d+8),`rgba(75,63,72,${k%7===0?.29:.14})`,k%7===0?1.6:.75)}
+for(let k=0;k<61;k++){let u=(k+.6)/61;let p=bez([778,154],[1136,88],[1398,337],[1421,645],u),n=bez([778,154],[1136,88],[1398,337],[1421,645],Math.min(1,u+.005));let a=Math.atan2(n[1]-p[1],n[0]-p[0])+Math.PI/2;line(p[0]+Math.cos(a)*9,p[1]+Math.sin(a)*9,p[0]+Math.cos(a)*19,p[1]+Math.sin(a)*19,`rgba(86,65,69,${k%9===0?.27:.14})`,1)}
+// Named fossil nodules, tiny layered growth rings and a few branching hairline fractures.
+for(let k=0;k<21;k++){let u=(k+.5)/22,p=bez([315,847],[158,531],[433,205],[773,153],u);g.beginPath();g.ellipse(p[0]+15,p[1]+9,3+(k%4),1.5+(k%3),-.65,0,TAU);g.strokeStyle='rgba(72,62,67,.22)';g.lineWidth=.9;g.stroke()}
+// Inner striations and ossification rings follow the arch's geometry.
+for(let i=0;i<22;i++){let a=i/22,px=302+436*a,py=823-620*Math.sin(a*.5*Math.PI),angle=.6+a*.4;line(px-6,py+8,px+12,py-7,`rgba(85,64,78,${.12+(i%3)*.08})`,.8);}
+for(let i=0;i<32;i++){let a=i/32,x=810+480*a,y=174+110*a*a+75*Math.sin(a*2.2);line(x,y,x+9,y+13,'rgba(91,69,73,.2)',1.2)}
+// fossil fractures as branching lines, fine dark etching
+for(let k=0;k<34;k++){let a=k/34,x=450+780*a,y=165+82*Math.sin(a*4.2)+24*a;curve([x,y],[x-16,y+14],[x-12,y+21],[x-7,y+35],`rgba(84,67,73,${.10+(k%3)*.035})`,.7)}
+// Suspended ribs and membranous cross-structures, each distinct.
+for(let i=0;i<7;i++){let x=487+i*97,y=302+8*Math.sin(i),endY=722+25*Math.sin(i*.85);curve([x,y],[x-15,y+135],[x+26,y+233],[x+45,endY],i%2?'#b3a09b':'#cdbab0',8-i*.25);curve([x+3,y],[x-11,y+133],[x+28,y+229],[x+47,endY],'rgba(67,66,77,.55)',1.1)}
+// fossil labels engraved on bone, tiny and quiet
+for(let i=0;i<11;i++)line(1210+i*14,667+i*3,1217+i*14,673+i*3,'rgba(95,79,78,.25)',.75);
+}
+function dwelling(x,y,s,m,id){ // varied seed houses with translucent conservatory roofs
+const hh=28*s,ww=33*s,lit=id%3!==0;line(x-ww*.48,y+1,x-ww*.6,y+28*s,'#675f60',2);line(x+ww*.45,y+1,x+ww*.38,y+28*s,'#675f60',2);
+poly([[x-ww/2,y],[x-ww/2,y-hh],[x+ww/2,y-hh],[x+ww/2,y]],'#344b4a','#d0b99e',1.3);
+poly([[x-ww*.62,y-hh],[x-ww*.2,y-hh-18*s],[x+ww*.1,y-hh-24*s],[x+ww*.62,y-hh]],id%4?'#617c6f':'#9e806e','#e1c9a5',1.4);
+for(let k=0;k<3;k++)line(x-ww*.32+k*ww*.3,y-hh+2,x-ww*.32+k*ww*.3,y-2,'#b6ac91a3',1);
+if(lit){glow(x,y-hh*.45,22*s,id%2?'174,241,194':'255,188,111',.4);g.fillStyle=id%2?'#abf1c0':'#ffc58b';g.fillRect(x-5*s,y-hh*.68,10*s,10*s)}
+line(x-ww*.65,y+2,x+ww*.7,y+2,'#e2c9a9',1.5);
+}
+function bridges(m){
+const routes=[[420,684,670,700],[672,703,920,730],[923,730,1180,718]];
+for(const [a,b,x,y] of routes){line(a,b,x,y,'#283b43',8);line(a,b-4,x,y-4,'#d9c4a1',2);for(let i=0;i<=28;i++){let u=i/28,X=a+(x-a)*u,Y=b+(y-b)*u;line(X,Y-12,X,Y+5,'rgba(235,215,179,.45)',1)}curve([a,b-22],[(x+a)/2,b+1],[(x+a)/2,y+5],[x,y-22],'rgba(243,207,165,.72)',1.8)}
+for(let i=0;i<13;i++){let x=455+i*52,y=682+(i/13)*36+Math.sin(i*.8)*4;dwelling(x,y,i%4===0?1.12:.65,m,i)}
+// Wooden observation tower and staircase descending into salt
+poly([[1103,692],[1140,678],[1180,689],[1180,730],[1103,730]],'#435855','#c8bba4',1.6);
+poly([[1090,690],[1142,635],[1191,690]],'#688677','#f1d8b6',2);ball(1140,647,5,'#f6e6c0');glow(1140,647,45,'249,200,130',.45);
+for(let k=0;k<21;k++)line(1160+k*5,730+k*3,1179+k*5,732+k*3,'#e2d1b39c',1.2);
+for(let p of people){ball(p.x,p.y-7,2.4*p.z,'#182d32');line(p.x,p.y-4,p.x-1,p.y+9,'#182d32',2*p.z);line(p.x-1,p.y+7,p.x-4,p.y+12,'#182d32',1)}
+}
+function garden(m){
+// ancient flowering tree with immensely thick living trunk suspended through the bone hollow
+curve([915,831],[933,675],[880,528],[913,417],'#183b3d',61);
+curve([916,830],[927,676],[891,524],[912,417],'#536f58',49);
+curve([910,827],[936,679],[889,529],[908,415],'#b5a7849a',5);
+for(let i=0;i<19;i++){let a=i/19,x=914+16*Math.sin(a*9),y=822-a*398;line(x,y,x-11,y-14,'rgba(24,64,55,.35)',1)}
+const branchList=[[[905,460],[800,335],[710,310],[590,351]],[[904,444],[1008,310],[1170,319],[1327,375]],[[903,510],[775,470],[700,483],[615,504]],[[912,475],[1000,418],[1130,440],[1260,509]],[[909,402],[861,307],[854,273],[890,218]],[[931,618],[1010,518],[1100,509],[1194,530]]];
+for(let i=0;i<branchList.length;i++){const [a,b,c,d]=branchList[i];curve(a,b,c,d,'#264f43',14-i*.7);curve(a,b,c,d,'#b4a27a88',2)}
+// Contour of canopy: clusters of dark negative-space foliage before individually rendered leaves.
+for(let k=0;k<112;k++){let a=k*.49,r=Math.sqrt((k*.618033988)%1),x=920+Math.cos(a)*r*350,y=376+Math.sin(a)*r*184;ball(x,y,23+19*Math.abs(Math.sin(k*1.13)),k%3===0?'#274d47a8':'#365e54b2')}
+// Botanical leaf anatomy, specular rim and dark midrib, all seeded and individually positioned.
+for(const l of leaves){let x=l.x+Math.sin(t*.26+l.phase)*2.8*l.z,y=l.y+Math.cos(t*.22+l.phase)*2*l.z,ang=l.ang,a=6*l.z,b=12*l.z;g.save();g.translate(x,y);g.rotate(ang);g.beginPath();g.moveTo(0,-b);g.quadraticCurveTo(a*1.8,-3,a*.8,4);g.quadraticCurveTo(0,b*1.5,0,b);g.quadraticCurveTo(-a*1.9,5,-a,0);g.quadraticCurveTo(-a*1.2,-6,0,-b);g.fillStyle=l.h>.92?m.flower:l.h>.52?m.green:'#376658';g.globalAlpha=.52+l.h*.36;g.fill();g.globalAlpha=.65;line(0,-b*.8,0,b*.7,'rgba(255,241,182,.4)',.8);g.restore()}
+// Drooping ferns and long mycelium filaments under the leaf canopy.
+for(let i=0;i<48;i++){let x=631+(i*101.23)%605,y=462+(i*31.77)%83,h=25+(i%11)*7;curve([x,y],[x-7,y+h*.35],[x+10,y+h*.8],[x+4,y+h],'rgba(135,186,143,.57)',.85);for(let j=0;j<6;j++){let Y=y+10+j*h/8;line(x,Y,x+(j%2?8:-8),Y-6,'rgba(182,202,159,.45)',.8)}}
+// Five sculptural hanging glass seed pods at different depths.
+for(let i=0;i<5;i++){let x=610+i*151,y=499+Math.sin(i*.8)*30;line(x,y-83,x,y-15,'#d8c69e91',1.3);glow(x,y,58,i%2?'181,255,194':'245,185,111',lum*.33);g.beginPath();g.ellipse(x,y,15,22,0,0,TAU);g.fillStyle='#8bb7a030';g.fill();g.lineWidth=1.5;g.strokeStyle='#efd7a6c2';g.stroke();ball(x,y,4+i%2*3,m.light);line(x-6,y-10,x+6,y+14,'rgba(236,255,218,.5)',1)}
+// Fungal lights and unfurling botanical flowers, with responsive blooms.
+for(let i=0;i<flowers.length;i++){let f=flowers[i],x=f.x,y=f.y,r=f.z*(.38+.62*lum)*(1+burst*.13),p=f.p+t*.2;for(let j=0;j<5;j++){let a=p+j*TAU/5;ball(x+Math.cos(a)*r*.72,y+Math.sin(a)*r*.72,r*.65,`rgba(${scene===2?'255,194,125':'222,238,185'},${.25+lum*.32})`)}ball(x,y,r*.46,m.light);if(i%11===0)glow(x,y,23,'234,249,175',lum*.22)}
+// Transparent botanical contour lines: spring growth echoes microscopic fossil detail.
+for(let i=0;i<17;i++){let x=630+i*41;curve([x,530],[x-23,590],[x+15,647],[x+(i%3-1)*8,700],`rgba(125,182,139,${.1+(i%3)*.05})`,.8)}
+// Fine forest ground and root lattice visible through stilt houses.
+for(const f of rootFibres){line(f.x,f.y,f.x+f.r*1.8,f.y+f.r*2.8,'rgba(93,130,106,.22)',.9)}
+}
+function lanterns(m){
+// Each light belongs to an articulated return-path, not uniform random flashing.
+for(let i=0;i<82;i++){let u=(i/82+t*(.007+lum*.013))%1,x=400+1015*u,y=602-286*Math.sin(u*Math.PI)+24*Math.sin(u*14+i*.9),r=1.1+(i%5)*.3;let alpha=.35+.4*Math.sin(t*.8+i*3.1)**2;ball(x,y,r,`rgba(255,219,157,${alpha})`);if(i%10===0)glow(x,y,22,'255,207,129',.26*lum)}
+for(let i=0;i<pollen.length;i++){let p=pollen[i],x=p.x+Math.sin(t*.35+p.phase)*14+p.z*t*2.7,y=p.y-((t*p.v*5+4000)%1050)*.08; x=((x-40)%1600+1600)%1600+40;y=((y-70)%900+900)%900+70;if(y<200||y>770||x<530||x>1300)continue;let a=.16+lum*.35,pal=p.tone===0?'255,207,128':p.tone===1?'155,237,201':'221,242,177';ball(x,y,p.r,`rgba(${pal},${a})`);if(i%39===0)glow(x,y,22,pal,.18*lum)}
+for(const imp of imprints){let life=t-imp.t;if(life<0||life>5)continue;let r=life*40;g.beginPath();g.ellipse(imp.x,imp.y,r,r*.65,-.1,0,TAU);g.strokeStyle=`rgba(252,218,160,${.5*(1-life/5)})`;g.lineWidth=1.3;g.stroke();for(let j=0;j<9;j++){let a=j*TAU/9+life*.32,px=imp.x+Math.cos(a)*r,py=imp.y+Math.sin(a)*r*.65;ball(px,py,1.4,'#ffe8b1')}}
+}
+function details(m){
+// The interface carries the labels. The landscape remains unobstructed by an overlapping ruler.
+// Solitary researchers in distant bone alcoves.
+for(let j=0;j<7;j++){let x=1270+j*23,y=804+j*.8;ball(x,y-6,2,'#d5bba0');line(x,y-4,x-1,y+8,'#294348',2);line(x-1,y+8,x-6,y+13,'#294348',1);}
+}
+function draw(){if(!w)return;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.fillStyle='#101b2b';g.fillRect(0,0,w,h);g.translate(ox*dpr,oy*dpr);g.scale(scale,scale);const m=moods[scene];backdrop(m);fossils(m);bridges(m);garden(m);lanterns(m);details(m)}
+function animate(stamp){if(!prev)prev=stamp;let dt=Math.min((stamp-prev)/1000,.05);prev=stamp;if(!still){t+=dt;burst=Math.max(0,burst-dt*.22);imprints=imprints.filter(p=>t-p.t<5);draw()}animateId=requestAnimationFrame(animate)}
+$('scene').onclick=()=>{scene=(scene+1)%3;const m=moods[scene];$('scene').textContent=m.name;$('plateNo').textContent=m.num;$('line').textContent=m.poem;draw()};
+$('light').oninput=e=>{lum=+e.target.value/100;$('level').textContent=e.target.value+'%';$('glow').textContent=e.target.value+'%';draw()};
+$('bloom').onclick=()=>{burst=2.6;for(let i=0;i<9;i++)imprints.push({x:620+i*67,y:395+Math.sin(i*2)*74,t:t-i*.14});if(still){still=false;$('still').textContent='STILL'}draw()};
+$('still').onclick=()=>{still=!still;$('still').textContent=still?'RESUME':'STILL';draw()};
+function point(e){let x=(e.clientX-ox)/scale,y=(e.clientY-oy)/scale;if(x>200&&x<1490&&y>130&&y<930){imprints.push({x,y,t});if(imprints.length>28)imprints.shift();burst=Math.max(burst,.7);draw()}}
+c.addEventListener('pointerdown',e=>{drag=true;c.setPointerCapture(e.pointerId);point(e)});c.addEventListener('pointermove',e=>{if(drag)point(e)});c.addEventListener('pointerup',()=>drag=false);c.addEventListener('pointercancel',()=>drag=false);
+$('save').onclick=()=>{draw();const a=document.createElement('a');a.download='the-garden-inside-the-bone-'+(scene+1)+'.png';a.href=c.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()};
+addEventListener('resize',resize);resize();animateId=requestAnimationFrame(animate);
+})();
+</script></body></html>
