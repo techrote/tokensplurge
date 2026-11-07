@@ -7,7 +7,7 @@ An abandoned mineral dyeworks stretches across a two-sided escarpment. Five larg
 
 **Transferable environmental question:** What would an inhabited industrial landscape look like if its architecture was designed around chemical deposition gradients, with sediment stains revealing historical operating levels? The interactive chemistry is an artistic metaphor only; this is not an actual fluid, corrosion or CyberSand physics simulation.
 
-**New file:** `environments/008-the-chromatic-escarpment.html`; UTF-8, 24,778 bytes, entirely self-contained (embedded Canvas2D, CSS, UI, textures, animation and exports). No external assets or libraries. Open directly in a current browser.
+**New file:** `environments/008-the-chromatic-escarpment.html`; UTF-8, 24,999 bytes, entirely self-contained (embedded Canvas2D, CSS, UI, textures, animation and exports). No external assets or libraries. Open directly in a current browser.
 
 ## Interaction
 - Sluice pressure changes particle/channel transport.
@@ -20,8 +20,8 @@ An abandoned mineral dyeworks stretches across a two-sided escarpment. Five larg
 ## Source custody
 - Inspected main SHA: `dba3f7ba18beb87628f496fefe828fce52f780f4`.
 - Source branch: `art/environment-lab-20261107-chromatic-escarpment-008`.
-- Verified published HTML Git blob: `38d6cc2dda53bb7037110434baf4ca9e8ead3337`.
-- Independently tested source SHA-256: `0a7c2f3cf176596a3af0a59e8940333c87fabe79dd933f9be6fe25af780e9ca0`.
+- Verified published HTML Git blob: `5864954ca7b01350a92ab8ace33501de5a65a48b`.
+- Independently tested source SHA-256: `b29805a48cbcfcd2e7ae6566db3ee2011586fac93eb02959ed3972af32b98b60`.
 - Existing originals, editions, hybrids, salvage, lineage, previous environment studies and reference-library files were not modified. No CyberSand changes.
 
 ## Independent creative distance
@@ -48,15 +48,17 @@ No recognisable layouts, palette systems, motifs, typography, simulations or sou
 | JavaScript page exceptions | **0** | **0** |
 | Document horizontal overflow | **0** | **0** |
 
-Screenshots were genuinely captured and inspected at both sizes, including desktop daylight, desktop pan/detail, and mobile interaction. Mobile was iterated from an undersized panorama to a purposeful portrait crop, while retaining zoom/pan discovery.
+Screenshots were genuinely captured and inspected at both sizes, including desktop daylight, desktop pan/detail, and mobile interaction. Mobile was iterated from an undersized panorama to a purposeful portrait crop, while retaining zoom/pan discovery. The dawn-state heading was subsequently corrected for contrast; the entire desktop/mobile browser suite was rerun against the final exact source after this correction.
 
-**Actual evidence hashes** (SHA-256):
-- Desktop initial PNG: `9060550ec5304b97e9dd2370ab371ed8262d259bafae86493c55e8941eb3dbe5`
-- Desktop animated PNG: `51f14209525cb46935a05e7ea8846924dc6ec8a79627d3604b947d93d25860c1`
-- Desktop dawn PNG: `10d1777738e697fab87c16f5654ed226c53bbb06b483fc7781844f65ca0b51c4`
-- Desktop detail PNG: `8b5800fdf76e9971b4a222061b875afc03629c6a385f95f6e99a6e7797560175`
-- Mobile initial PNG: `135f1947f22c244c9623c5f92fce517e06537370cdb67c999f54225e8527c940`
-- Mobile interaction PNG: `e323ce1a6978e5f5fa4f3089aaf6901b693adf25895c348b895983f0b92ca0ea`
+**Final post-correction evidence hashes** (SHA-256):
+- Desktop initial PNG: `abbc32324b3128e879de93ef3257004a9cad2b17198903ecc04f7051b54ef11c`
+- Desktop animated PNG: `73ea627af14b743dcb0cee39554fbb5e9feca01e2a3145edbc25fdc134dca29a`
+- Desktop dawn PNG: `e9dddfc3dd892708d29098ee8118c53a4bfd11417d4606c7fa46a81983484638`
+- Desktop detail PNG: `7179aa7bce6463158083f47d60be29fb21a049e43dc450a4398136e63fe79031`
+- Mobile initial PNG: `b2f4f42487afc17cfea211778218eedad21bd040104b84d203af51e17370fcbc`
+- Mobile interaction PNG: `b96ced1d7be4fead342f576c6c2e6a91f8dc75b1a6b0c75a3abd11976acd094b`
+
+Final source revision after the executed contrast correction: commit `d322d77b616b479444083c0cf63ab174b3bda62e`. The two-file PR branch is based on immutable main `dba3f7ba18beb87628f496fefe828fce52f780f4`.
 
 ### Remaining limitations
 Screenshot bytes are preserved in the local delivery evidence bundle, not committed to GitHub as immutable screenshot artifacts. Independent external quality acceptance, browser parity (Safari/Firefox), full-session performance, direct `file://` navigation and native CyberSand/Godot material/physics/scene validation are untested. These limitations do not block a usable experimental concept artwork.
