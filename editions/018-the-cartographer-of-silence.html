@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080c17">
+<title>The Cartographer of Silence — TokenSplurge Edition XVIII</title>
+<style>
+:root{color-scheme:dark;--paper:#ddd5bc;--gold:#bd9970;--muted:#7b91a4;--night:#080c17}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#070a12;color:var(--paper)}
+body{font-family:Georgia,'Times New Roman',serif;background:radial-gradient(ellipse at 50% 18%,#1e2936 0,#090d17 57%,#060811 100%);letter-spacing:.005em}
+main{max-width:1480px;margin:auto;padding:23px 35px 30px}header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 2px 17px;border-bottom:1px solid #9b805a4b}
+.kicker,.index,.fine,.button,.readout,.deck-label{font:10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.19em;text-transform:uppercase}
+.kicker{color:#cba879}.index{color:#75899a;text-align:right}h1{font-size:clamp(27px,3.5vw,49px);font-weight:400;line-height:1.1;margin:18px 0 5px;letter-spacing:-.027em}.sub{color:#a2aeb7;font-size:14px;line-height:1.5;margin:0 0 19px;font-style:italic}
+.stage{position:relative;width:100%;height:min(64vw,800px);min-height:475px;background:#0a1019;border:1px solid #8e785b64;box-shadow:0 15px 70px #0008,inset 0 0 30px #000;overflow:hidden}
+.stage canvas{display:block;width:100%;height:100%;touch-action:manipulation}.stage:after{content:'';position:absolute;pointer-events:none;inset:9px;border:1px solid #e0b66f1c}
+.controls{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:15px;padding:16px 0 7px;border-bottom:1px solid #9b805a35}
+.plates,.actions{display:flex;flex-wrap:wrap;gap:7px}.button{font-size:10px;cursor:pointer;color:#abafac;border:1px solid #917a5f70;background:#101724;padding:10px 13px;transition:background .2s,color .2s;white-space:nowrap}
+.button.active{background:#b99765;color:#10151a;border-color:#d4b885}.button:hover{color:#fff;background:#32404b}.button.active:hover{color:#111;background:#d6b580}.button:focus-visible,input:focus-visible{outline:2px solid #e2c78c;outline-offset:3px}
+.range{display:flex;align-items:center;gap:9px;color:#a9b8bf;font:10px ui-monospace,monospace;letter-spacing:.11em;text-transform:uppercase}.range input{width:108px;accent-color:#cb9a62}
+.readout{display:flex;justify-content:space-between;gap:18px;padding:15px 1px 0;color:#96a6aa;letter-spacing:.10em}.readout strong{color:#e1c79c;font-weight:400}
+footer{padding:18px 0 5px;max-width:1080px;color:#8d9a9e;font-size:12px;line-height:1.65}.deck-label{color:#c4a276;margin-right:12px}
+@media(max-width:700px){main{padding:14px 12px 22px}header{padding-bottom:12px}.kicker,.index{font-size:8px;letter-spacing:.1em}h1{font-size:29px;margin-top:14px}.sub{font-size:12px}.stage{height:565px;min-height:0}.controls{gap:10px}.button{font-size:9px;padding:9px 10px}.plates,.actions{gap:5px}.range{width:100%;justify-content:space-between}.range input{width:52%}.readout{font-size:9px;flex-direction:column;gap:5px}footer{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.button{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="kicker">TokenSplurge · Independent edition XVIII · An acoustic cabinet</div><div class="index">From experiment S056 / Chladni · 2026</div></header>
+<h1>The Cartographer of Silence</h1>
+<p class="sub">The places where a sounding plate refuses to move are the places where its sand remembers to rest.</p>
+<div class="stage"><canvas id="art" aria-label="Animated engraving of a laboratory Chladni plate. Nine thousand real simulated sand grains migrate toward the nodal geometry of a vibrating metal plate." role="img"></canvas></div>
+<div class="controls"><div class="plates" aria-label="Choose one of three acoustic studies">
+<button class="button active" data-study="0">I · The Vesper Map</button><button class="button" data-study="1">II · A Crown of Echoes</button><button class="button" data-study="2">III · The Unwritten Hymn</button></div>
+<div class="actions"><label class="range">Vibration <input id="energy" type="range" min="15" max="100" value="56"><output id="energyValue">56%</output></label><button class="button" id="strike">Strike the plate</button><button class="button" id="nodes" aria-pressed="false">Reveal nodal lines</button><button class="button" id="pause" aria-pressed="false">Stillness</button><button class="button" id="save">Collect PNG</button></div></div>
+<div class="readout" aria-live="polite"><span id="status">PLATE 01 / MODES 3 : 5</span><span id="measure">SETTLED GRAINS — MEASURING</span><span><strong>ZERO MOTION IS NOT THE SAME AS SILENCE.</strong></span></div>
+<footer><span class="deck-label">The apparatus</span>A hand-engraved fiction built around a real Chladni standing-wave equation. Sand migrates toward places of minimal displacement, revealing the topology of a metal plate's resonant modes. Change the acoustic study, scatter the grains with a strike, or touch the plate to disturb its dust. All artwork and simulation are contained in this one HTML file; no network or audio permission is required.</footer>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('art'),ctx=canvas.getContext('2d',{alpha:false});
+const $=id=>document.getElementById(id),PI=Math.PI,TAU=PI*2,N=9000;
+const studies=[
+ {name:'THE VESPER MAP',sub:'THE QUIET BETWEEN TWO NOTES',a:3,b:5,dark:'#071323',base:'#122a32',mid:'#1c5258',gold:'#d9b275',dust:['#fbe6b4','#ddbd83','#f8d6a0'],ambient:'#49a3b3',mark:'I',seed:44012},
+ {name:'A CROWN OF ECHOES',sub:'WHERE THE SOUND IS NOT',a:4,b:7,dark:'#071b1d',base:'#17322f',mid:'#265e50',gold:'#c2a976',dust:['#faf2c8','#c9ddbf','#e5d5a7'],ambient:'#86bcaa',mark:'II',seed:74023},
+ {name:'THE UNWRITTEN HYMN',sub:'EVERY REST HAS A SHAPE',a:5,b:8,dark:'#1c0d1d',base:'#302136',mid:'#5f3b55',gold:'#e2b18b',dust:['#ffe7cd','#eab49e','#fce2ab'],ambient:'#c27f9c',mark:'III',seed:85034}
+];
+let scene=0,energy=.56,nodes=false,paused=false,time=0,settled=0,W=1200,H=720,dpr=1,grain=[],sparks=[],needRedraw=true,composed=null,sourceImage=null,geom=null,backTexture=null;
+function rng(seed){let a=seed>>>0;return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+const random=rng(20261106);function clamp(v,a,b){return Math.min(b,Math.max(a,v))}
+function setFont(g,size,serif=false){g.font=`${size}px ${serif?'Georgia,serif':'ui-monospace,monospace'}`}
+function line(g,points){g.beginPath();g.moveTo(...points[0]);for(let i=1;i<points.length;i++)g.lineTo(...points[i]);g.stroke()}
+function txt(g,str,x,y,size=11,col='#baad91',align='left',serif=false){g.save();g.textAlign=align;g.fillStyle=col;setFont(g,size,serif);g.fillText(str,x,y);g.restore()}
+function ring(g,x,y,r,col,width=1){g.beginPath();g.arc(x,y,r,0,TAU);g.strokeStyle=col;g.lineWidth=width;g.stroke()}
+function nodal(x,y,a,b){return Math.cos(a*PI*x)*Math.cos(b*PI*y)-Math.cos(b*PI*x)*Math.cos(a*PI*y)}
+function grad(x,y,a,b){return [-a*PI*Math.sin(a*PI*x)*Math.cos(b*PI*y)+b*PI*Math.sin(b*PI*x)*Math.cos(a*PI*y),-b*PI*Math.cos(a*PI*x)*Math.sin(b*PI*y)+a*PI*Math.cos(b*PI*x)*Math.sin(a*PI*y)]}
+function radius(){return Math.min(W*.52,H*.82)}
+function location(){const mobile=W<720;const S=mobile?Math.min(W*.85,H*.56):Math.min(W*.48,H*.77);return {S,x:mobile?(W-S)/2:W*.49-S/2,y:mobile?115:Math.max(76,(H-S)/2+16),mobile}}
+function hatch(g,x,y,s){g.save();g.beginPath();g.rect(x,y,s,s);g.clip();g.strokeStyle='#f6d6a007';g.lineWidth=.7;for(let k=-s;k<s*2;k+=9){line(g,[[x+k,y],[x+k+s,y+s]])}g.restore()}
+const nodalCache={};
+function nodeGeometry(st){const key=st.a+':'+st.b;if(nodalCache[key])return nodalCache[key];
+ const a=st.a,b=st.b,M=126,vals=new Float32Array((M+1)*(M+1));
+ for(let j=0;j<=M;j++)for(let i=0;i<=M;i++)vals[j*(M+1)+i]=nodal(i/M,j/M,a,b);
+ const path=new Path2D();for(let j=0;j<M;j++)for(let i=0;i<M;i++){
+ const v0=vals[j*(M+1)+i],v1=vals[j*(M+1)+i+1],v2=vals[(j+1)*(M+1)+i+1],v3=vals[(j+1)*(M+1)+i];let pts=[];
+ const edge=(p,q,ix,iy,jx,jy)=>{if((p>=0)!=(q>=0)){const t=p/(p-q);pts.push([(ix+(jx-ix)*t)/M,(iy+(jy-iy)*t)/M])}};
+ edge(v0,v1,i,j,i+1,j);edge(v1,v2,i+1,j,i+1,j+1);edge(v2,v3,i+1,j+1,i,j+1);edge(v3,v0,i,j+1,i,j);
+ if(pts.length===2){path.moveTo(...pts[0]);path.lineTo(...pts[1])}
+ else if(pts.length===4){path.moveTo(...pts[0]);path.lineTo(...pts[1]);path.moveTo(...pts[2]);path.lineTo(...pts[3])}
+ }return nodalCache[key]=path}
+function contour(g,x,y,s,st){const path=nodeGeometry(st);g.save();g.translate(x,y);g.scale(s,s);
+ g.strokeStyle=st.ambient+'39';g.lineWidth=4/s;g.stroke(path);
+ g.strokeStyle=st.gold+'98';g.lineWidth=.95/s;g.stroke(path);g.restore()}
+function setupScene(i){scene=i;const st=studies[i],rand=rng(st.seed);grain=[];for(let k=0;k<N;k++){grain.push({x:.018+rand()*.964,y:.018+rand()*.964,q:.54+rand()*.8,t:rand()*TAU,c:Math.floor(rand()*3),vx:0,vy:0})} // Pre-settle, retaining a visible halo of loose grains.
+ for(let n=0;n<34;n++)evolve(1/60,true);
+ document.querySelectorAll('[data-study]').forEach((b,j)=>{b.classList.toggle('active',i===j);b.setAttribute('aria-pressed',String(i===j))});
+ $('status').textContent=`PLATE 0${i+1} / RESONANCE ${st.a} : ${st.b}`;needRedraw=true}
+function disturb(x,y,r,intensity=1){const rad2=r*r;for(const p of grain){const dx=p.x-x,dy=p.y-y,d2=dx*dx+dy*dy;if(d2<rad2){const fac=(1-Math.sqrt(d2)/r)*intensity;p.x=clamp(p.x+(random()-.5)*fac*.24,.011,.989);p.y=clamp(p.y+(random()-.5)*fac*.24,.011,.989)}}sparks.push({x,y,t:0,r})}
+function evolve(dt,pre=false){const {a,b}=studies[scene];let sum=0;const factor=clamp(dt*60,.1,2);for(const p of grain){let v=nodal(p.x,p.y,a,b),[gx,gy]=grad(p.x,p.y,a,b),gg=gx*gx+gy*gy;const step=clamp(-v/(gg+2.3),-.011,.011)*(.42+energy*.55)*factor;const noise=(pre?.00028:.00037)*(energy*.8+.24)*Math.sqrt(factor);p.x=clamp(p.x+gx*step+(random()-.5)*noise,.008,.992);p.y=clamp(p.y+gy*step+(random()-.5)*noise,.008,.992);sum+=Math.abs(v)}settled=1-sum/N/1.15;if(!pre)time+=dt}
+function texture(g,x,y,s,seed){const rand=rng(seed),n=1100;for(let i=0;i<n;i++){const xx=x+rand()*s,yy=y+rand()*s;g.fillStyle=i%3?'#e2c18e08':'#f2dfbe09';g.fillRect(xx,yy,.4+rand()*2,.4+rand()*2)}}
+function label(g,x,y,s,st){const mobile=W<720;if(mobile)return;const left=x-64,right=x+s+70,top=y+35;g.save();g.strokeStyle=st.gold+'66';g.lineWidth=1;line(g,[[left+5,top+10],[x-18,top+10],[x-4,top+26]]);line(g,[[right-6,y+s*.38],[x+s+14,y+s*.38],[x+s+2,y+s*.4]]);txt(g,'RESONATOR / #'+(scene+1),left-2,top-1,10,st.gold,'right');txt(g,'BRASS / DUST / WAVES',left-2,top+20,8,'#899399','right');txt(g,'NODAL',right+5,y+s*.38-9,11,st.gold);txt(g,'GEOMETRY',right+5,y+s*.38+8,11,st.gold);g.restore()}
+function floral(g,x,y,scale,st,rotation=0){g.save();g.translate(x,y);g.rotate(rotation);g.scale(scale,scale);g.strokeStyle=st.gold+'98';g.lineWidth=1;for(let j=0;j<8;j++){g.save();g.rotate(j*TAU/8);g.beginPath();g.moveTo(0,0);g.bezierCurveTo(-12,-19,-10,-39,0,-53);g.bezierCurveTo(10,-39,12,-19,0,0);g.stroke();g.restore()}ring(g,0,0,8,st.gold+'b0');ring(g,0,0,36,st.gold+'33');g.restore()}
+function fork(g,x,y,s,st,t){g.save();g.translate(x,y);g.scale(s,s);g.lineCap='round';g.lineJoin='round';g.strokeStyle='#806546';g.lineWidth=12;g.beginPath();g.moveTo(0,20);g.lineTo(0,115);g.stroke();g.strokeStyle=st.gold;g.lineWidth=7;g.beginPath();g.moveTo(0,5);g.lineTo(0,115);g.stroke();g.strokeStyle=st.gold;g.lineWidth=9;g.beginPath();g.moveTo(-34,-15);g.lineTo(-34,-114);g.moveTo(34,-15);g.lineTo(34,-114);g.arc(0,-15,34,0,PI,false);g.stroke();g.lineWidth=1;g.strokeStyle='#ffedc29b';for(let k of [-1,1])line(g,[[k*37,-110],[k*37,-22]]);g.rotate(.01*Math.sin(t*30));ring(g,0,118,8,st.gold);g.restore()}
+function smallInstrument(g,x,y,sz,st){g.save();g.translate(x,y);g.strokeStyle=st.gold+'90';g.lineWidth=1.1;ring(g,0,0,sz,st.gold+'7f');ring(g,0,0,sz*.86,st.gold+'52');ring(g,0,0,sz*.17,st.gold);for(let k=0;k<48;k++){const a=k*TAU/48;line(g,[[Math.cos(a)*sz*.89,Math.sin(a)*sz*.89],[Math.cos(a)*(sz+(k%4?2:7)),Math.sin(a)*(sz+(k%4?2:7))]])}g.save();g.rotate(time*.13);line(g,[[0,0],[sz*.52,-sz*.46]]);g.restore();g.fillStyle=st.gold;g.beginPath();g.arc(0,0,3,0,TAU);g.fill();g.restore()}
+function bg(g,st){let grd=g.createRadialGradient(W*.51,H*.42,0,W*.5,H*.5,Math.max(W,H)*.8);grd.addColorStop(0,st.base);grd.addColorStop(.52,st.dark);grd.addColorStop(1,'#070910');g.fillStyle=grd;g.fillRect(0,0,W,H);
+ const rand=rng(1877);for(let i=0;i<650;i++){const x=rand()*W,y=rand()*H;g.fillStyle=rand()>.93?st.gold+'55':'#f5d59c0c';g.fillRect(x,y,.5+rand(),.5+rand())}
+ g.strokeStyle=st.gold+'26';g.lineWidth=1;g.strokeRect(22,22,W-44,H-44);g.strokeRect(30,30,W-60,H-60);
+ for(let [x,y,flipX,flipY] of [[35,35,1,1],[W-35,35,-1,1],[35,H-35,1,-1],[W-35,H-35,-1,-1]]){g.save();g.translate(x,y);g.scale(flipX,flipY);g.beginPath();g.moveTo(0,62);g.quadraticCurveTo(0,0,62,0);g.moveTo(0,36);g.quadraticCurveTo(0,0,36,0);g.strokeStyle=st.gold+'70';g.stroke();g.restore()}}
+function frame(g,x,y,s,st){g.save();g.shadowColor='#000c';g.shadowBlur=40;g.fillStyle='#11151a';g.fillRect(x-24,y-24,s+48,s+48);g.shadowBlur=0;for(let z=0;z<7;z++){const o=27-z*4;g.fillStyle=z%2?st.gold+'14':'#0005';g.fillRect(x-o,y-o,s+2*o,s+2*o);g.strokeStyle=z%2?st.gold+'9c':st.gold+'32';g.lineWidth=z===3?2:.6;g.strokeRect(x-o+.5,y-o+.5,s+2*o-1,s+2*o-1)}
+ for(let [sx,sy] of [[x-14,y-14],[x+s+14,y-14],[x-14,y+s+14],[x+s+14,y+s+14]]){ring(g,sx,sy,7,st.gold+'7c');ring(g,sx,sy,2.3,st.gold+'a0');line(g,[[sx-3,sy-3],[sx+3,sy+3]])}
+ for(let k=0;k<38;k++){const t=k/37;g.strokeStyle=st.gold+'4d';g.lineWidth=.6;for(let side=0;side<4;side++){g.save();g.translate(x+s/2,y+s/2);g.rotate(side*PI/2);let p=(t-.5)*s;line(g,[[p,-s/2-26],[p,-s/2-23+(k%5===0?7:2)]]);g.restore()}}g.restore()}
+function plate(g,x,y,s,st){frame(g,x,y,s,st);let gr=g.createLinearGradient(x,y,x+s,y+s);gr.addColorStop(0,'#121c25');gr.addColorStop(.32,st.base);gr.addColorStop(.72,st.mid);gr.addColorStop(1,'#12131c');g.fillStyle=gr;g.fillRect(x,y,s,s);hatch(g,x,y,s);texture(g,x,y,s,st.seed+11);
+ g.save();g.beginPath();g.rect(x,y,s,s);g.clip();let inner=g.createRadialGradient(x+s*.48,y+s*.42,0,x+s*.5,y+s*.5,s*.76);inner.addColorStop(0,'#e8bc7430');inner.addColorStop(1,'#01040e8e');g.fillStyle=inner;g.fillRect(x,y,s,s);
+ g.strokeStyle=st.gold+'2e';g.lineWidth=.75;for(let k=1;k<8;k++){let q=k/8;line(g,[[x+q*s,y],[x+q*s,y+s]]);line(g,[[x,y+q*s],[x+s,y+q*s]])}
+ ring(g,x+s/2,y+s/2,s*.33,st.gold+'39');ring(g,x+s/2,y+s/2,s*.345,st.gold+'18');g.strokeStyle=st.gold+'2a';for(let k=0;k<12;k++){let a=k*TAU/12;line(g,[[x+s/2+Math.cos(a)*s*.34,y+s/2+Math.sin(a)*s*.34],[x+s/2+Math.cos(a)*s*.37,y+s/2+Math.sin(a)*s*.37]])}
+ for(let q of [.04,.96])for(let r of [.04,.96]){const xx=x+s*q,yy=y+s*r;floral(g,xx,yy,s/740,st,(q+r)*PI)}
+ if(nodes)contour(g,x,y,s,st);
+ // Deposit genuinely simulated grains above the engraved plate.
+ g.globalCompositeOperation='screen';const scale=s;for(let i=0;i<N;i++){const p=grain[i],xx=x+p.x*scale,yy=y+p.y*scale;g.globalAlpha=.61+.28*p.q/1.4;g.fillStyle=st.dust[p.c];let r=scale/690*p.q;g.fillRect(xx,yy,Math.max(1,r*1.32),Math.max(1,r*1.32))}g.globalAlpha=1;g.globalCompositeOperation='source-over';
+ // A quiet, nearly transparent nodal overglow, only when the sounding plate is excited.
+ if(!nodes&&energy>.4){g.globalAlpha=.11*energy;contour(g,x,y,s,st);g.globalAlpha=1}
+ g.restore();g.strokeStyle=st.gold+'e0';g.lineWidth=1.5;g.strokeRect(x+.5,y+.5,s-1,s-1);
+ txt(g,st.mark,x+14,y+s-15,18,st.gold,'left',true);txt(g,`${st.a} × ${st.b}`,x+s-15,y+s-17,11,st.gold,'right');
+ for(const spark of sparks){const rx=x+spark.x*s,ry=y+spark.y*s;g.save();g.globalAlpha=Math.max(0,1-spark.t)*.9;ring(g,rx,ry,spark.r*s*(1+spark.t*2),st.gold);g.restore()}}
+function apparatus(g,x,y,s,st){const mobile=W<720;const middle=x+s/2;
+ // Double-support cradle and mechanical copper stem.
+ g.strokeStyle=st.gold+'65';g.lineWidth=2;line(g,[[middle,y+s+28],[middle,y+s+44],[middle-44,y+s+66],[middle-44,y+s+75]]);line(g,[[middle,y+s+44],[middle+44,y+s+66],[middle+44,y+s+75]]);
+ g.fillStyle='#101d24';g.fillRect(middle-57,y+s+64,114,8);g.strokeStyle=st.gold+'7f';g.strokeRect(middle-57,y+s+64,114,8);
+ for(let i=-4;i<=4;i++){g.fillStyle=st.gold+'aa';g.fillRect(middle+i*12-1,y+s+67,3,3)}
+ if(!mobile){const lx=x-165,rx=x+s+165;fork(g,lx,y+s*.45,Math.min(1.25,s/450),st,time);fork(g,rx,y+s*.48,Math.min(.94,s/540),st,time);g.strokeStyle=st.gold+'55';g.lineWidth=1.3;g.setLineDash([4,5]);line(g,[[lx+42,y+s*.44],[x-32,y+s*.44]]);line(g,[[x+s+30,y+s*.46],[rx-38,y+s*.46]]);g.setLineDash([]);
+ smallInstrument(g,lx,y+s*.83,40,st);smallInstrument(g,rx,y+s*.82,48,st);txt(g,'A / EXCITER',lx,y+s*.7,9,st.gold,'center');txt(g,'B / RECEIVER',rx,y+s*.68,9,st.gold,'center');}}
+function overlays(g,x,y,s,st){const mobile=W<720;
+ g.fillStyle=st.gold+'15';if(!mobile){txt(g,'ARCHIVE OF',52,75,13,st.gold);txt(g,'UNSOUNDED THINGS',52,94,13,st.gold);txt(g,'LABORATORY  /  018',W-54,74,10,st.gold,'right');txt(g,'DUST MEASURES STILLNESS',W-54,94,9,'#8d9ca6','right');
+ txt(g,'THE PLATE DOES NOT',52,H-83,11,'#9cabae');txt(g,'REMEMBER THE SOUND.',52,H-66,11,'#9cabae');txt(g,'IT REMEMBERS THE REST.',52,H-49,11,st.gold);
+ txt(g,'f(x,y) =',W-57,H-91,11,st.gold,'right');txt(g,'cos(aπx)cos(bπy)',W-57,H-72,10,'#9aafb3','right');txt(g,'− cos(bπx)cos(aπy)',W-57,H-54,10,'#9aafb3','right');
+ }else{
+ txt(g,'LABORATORY XVIII',W/2,48,11,st.gold,'center');txt(g,st.name,W/2,70,15,'#d9c29a','center',true);txt(g,'ACOUSTIC STUDY  /  '+st.a+' : '+st.b,W/2,H-53,10,st.gold,'center');
+ }
+ txt(g,'NODAL FIELD / '+st.name,W/2,H-18,10,st.gold,'center');
+ }
+function draw(){const st=studies[scene],g=ctx,{x,y,S}=location();g.save();bg(g,st);apparatus(g,x,y,S,st);plate(g,x,y,S,st);overlays(g,x,y,S,st);g.restore();needRedraw=false}
+function resize(){const r=canvas.getBoundingClientRect();W=r.width;H=r.height;dpr=clamp(window.devicePixelRatio||1,1,2);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);needRedraw=true;draw()}
+let tickCount=0,last=0;function tick(ts){if(last&&ts-last<44){requestAnimationFrame(tick);return}const dt=Math.min(.05,Math.max(0,(ts-last)/1000||1/60));last=ts;if(!paused){evolve(dt);sparks=sparks.filter(s=>(s.t+=dt*.7)<1);needRedraw=true}if(needRedraw)draw();if(tickCount++%25===0){$('measure').textContent=`NODAL CONCORDANCE / ${Math.round(clamp(settled,0,1)*100)}% · ${N.toLocaleString('en-GB')} GRAINS`}requestAnimationFrame(tick)}
+document.querySelectorAll('[data-study]').forEach(b=>b.addEventListener('click',()=>setupScene(Number(b.dataset.study))));
+$('energy').addEventListener('input',e=>{energy=Number(e.target.value)/100;$('energyValue').textContent=e.target.value+'%'});
+$('strike').addEventListener('click',()=>{disturb(.5,.5,.85,2.2);needRedraw=true});
+$('nodes').addEventListener('click',()=>{nodes=!nodes;$('nodes').setAttribute('aria-pressed',String(nodes));$('nodes').classList.toggle('active',nodes);needRedraw=true});
+$('pause').addEventListener('click',()=>{paused=!paused;$('pause').textContent=paused?'Resume':'Stillness';$('pause').setAttribute('aria-pressed',String(paused));$('pause').classList.toggle('active',paused);needRedraw=true});
+$('save').addEventListener('click',()=>{draw();const anchor=document.createElement('a');anchor.download=`cartographer-of-silence-${scene+1}.png`;anchor.href=canvas.toDataURL('image/png');document.body.appendChild(anchor);anchor.click();anchor.remove()});
+canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),p=location(),x=(e.clientX-r.left-p.x)/p.S,y=(e.clientY-r.top-p.y)/p.S;if(x>=0&&x<=1&&y>=0&&y<=1){disturb(x,y,.15,1.45);needRedraw=true}});
+window.addEventListener('keydown',e=>{if(e.key===' '){e.preventDefault();$('strike').click()}if('123'.includes(e.key)&&e.key.length===1)setupScene(Number(e.key)-1)});
+window.addEventListener('resize',resize);setupScene(0);resize();requestAnimationFrame(tick);
+})();
+</script>
+</body></html>
