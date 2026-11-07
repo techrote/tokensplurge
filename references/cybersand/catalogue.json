@@ -713,7 +713,7 @@
         "method": "local Chromium/Playwright exact per-entry source HTML",
         "desktop": "captures/breathing-citadel-desktop.png",
         "detail": "captures/breathing-citadel-detail.png",
-        "status": "pending",
+        "status": "captured",
         "report": "captures/report.json",
         "evidence": "Pending independently run source-pinned Playwright Chromium full/detail PNG capture and source/hash verification; author-local browser execution does not establish gallery evidence or native Godot acceptance."
       },

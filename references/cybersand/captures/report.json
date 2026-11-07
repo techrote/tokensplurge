@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
-  "edition": "2026-11-06-curation-03",
+  "edition": "2026-11-07-curation-04",
   "source_revision_policy": "per-entry",
   "historical_pin": "f9deae20ded26e959f2096ba9fed9a0e3b61a6ed",
   "engine": "Chromium via Playwright",
   "playwright_version": "1.56.1",
-  "generated_utc": "2026-11-06T23:47:55.837Z",
+  "generated_utc": "2026-11-07T01:53:25.449Z",
   "limitations": "Not native Godot/material/physics, cross-browser, hosted preview or human visual acceptance evidence.",
   "results": [
     {
@@ -566,6 +566,39 @@
           "path": "captures/thirst-of-the-sky-detail.png",
           "bytes": 526727,
           "sha256": "9e168f8738333123e26b65d228e39e119354d13f46ea9352a9a13ef485c87dfa"
+        }
+      ]
+    },
+    {
+      "id": "breathing-citadel",
+      "ref": "2f38d84ef7ffd03cd51e44057dda3aeb1c03b657",
+      "path": "environments/007-the-breathing-citadel-source.html",
+      "blob_sha": "767d23bccae92eb312a79722c33358a33af1e6d6",
+      "status": "captured",
+      "viewport": "1440x900",
+      "method": "local Chromium exact per-entry Git source",
+      "canvas": {
+        "x": 0,
+        "y": 65.84375,
+        "width": 1440,
+        "height": 764.59375
+      },
+      "detail_clip": {
+        "x": 364.80000000000007,
+        "y": 231.0784375,
+        "width": 768,
+        "height": 480
+      },
+      "files": [
+        {
+          "path": "captures/breathing-citadel-desktop.png",
+          "bytes": 1069829,
+          "sha256": "7733873bc783c9a5b5dc6201bdd48dec13fe12885f6e1ecf4ae05239be3d2d8c"
+        },
+        {
+          "path": "captures/breathing-citadel-detail.png",
+          "bytes": 424550,
+          "sha256": "2ce88d16860d2e522db9a0b62be12d7e10b5976a48798ccbbea127542fc23373"
         }
       ]
     }
