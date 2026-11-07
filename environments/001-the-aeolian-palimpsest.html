@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="dark">
+<title>The Aeolian Palimpsest — an atlas of surviving wind</title>
+<style>
+:root{color-scheme:dark;--ink:#d9d5ce;--low:#a7abae;--line:rgba(222,208,174,.23);--glass:rgba(12,20,34,.78)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090f1d;color:var(--ink);font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}#world{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}#vignette{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 180px rgba(4,8,18,.58);background:linear-gradient(to bottom,rgba(5,11,24,.28),transparent 24%,transparent 73%,rgba(4,9,16,.48))}.panel{position:fixed;z-index:2;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:var(--glass);border:1px solid var(--line);border-radius:3px}.head{left:26px;top:23px;max-width:min(440px,calc(100vw - 52px));padding:17px 20px 15px}.eyebrow{color:#c6ac7b;letter-spacing:.24em;font-size:10px;text-transform:uppercase}.head h1{font:normal clamp(23px,3.3vw,37px)/1.12 Georgia,serif;letter-spacing:.01em;margin:8px 0;color:#f0e1c8}.head p{margin:9px 0 0;color:#acb8bb;line-height:1.55;max-width:370px}.head .marker{display:flex;gap:13px;margin-top:12px;color:#a4a4a4;font-size:10px;letter-spacing:.12em}.readout{position:fixed;right:25px;top:27px;z-index:2;color:#aeb6b8;font-size:10px;line-height:1.75;text-align:right;letter-spacing:.13em;text-shadow:0 2px 5px #080d15}.readout b{color:#e9c995;font-weight:500}.foot{position:fixed;left:24px;right:24px;bottom:21px;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:12px;pointer-events:none}.foot>*{pointer-events:auto}.tools.panel{position:relative}.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px}.tools button,.tools input{accent-color:#d5ad6f}.tools button{border:1px solid rgba(212,195,160,.28);background:rgba(27,37,53,.9);color:#e2d3b5;font:11px ui-monospace,monospace;letter-spacing:.05em;padding:7px 10px;cursor:pointer;border-radius:2px}.tools button:hover,.tools button:focus-visible{background:#3e4b54;outline:1px solid #d5ad6f}.tools label{display:flex;align-items:center;gap:9px;margin:0 8px;color:#c9c6bd;white-space:nowrap}.tools input[type=range]{width:95px}.caption{color:#b2b0aa;font-size:10px;letter-spacing:.08em;text-align:right;text-shadow:0 2px 5px #080d15}.caption strong{color:#dfc79d;font-weight:400}#announce{position:fixed;left:24px;bottom:85px;pointer-events:none;z-index:3;letter-spacing:.1em;color:#f4d4a1;font-size:11px;opacity:0;transition:opacity .3s}@media(max-width:760px){.head{top:12px;left:12px;padding:10px 13px;max-width:calc(100vw - 24px)}.head h1{font-size:23px;margin:3px 0}.head p{font-size:10px;margin:4px 0 0}.head .marker{display:none}.readout{display:none}.foot{left:9px;right:9px;bottom:9px;display:block}.tools{justify-content:space-between;gap:4px;padding:6px}.tools button{font-size:10px;padding:7px 7px}.tools label{font-size:10px;margin:0 2px}.tools input[type=range]{width:60px}.caption{display:none}#announce{left:12px;bottom:64px}}
+</style>
+</head>
+<body>
+<canvas id="world" role="img" aria-label="Animated imaginary canyon: a colossal segmented bronze wind lens rises over salt terraces and a glowing fault scar. Drag across the scene to change its airflow; tap to release luminous dust."></canvas>
+<div id="vignette"></div>
+<header class="head panel"><div class="eyebrow">Field chronicle  /  01 — the inland void</div><h1>The Aeolian Palimpsest</h1><p>Where the sea retreated, its last wind was engraved into stone. The ancient listening engine still measures storms that have not yet arrived.</p><div class="marker"><span>36° 18′ N</span><span>ARCHIVE: ACTIVE</span><span>NO. 09 / ∞</span></div></header>
+<aside class="readout" aria-live="off">STRATA <b>09 · EVAPORITE / BASALT</b><br>WIND VECTOR <b id="windval">+0.62</b><br>SEDIMENT COUNT <b id="partval">480</b><br>FIELD STATUS <b id="modeval">OBSERVING</b></aside>
+<div id="announce" aria-live="polite"></div>
+<footer class="foot"><div class="tools panel"><label for="wind">WIND <input id="wind" aria-label="Wind strength" type="range" min="-100" max="100" value="62" step="1"></label><button type="button" id="phase" aria-pressed="false">AFTER DARK</button><button type="button" id="pause">PAUSE</button><button type="button" id="reset">RESEED</button><button type="button" id="save">SAVE PNG</button></div><div class="caption">DRAG TO BEND THE WIND · TAP TO RELEASE DUST<br><strong>SPECULATIVE ENVIRONMENT STUDY / CHROMIUM CANVAS</strong></div></footer>
+<script>
+'use strict';
+(() => {
+const cv=document.getElementById('world'),cx=cv.getContext('2d',{alpha:false}),windEl=document.getElementById('wind');
+const V={w:1600,h:960};let W=0,H=0,dpr=1,scale=1,ox=0,oy=0,sky=0,phase=0,paused=false,time=0,last=0,particles=[],bursts=[],wind=.62,dragging=false,frame=0;
+const TAU=Math.PI*2,clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),mix=(a,b,t)=>a+(b-a)*t;
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}const R=rng(1947281),rr=(a,b)=>mix(a,b,R());
+function path(c,coords,close=false){c.beginPath();c.moveTo(coords[0][0],coords[0][1]);for(let i=1;i<coords.length;i++)c.lineTo(coords[i][0],coords[i][1]);if(close)c.closePath()}
+function poly(c,coords,fill,stroke,lw=1){path(c,coords,true);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.lineWidth=lw;c.strokeStyle=stroke;c.stroke()}}
+function line(c,x1,y1,x2,y2,col='#f5dab1',w=1){c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}
+function circ(c,x,y,r,col){c.beginPath();c.arc(x,y,r,0,TAU);c.fillStyle=col;c.fill()}
+function ellipse(c,x,y,rx,ry,col){c.beginPath();c.ellipse(x,y,rx,ry,0,0,TAU);c.fillStyle=col;c.fill()}
+function gradient(c,x,y,r,col){const g=c.createRadialGradient(x,y,0,x,y,r);for(let i=0;i<col.length;i++)g.addColorStop(col[i][0],col[i][1]);return g}
+function terrainHeight(x,index){const y=[465,505,572,645,731,807,895][index];return y+Math.sin(x*.005+index*2.14)*[24,28,40,48,61,74,68][index]+Math.sin(x*.016+index*5.2)*[11,14,15,21,25,26,31][index]+Math.sin(x*.046+index*3.8)*[2,3,6,8,9,12,16][index]}
+function drawHaze(c){let g=c.createLinearGradient(0,0,0,960);g.addColorStop(0,'#111b30');g.addColorStop(.22,'#263548');g.addColorStop(.49,'#736e6a');g.addColorStop(.67,'#8c6c65');g.addColorStop(1,'#292b39');c.fillStyle=g;c.fillRect(0,0,1600,960);
+  for(let n=0;n<8;n++){const y=205+n*38;line(c,-10,y,1610,y+rr(-9,9),`rgba(224,185,166,${.009+n*.003})`,rr(15,30))}
+  for(let i=0;i<200;i++){const x=rr(0,1600),y=rr(0,475);circ(c,x,y,rr(.2,1.1),`rgba(249,228,195,${rr(.06,.48)})`)}
+  // Fossil upper atmosphere: light, topographic wind-archive rings.
+  c.save();c.strokeStyle='rgba(241,209,181,.055)';c.lineWidth=1;for(let i=0;i<19;i++){c.beginPath();c.ellipse(1150,205,360+i*30,75+i*13,-.18,Math.PI*.88,Math.PI*1.84);c.stroke()}c.restore();
+  const glare=gradient(c,1210,415,660,[[0,'rgba(247,207,149,.17)'],[.4,'rgba(223,148,117,.07)'],[1,'rgba(197,119,92,0)']]);c.fillStyle=glare;c.fillRect(400,0,1200,950);
+}
+function drawFar(c){ // rear distant massifs and wind-raked terraces
+ for(let k=0;k<4;k++){let pts=[[-100,670]];for(let x=-100;x<=1700;x+=12){let y=370+k*43+55*Math.sin(x*.0035+2.2*k)+36*Math.sin(x*.009+1.9*k)+13*Math.sin(x*.023+k);pts.push([x,y])}pts.push([1700,720],[-100,720]);poly(c,pts,['#4b5156','#655c5c','#776565','#8e7069'][k]);for(let i=0;i<40;i++){let x=rr(0,1600),y=pts[Math.min(pts.length-3,Math.floor(x/12)+9)]?.[1]||460;line(c,x,y+rr(0,50),x+rr(10,90),y+rr(10,50),'rgba(228,188,157,.038)',1)}}
+ let layer=[['#614e50',464],['#76605a',500],['#8e7066',532]];for(let k=0;k<layer.length;k++){const y=layer[k][1];const pts=[];for(let x=-100;x<=1700;x+=11)pts.push([x,y+24*Math.sin(x*.009+2*k)+9*Math.sin(x*.034+k)]);pts.push([1700,720],[-100,720]);poly(c,pts,layer[k][0]);}
+}
+function drawGeology(c){
+ // Contour-cut escarpments; every layer is a separate curved extrusion.
+ for(let k=0;k<7;k++){let points=[];for(let x=-40;x<=1640;x+=7)points.push([x,terrainHeight(x,k)]);points.push([1640,1000],[-40,1000]);let cols=['#675555','#7c5f59','#936a5b','#a77c66','#a9816b','#71545a','#403e4d'];poly(c,points,cols[k]);path(c,points.slice(0,-2));c.strokeStyle=['rgba(249,214,174,.18)','rgba(232,187,149,.27)','rgba(251,195,156,.28)','rgba(241,194,151,.33)','rgba(239,195,158,.2)','rgba(227,170,148,.18)','rgba(210,168,141,.11)'][k];c.lineWidth=k===3?3:1.7;c.stroke()}
+ for(let k=0;k<7;k++)for(let j=0;j<7;j++){c.beginPath();let first=true;for(let x=-40;x<=1640;x+=8){const y=terrainHeight(x,k)+j*(4+k*.7)+4*Math.sin(x*.018+j*2+k);if(first){c.moveTo(x,y);first=false}else c.lineTo(x,y)}c.strokeStyle=j%3===0?'rgba(245,194,162,.105)':'rgba(46,38,52,.095)';c.lineWidth=j%3===0?1.5:.7;c.stroke()}
+ // Seams, cutbacks and ancient square exploration openings.
+ for(let i=0;i<640;i++){let x=rr(0,1600),k=Math.floor(rr(0,7)),y=terrainHeight(x,k)+rr(8,56);let len=rr(3,40);line(c,x,y,x+len,y+rr(-1,3),`rgba(${R()>.5?'251,211,175':'37,30,43'},${rr(.08,.29)})`,rr(.45,2));if(R()<.22)line(c,x+len*.6,y,x+len*.6+rr(-6,6),y+rr(6,19),'rgba(43,35,48,.22)',1)}
+ for(let i=0;i<62;i++){let x=rr(10,1580),k=Math.floor(rr(1,6)),y=terrainHeight(x,k)+rr(7,35);let w=rr(4,13);c.fillStyle='rgba(30,32,44,.42)';c.fillRect(x,y,w,rr(2,7));line(c,x,y+1,x+w,y+1,'rgba(250,207,152,.25)',.8)}
+ // deep central fault trench, directional black strokes
+ const ch=[[540,950],[700,779],[740,713],[766,661],[815,649],[856,687],[898,730],[940,771],[1023,952]];poly(c,ch,'#302f3d','rgba(255,195,136,.26)',3);
+ for(let i=0;i<53;i++){let p=i/52;let x=mix(756,850,p)+Math.sin(i*12.2)*23,y=658+p*p*332;line(c,x,y,x+Math.sin(i*4)*21,y+rr(18,66),`rgba(240,170,116,${rr(.04,.22)})`,rr(.5,2))}
+ let g=gradient(c,806,794,255,[[0,'rgba(245,159,113,.23)'],[.38,'rgba(228,120,108,.06)'],[1,'rgba(212,114,95,0)']]);c.fillStyle=g;c.fillRect(510,580,600,380);
+ // two geological spill escarpments with broken polygon relief
+ for(let side of [0,1]){const off=side?1240:-75,sg=side?-1:1;let profile=[[0,490],[64,502],[92,545],[128,566],[150,614],[199,632],[245,694],[267,730],[289,804],[300,960],[0,960]];let points=profile.map(([x,y])=>[off+sg*x,y]);poly(c,points,side?'#3b3d49':'#393b48','rgba(231,190,154,.15)',1.7);for(let k=0;k<9;k++){let y=520+k*49;line(c,off,y,off+sg*(55+k*24),y+rr(-10,17),'rgba(219,165,142,.13)',rr(.8,2.4))}for(let i=0;i<300;i++){let x=rr(5,240),y=rr(580,948);if(x<(y-460)*.48+38){line(c,off+sg*x,y,off+sg*(x+rr(1,11)),y-rr(0,7),`rgba(227,175,149,${rr(.02,.15)})`,rr(.3,1.1))}}}
+ // salt channels and wind-etched fine grain bands
+ for(let i=0;i<120;i++){let x=rr(170,1450),y=rr(784,965);if(y<terrainHeight(x,5))continue;let l=rr(3,54);line(c,x,y,x+l,y-rr(0,6),`rgba(247,204,153,${rr(.05,.24)})`,rr(.5,1.3))}
+}
+function drawArchitecture(c){const x=1035,y=385,r=218;
+ // towering lateral arms and foundation buttresses
+ poly(c,[[753,910],[768,558],[781,507],[800,503],[821,868],[810,920]],'#4b4650','rgba(231,189,144,.3)',2);
+ poly(c,[[1283,904],[1279,524],[1309,491],[1328,511],[1368,904]],'#47434c','rgba(225,189,151,.32)',2);
+ for(let [px,yy] of [[766,543],[1306,516]]){for(let k=0;k<17;k++){line(c,px-10,yy+k*20,px+23,yy+k*20,'rgba(230,184,153,.2)',1);circ(c,px+4,yy+k*20,2,'rgba(248,205,157,.36)')};poly(c,[[px-23,yy],[px+30,yy-13],[px+45,yy+5],[px-16,yy+19]],'#a37b6b','rgba(245,207,160,.5)',1.4)}
+ // fragile diagonal load strands and counterweights
+ for(const [ax,ay,bx,by] of [[760,550,885,255],[1320,513,1196,218],[756,730,912,535],[1328,735,1160,570],[760,572,1036,166],[1315,524,1038,160]]){
+ line(c,ax,ay,bx,by,'rgba(18,26,39,.82)',3.2);line(c,ax+.8,ay,bx+.8,by,'rgba(210,177,145,.39)',1);
+ for(let f=.1;f<1;f+=.1){let xx=mix(ax,bx,f),yy=mix(ay,by,f);circ(c,xx,yy,1.2,'rgba(221,183,143,.35)')}
+ }
+ // outer mechanical armature: rings, engraved segments and bright fracture edges
+ const metal=c.createLinearGradient(x-r,y-r,x+r,y+r);metal.addColorStop(0,'#413e49');metal.addColorStop(.23,'#a27b6a');metal.addColorStop(.49,'#4e4851');metal.addColorStop(.73,'#bd9274');metal.addColorStop(1,'#393f4e');
+ for(let i=0;i<40;i++){let a=i*TAU/40-1.2,b=a+TAU/40*.91; c.beginPath();c.arc(x,y,r+21,a,b);c.arc(x,y,r+5,b,a,true);c.closePath();c.fillStyle=i%5===0?'#c19b7b':metal;c.fill();c.strokeStyle='rgba(25,29,38,.68)';c.lineWidth=2.3;c.stroke();c.beginPath();c.arc(x,y,r+19,a+.01,b-.02);c.lineWidth=1;c.strokeStyle='rgba(252,217,171,.5)';c.stroke()}
+ for(let rad of [r-4,r-19,r-30]){c.beginPath();c.arc(x,y,rad,0,TAU);c.strokeStyle=rad===r-19?'#352f3b':'rgba(218,176,143,.46)';c.lineWidth=rad===r-19?8:2;c.stroke()}
+ for(let i=0;i<120;i++){let a=i*TAU/120;line(c,x+Math.cos(a)*(r+24),y+Math.sin(a)*(r+24),x+Math.cos(a)*(r+24+(i%10===0?15:5)),y+Math.sin(a)*(r+24+(i%10===0?15:5)),i%10===0?'rgba(242,208,169,.9)':'rgba(246,206,160,.45)',i%10===0?2:1)}
+ // inner radial ribs: thin bronze, asymmetrical louvres
+ for(let i=0;i<19;i++){const a=(i+.17)*TAU/19;const p=[x+Math.cos(a)*(r-42),y+Math.sin(a)*(r-42)],q=[x+Math.cos(a+.17)*(r-116),y+Math.sin(a+.17)*(r-116)];line(c,...p,...q,'rgba(205,169,131,.34)',5);line(c,p[0],p[1],q[0],q[1],'rgba(253,215,173,.45)',1.2);poly(c,[[p[0],p[1]],[p[0]+Math.cos(a+.12)*20,p[1]+Math.sin(a+.12)*20],[q[0]+Math.cos(a+.17)*16,q[1]+Math.sin(a+.17)*16],[q[0],q[1]]],i%3?'rgba(57,57,66,.62)':'rgba(155,120,106,.35)');circ(c,...p,3,'#d6ad81')}
+ // the central suspended listening stone
+ let glow=gradient(c,x,y,200,[[0,'rgba(250,196,139,.30)'],[.28,'rgba(218,154,131,.07)'],[1,'rgba(228,178,136,0)']]);c.fillStyle=glow;c.fillRect(x-201,y-201,402,402);
+ for(let j=0;j<28;j++){const a=j*TAU/28;line(c,x+Math.cos(a)*80,y+Math.sin(a)*80,x+Math.cos(a)*128,y+Math.sin(a)*128,'rgba(234,200,167,.16)',1)}
+ ellipse(c,x,y,68,68,'#272e3e');ellipse(c,x,y,54,54,'#5d5860');ellipse(c,x,y,49,49,'#272e3b');for(let j=0;j<13;j++){const a=j*TAU/13;line(c,x+Math.cos(a)*29,y+Math.sin(a)*29,x+Math.cos(a+1.1)*42,y+Math.sin(a+1.1)*42,'rgba(227,187,142,.55)',1.3)}
+ ellipse(c,x,y,17,17,'#b78c71');ellipse(c,x,y,9,9,'#f1d1a1');circ(c,x,y,4,'#fff1cb');
+ // outboard station / slab motifs, mechanical housing
+ for(let [sx,sy] of [[708,752],[1338,716],[676,856],[1375,845]]){poly(c,[[sx-18,sy+3],[sx-11,sy-36],[sx+10,sy-47],[sx+17,sy+5]],'#464652','rgba(234,195,162,.3)',1.6);for(let k=0;k<5;k++)line(c,sx-9,sy-31+k*7,sx+9,sy-35+k*7,'rgba(214,162,135,.4)',1)}
+ // fine long catenary wires tracing the wind's forced geometry
+ for(let i=0;i<8;i++){const xa=740+i*12,ya=577+i*17,xb=1340-i*11,yb=600+i*14;c.beginPath();c.moveTo(xa,ya);c.quadraticCurveTo(1000,682+i*24,xb,yb);c.strokeStyle=`rgba(220,174,146,${.06+i*.018})`;c.lineWidth=.9;c.stroke()}
+ // etched scale annotations, physically located outside the ring
+ c.font='10px ui-monospace,monospace';c.fillStyle='rgba(229,210,172,.56)';c.fillText('EOLIAN / SECTOR 09',1327,354);c.fillText('∅ 4.3 hm',1330,371);line(c,1255,364,1317,364,'rgba(237,214,181,.35)',1);
+}
+function drawDeposits(c){
+ // Resonance columns along dry bed: hollow and faceted, not decorative trees.
+ let positions=[];for(let i=0;i<92;i++)positions.push([rr(130,1500),rr(690,970),rr(7,35)]);positions.sort((a,b)=>a[1]-b[1]);
+ for(let [x,y,h] of positions){if(y<terrainHeight(x,4)+20)continue;let skew=rr(-8,8),w=h*.23;poly(c,[[x-w,y],[x-w*.75,y-h*.7],[x+skew,y-h],[x+w*.5,y-h*.64],[x+w,y]],'#43414d','rgba(245,188,146,.26)',.85);line(c,x+skew,y-h,x+w*.7,y-h*.47,'rgba(247,206,172,.19)',.6);if(R()<.3)circ(c,x+skew,y-h,rr(.7,2.8),'rgba(253,196,131,.65)')}
+ // salt efflorescence fields
+ for(let i=0;i<1250;i++){let x=rr(0,1600),y=rr(665,960);if(y<terrainHeight(x,Math.floor(rr(4,7))))continue;const a=rr(.15,.85);line(c,x,y,x+rr(.3,3.5),y+rr(-2,2),`rgba(250,211,175,${a*.31})`,rr(.4,1.7))}
+}
+function drawSurveyStations(c){
+ // Independent exploratory instruments with scale increments, cable constraints and inscribed mineral provenance.
+ for(const [x,y,h,m] of [[315,784,95,.95],[451,822,62,.7],[571,868,85,.8],[1464,789,89,.92],[1515,855,53,.72]]){
+ const w=14*m;poly(c,[[x-w*1.3,y],[x-w*.85,y-h*.86],[x-w*.4,y-h],[x+w*.45,y-h],[x+w,y]],'#44414d','rgba(240,192,153,.32)',1.4);
+ for(let j=0;j<5;j++){let yy=y-h*.8+j*h*.12;line(c,x-w*.63,yy,x+w*.6,yy-1,'rgba(240,194,155,.4)',1)}
+ line(c,x,y-h,x,y-h-25,'rgba(234,181,137,.6)',2);circ(c,x,y-h-27,3,'#efbb88');circ(c,x,y-h-27,8,'rgba(249,185,118,.10)');
+ poly(c,[[x-22*m,y-h*.57],[x+21*m,y-h*.59],[x+27*m,y-h*.5],[x-25*m,y-h*.49]],'#504752','rgba(247,193,152,.26)',1);
+ line(c,x-17*m,y-h*.49,x-32*m,y-h*.12,'rgba(232,194,159,.27)',1);line(c,x+17*m,y-h*.48,x+31*m,y-h*.15,'rgba(232,194,159,.27)',1);
+ for(let j=0;j<7;j++)circ(c,x+rr(-4,4),y-h*.16+j*2.1,rr(.5,1.1),'rgba(237,194,142,.45)')
+ }
+ // Residual deposit geometry: interlocking contour plates rather than decorative sand lines.
+ for(let i=0;i<90;i++){let x=rr(220,1560),y=rr(680,935),r=rr(6,30);c.beginPath();c.ellipse(x,y,r,r*rr(.09,.23),rr(-.45,.45),0,TAU);c.strokeStyle=`rgba(246,209,172,${rr(.025,.09)})`;c.lineWidth=rr(.5,1.1);c.stroke()}
+ // Micro-mapping inscriptions on the exposed crest of the great suspended lens.
+ let x=1035,y=385;for(let i=0;i<96;i++){const a=i*TAU/96+Math.PI/5,rad=rr(184,204),px=x+Math.cos(a)*rad,py=y+Math.sin(a)*rad;line(c,px,py,px+Math.cos(a+.9)*rr(2,9),py+Math.sin(a+.9)*rr(2,9),'rgba(246,207,171,.22)',.9)}
+ for(let i=0;i<34;i++){const xx=580+i*31,yy=936+Math.sin(i*.7)*7;line(c,xx,yy,xx+8,yy-rr(0,4),'rgba(239,185,155,.17)',1)}
+}
+const base=document.createElement('canvas');base.width=1600;base.height=960;const bc=base.getContext('2d');drawHaze(bc);drawFar(bc);drawGeology(bc);drawArchitecture(bc);drawDeposits(bc);drawSurveyStations(bc);
+function seed(){const P=rng(31241);particles=Array.from({length:480},(_,i)=>({x:P()*1600,y:160+P()*780,v:P()*TAU,s:.25+P()*1.35,t:P()*100,rate:.25+P()*.95}));bursts=[];document.getElementById('partval').textContent=particles.length}
+seed();
+function size(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);scale=W<761?H/960*.83:Math.min(W/1600,H/960);ox=W<761?W/2-1040*scale:(W-1600*scale)/2;oy=(H-960*scale)/2;cx.setTransform(dpr,0,0,dpr,0,0);cx.imageSmoothingEnabled=true}
+addEventListener('resize',size);size();
+function windField(x,y,t){const d=Math.hypot((x-1035)/330,(y-385)/250),influence=Math.exp(-d*d);let vx=wind*1.25+.35*Math.sin(y*.012+t*.3),vy=.24*Math.sin(x*.009+t*.21)+.32*Math.cos(y*.016-t*.3);const ang=Math.atan2(y-385,x-1035);vx+=-Math.sin(ang)*influence*1.45;vy+=Math.cos(ang)*influence*1.1;return [vx,vy]}
+function renderDynamics(dt){ // atmospheric parallax and particle advection
+ cx.save();cx.globalCompositeOperation='screen';const pulse=.5+.5*Math.sin(time*1.4);
+ const lx=ox+1035*scale,ly=oy+385*scale,rad=350*scale;
+ let g=cx.createRadialGradient(lx,ly,8,lx,ly,rad);g.addColorStop(0,`rgba(230,176,122,${phase? .065+.04*pulse:.018+.012*pulse})`);g.addColorStop(1,'rgba(230,176,122,0)');cx.fillStyle=g;cx.fillRect(lx-rad,ly-rad,rad*2,rad*2);
+ let fr=0;
+ for(let p of particles){if(!paused){const f=windField(p.x,p.y,time);p.x+=(f[0]*(.55+p.s)+Math.sin(p.t)) * dt * 27;p.y+=(f[1]*(.5+p.s)+Math.cos(p.t*.3)*.18)*dt*25;p.t+=dt*p.rate;if(p.x>1660)p.x=-40;if(p.x< -55)p.x=1650;if(p.y>990)p.y=130;if(p.y<120)p.y=970}
+ const xx=ox+p.x*scale,yy=oy+p.y*scale,alpha=clamp(.16+p.s*.26,0,.8)*(phase?1.2:.75);let col=phase?`rgba(255,205,133,${alpha})`:`rgba(245,215,184,${alpha})`;cx.strokeStyle=col;cx.lineWidth=clamp(p.s*scale,.5,2.3);cx.beginPath();cx.moveTo(xx,yy);cx.lineTo(xx+wind*scale*(2+p.s*3),yy-1.4*scale);cx.stroke();fr++}
+ for(let i=bursts.length-1;i>=0;i--){let b=bursts[i];if(!paused){b.r+=dt*85;b.life-=dt*.48}if(b.life<=0){bursts.splice(i,1);continue}const px=ox+b.x*scale,py=oy+b.y*scale,r=b.r*scale;cx.strokeStyle=`rgba(255,210,135,${b.life*.7})`;cx.lineWidth=2*scale;cx.beginPath();cx.arc(px,py,r,0,TAU);cx.stroke();for(let j=0;j<31;j++){const a=j*TAU/31+b.r*.011;cx.fillStyle=`rgba(255,216,146,${b.life*(.25+Math.sin(j*j)*.25)})`;cx.fillRect(px+Math.cos(a)*r,py+Math.sin(a)*r,Math.max(.5,scale*2.5),Math.max(.5,scale*2.5))}}
+ cx.restore()}
+function render(stamp){const dt=last?clamp((stamp-last)/1000,0,.06):0;last=stamp;if(!paused)time+=dt;cx.setTransform(dpr,0,0,dpr,0,0);cx.fillStyle='#0b1020';cx.fillRect(0,0,W,H);cx.save();cx.translate(ox,oy);cx.scale(scale,scale);cx.drawImage(base,0,0);cx.restore();if(phase){cx.fillStyle='rgba(8,16,35,.32)';cx.fillRect(0,0,W,H)}renderDynamics(dt);frame++;requestAnimationFrame(render)}requestAnimationFrame(render);
+function announce(s){const n=document.getElementById('announce');n.textContent=s;n.style.opacity='1';clearTimeout(announce.handle);announce.handle=setTimeout(()=>n.style.opacity='0',1700)}
+windEl.addEventListener('input',()=>{wind=Number(windEl.value)/100;document.getElementById('windval').textContent=(wind>=0?'+':'')+wind.toFixed(2)});
+document.getElementById('phase').addEventListener('click',e=>{phase=1-phase;e.currentTarget.setAttribute('aria-pressed',String(!!phase));e.currentTarget.textContent=phase?'BEFORE DARK':'AFTER DARK';announce(phase?'NIGHT CURRENT · VISIBLE':'DAYLIGHT CURRENT · VISIBLE')});
+document.getElementById('pause').addEventListener('click',e=>{paused=!paused;e.currentTarget.textContent=paused?'RESUME':'PAUSE';document.getElementById('modeval').textContent=paused?'HELD':'OBSERVING'});
+document.getElementById('reset').addEventListener('click',()=>{seed();wind=.62;windEl.value='62';document.getElementById('windval').textContent='+0.62';time=0;announce('SEDIMENT RECORD RESEEDED')});
+function exportPNG(){const name='aeolian-palimpsest-'+(phase?'night':'day')+'.png';cv.toBlob(blob=>{if(!blob){announce('EXPORT FAILED');return}let a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);announce('PNG EXPORTED')},'image/png')}
+document.getElementById('save').addEventListener('click',exportPNG);
+function coords(e){return{x:(e.clientX-ox)/scale,y:(e.clientY-oy)/scale}}
+cv.addEventListener('pointerdown',e=>{dragging=true;cv.setPointerCapture(e.pointerId);const p=coords(e);if(p.x>=0&&p.x<1600&&p.y>=0&&p.y<960){bursts.push({...p,r:5,life:1});if(bursts.length>16)bursts.shift()}});
+cv.addEventListener('pointermove',e=>{if(!dragging)return;const val=clamp((e.movementX/14)+wind,-1,1);wind=mix(wind,val,.42);windEl.value=String(Math.round(wind*100));document.getElementById('windval').textContent=(wind>=0?'+':'')+wind.toFixed(2)});
+cv.addEventListener('pointerup',()=>dragging=false);cv.addEventListener('pointercancel',()=>dragging=false);
+document.addEventListener('keydown',e=>{if(e.target===windEl)return;if(e.code==='Space'){e.preventDefault();document.getElementById('pause').click()}else if(e.key.toLowerCase()==='r')document.getElementById('reset').click();else if(e.key.toLowerCase()==='s')document.getElementById('save').click();else if(e.key.toLowerCase()==='n')document.getElementById('phase').click()});
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){paused=true;document.getElementById('pause').textContent='RESUME';document.getElementById('modeval').textContent='HELD'}
+window.__AEOLIAN_DEBUG__=()=>({frame,time,paused,phase,wind,particles:particles.length,bursts:bursts.length,canvas:[cv.width,cv.height],world:[1600,960]});
+})();
+</script>
+</body>
+</html>
