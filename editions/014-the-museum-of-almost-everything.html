@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b101c"><title>The Museum of Almost Everything — an illuminated archive</title>
+<style>
+:root{color-scheme:dark;--paper:#efe0c0;--muted:#a9a99b;--edge:#957c61;--night:#080d17}
+*{box-sizing:border-box}html{background:#080d17;min-height:100%}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#263043 0,#0a101b 53%,#070a12 100%);min-height:100vh;color:var(--paper);font-family:Georgia,serif}
+.shell{max-width:1480px;margin:auto;padding:25px clamp(12px,2.8vw,40px) 35px}
+.mast{display:flex;justify-content:space-between;gap:24px;align-items:center;border-bottom:1px solid #a88f6448;padding-bottom:14px;margin-bottom:17px}
+.brand{letter-spacing:.26em;text-transform:uppercase;font:11px/1.5 Arial,sans-serif;color:#bda989}.folio{font:11px/1.5 Arial,sans-serif;letter-spacing:.12em;color:#8f99a5;text-align:right}
+h1{font-size:clamp(26px,3.6vw,52px);line-height:1.07;font-weight:normal;letter-spacing:-.034em;margin:0 0 6px}p.lead{font-size:clamp(13px,1.15vw,17px);line-height:1.5;max-width:820px;color:#c3bba9;margin:0 0 20px;font-style:italic}
+.stage{position:relative;border:1px solid #8b795b8a;box-shadow:0 14px 75px #000b,0 0 0 5px #c2a47714,0 0 0 6px #4d4a4280;background:#081320;overflow:hidden}
+canvas{display:block;width:100%;aspect-ratio:1200/750;touch-action:none;cursor:crosshair}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px}button{font:11px/1.3 Arial,sans-serif;text-transform:uppercase;letter-spacing:.1em;padding:10px 14px;color:#dbcfb5;border:1px solid #796d588a;background:#111b2a;cursor:pointer}button:hover,button:focus-visible{outline:none;border-color:#d6b77b;background:#2b3540;color:#fff2cf}button[aria-pressed="true"]{border-color:#d3bc86;background:#473f34;color:#fff0ce}.readout{margin-left:auto;font:10px/1.7 ui-monospace,monospace;letter-spacing:.06em;color:#a4aaae;text-align:right}.footer{display:flex;justify-content:space-between;gap:30px;margin-top:18px;color:#a9a699;font:11px/1.6 Arial,sans-serif;letter-spacing:.035em}.footer span:first-child{max-width:700px}
+@media(max-width:700px){.shell{padding:18px 10px 26px}.mast{padding-bottom:12px}.brand{font-size:9px}.folio{font-size:9px}.lead{margin-bottom:16px}.stage{box-shadow:0 8px 30px #0009}canvas{aspect-ratio:720/1070}.controls{gap:6px}button{font-size:10px;padding:10px 11px}.readout{width:100%;margin:5px 0 0;text-align:left}.footer{flex-direction:column;gap:8px}}
+</style></head><body>
+<main class="shell"><div class="mast"><div class="brand">THE INSTITUTE OF IMPROBABLE MACHINES &nbsp; / &nbsp; CABINET XIV</div><div class="folio">A LIVING INVENTORY<br>VOL. 014 · MMXXVI</div></div>
+<h1>The Museum of Almost Everything</h1><p class="lead">One hundred and eleven little mechanisms, kept under glass. Each remembers a different way the world might have worked.</p>
+<div class="stage"><canvas id="art" role="img" aria-label="An ornate museum cabinet containing 111 luminous miniature machines; a selected exhibit is magnified in a large astronomical vitrine. The colours and connections animate in three nocturnal lighting studies."></canvas></div>
+<div class="controls" aria-label="Artwork controls">
+<button data-scene="0" aria-pressed="true">I · The Sleeping Hall</button><button data-scene="1" aria-pressed="false">II · Private Viewing</button><button data-scene="2" aria-pressed="false">III · Dawn Inventory</button>
+<button id="wake" aria-pressed="false">Rouse the Cabinet</button><button id="pause" aria-pressed="false">Stillness</button><button id="labels" aria-pressed="false">Index Lines</button><button id="export">Collect PNG</button>
+<div class="readout" id="readout">SPECIMEN 001 / 111 · IN REPOSE</div></div>
+<div class="footer"><span>Move across the drawers to select an invention; click to hold it in the great vitrine. Arrow keys page between specimens. Each drawer is procedurally engraved from its catalogue number, not a repeated icon.</span><span>AFTER S100 · WALL OF SPECIMENS<br>AN INDEPENDENT EDITION · NO EXTERNAL DEPENDENCIES</span></div></main>
+<script>
+(()=>{'use strict';
+// Source catalogue: the named specimens of SALVAGE S100, Wall of Specimens.
+const NAMES=`RECOVERY HEAD|CARRIER LOCK|UNDELIVERABLE|CLOCK RESYNC|BITPLANE REMARRIAGE|VERTEX CALM|LIQUID RETENTION|PHOSPHOR RECALL|CONTOUR CLIMB|SEDIMENT|LARVAL STAGE|GLAZIER|BUS REPAIR|FILL-IN|REWEAVE|HEAT SINK|MOIRE KEY|INK KEEPER|ANALYZER|UPSIDE DOWN|BIT BUDGET|EXCAVATION|VERTICAL CATCH|DEAD PIXELS|CODEC MERGE|BACKLIGHT GRID|REASSEMBLE|SAND TABLE|SOFT LANDING|RIPPLE TANK|HERD|DEBRIS FIELD|ADDRESS GUESS|BEAT FREQUENCY|SCANLINE RUNNER|FOG MAZE|PLINKO DRIFT|LIFE SUPPORT|SLINGSHOT|ETCH TRACE|SORTING OFFICE|SHIELD RING|LETTER RAIN|TERRITORY|HARMONOGRAPH|BEAM PATH|LAYER STACK|PINBALL|CROSSING|CACHE|PHOSPHOR PONG|FALLING FRAMES|FLOOD|RULE DIAL|TURING GARDEN|CHLADNI|MIRROR GARDEN|SLIME NETWORK|SALVO|TRUCHET LOOPS|SLIDE TO WALL|FIVE LETTERS|TERRAFORM|ORBIT PAINTER|PAIRS|TOWER|PIXEL SWEEP|INTRUDERS|DIG SITE|PENDULUM WAVE|CORRIDOR|ATTRACTOR GARDEN|CRYSTAL LAB|LIGHT CYCLES|WORD SEARCH|COLLAPSE|SAFE CRACKER|SANDPILE|JULIA HUNT|LONG EXPOSURE|MARBLE MAZE|LOGIC BUS|SPIROGRAPH|THREE KINGDOMS|ZEN RAKE|POCKET|CHROMA MATCH|CUT THE CORD|POUR SORT|NONOGRAM|TUNNEL RUN|STACK BLOCKS|SWAP MATCH|PARTICLE LIFE|MINI SUDOKU|DEAD PIXEL HUNT|OSCILLOSCOPE|DEFUSE|BUBBLE SHOOTER|WALL OF SPECIMENS|FIREFLIES|FOUR IN A ROW|REVERSI|LAVA LAMP|PIXEL MATCH|WIREWORLD|FOUR COLOURS|ORCHARD|KNIGHTS TOUR|NIM|PELLET MAZE`.split('|');
+const SCENES=[
+{name:'THE SLEEPING HALL',clock:'00:17',ground:'#071321',glass:'#132839',warm:'#c89b63',cool:'#9ac3c1',spark:'#e5c589',ink:'#e8d5ae',mist:'#254456',story:'A hundred sleeping inventions. Only the night watch knows their names.',motion:.22},
+{name:'PRIVATE VIEWING',clock:'03:12',ground:'#071928',glass:'#0f3443',warm:'#c1aa82',cool:'#66d5d9',spark:'#d7f4d6',ink:'#e7e3c8',mist:'#1c6878',story:'The cabinets hum to one another through threads of cold glass.',motion:.7},
+{name:'THE DAWN INVENTORY',clock:'05:58',ground:'#201b26',glass:'#442d3a',warm:'#f0b38a',cool:'#b3a3d9',spark:'#ffe3b3',ink:'#f1d6b9',mist:'#a55b67',story:'At morning, every failed invention becomes a small sun.',motion:1.1}];
+const canvas=document.querySelector('#art'),ctx=canvas.getContext('2d',{alpha:false}),buttons=[...document.querySelectorAll('[data-scene]')],readout=document.querySelector('#readout');
+let width=1200,height=750,mobile=false,scene=0,selected=44,held=false,hover=-1,awake=false,paused=false,showLines=false,time=0,last=0,drawerBoxes=[],sparks=[];
+const TAU=Math.PI*2,clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const rnd=n=>{let x=(n+11)|0;x=Math.imul(x^(x>>>16),0x7feb352d);x=Math.imul(x^(x>>>15),0x846ca68b);return ((x^(x>>>16))>>>0)/4294967295};
+const line=(c,x1,y1,x2,y2,w=1,col='#ffffff33')=>{c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.strokeStyle=col;c.lineWidth=w;c.stroke()};
+function circle(x,y,r,fill,stroke='',w=1){ctx.beginPath();ctx.arc(x,y,r,0,TAU);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.stroke()}}
+function rect(x,y,w,h,fill,stroke='',lw=1){if(fill){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h)}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.strokeRect(x+.5,y+.5,w-1,h-1)}}
+function text(t,x,y,font='12px Georgia',color='#e5d4b3',align='left',spacing){ctx.save();ctx.font=font;ctx.fillStyle=color;ctx.textAlign=align;if(spacing!==undefined&&'letterSpacing' in ctx)ctx.letterSpacing=spacing;ctx.fillText(t,x,y);ctx.restore()}
+function round(x,y,w,h,r,fill,stroke='',lw=1){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
+function glow(x,y,r,col,a=.6){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,col);g.addColorStop(1,'transparent');ctx.save();ctx.globalAlpha=a;ctx.fillStyle=g;ctx.fillRect(x-r,y-r,2*r,2*r);ctx.restore()}
+function arc(cx,cy,r,a,b,col,w=1){ctx.beginPath();ctx.arc(cx,cy,r,a,b);ctx.strokeStyle=col;ctx.lineWidth=w;ctx.stroke()}
+function gear(x,y,r,n,phase,col){ctx.save();ctx.translate(x,y);ctx.rotate(phase);ctx.beginPath();for(let j=0;j<2*n;j++){let a=j*Math.PI/n,rr=r*(j%2?.88:1.08);let px=Math.cos(a)*rr,py=Math.sin(a)*rr;if(j)ctx.lineTo(px,py);else ctx.moveTo(px,py)}ctx.closePath();ctx.strokeStyle=col;ctx.lineWidth=Math.max(.7,r/20);ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.57,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.13,0,TAU);ctx.stroke();ctx.restore()}
+function machinery(n,x,y,r,t,full=false){let kind=n%11,phase=t*(.08+rnd(n+43)*.25),s=rnd(n*12),ink=SCENES[scene].cool,gold=SCENES[scene].warm;
+ ctx.save();ctx.translate(x,y);ctx.rotate((s-.5)*.2);ctx.lineCap='round';ctx.lineJoin='round';
+ const q=r;const L=(x1,y1,x2,y2,c=ink,w=1)=>line(ctx,x1*q,y1*q,x2*q,y2*q,w,c);
+ const C=(xx,yy,rr,c='',st=gold,w=1)=>circle(xx*q,yy*q,rr*q,c,st,w);
+ if(kind===0){for(let j=0;j<10;j++){let a=j*TAU/10+phase;L(Math.cos(a)*.2,Math.sin(a)*.2,Math.cos(a)*.82,Math.sin(a)*.82,j%2?gold:ink,full?1.4:.7)}C(0,0,.8,'',gold);C(0,0,.22,ink)}
+ else if(kind===1){gear(0,0,q*.78,9,phase,gold);gear(q*.34,q*.28,q*.27,7,-phase*1.6,ink);C(0,0,.12,ink)}
+ else if(kind===2){ctx.beginPath();for(let j=0;j<=120;j++){let a=j/120*TAU*2,px=Math.sin(a*2+s*2)*q*.73,py=Math.cos(a*(3+s*.3)+phase)*q*.66;if(!j)ctx.moveTo(px,py);else ctx.lineTo(px,py)}ctx.strokeStyle=ink;ctx.lineWidth=full?1.4:.75;ctx.stroke();C(0,0,.07,gold)}
+ else if(kind===3){for(let j=0;j<7;j++){let yy=(j-3)*.22;let v=Math.sin(j*2+phase)*.26;L(-.8,yy,.8,yy+v,j%2?ink:gold,full?1.4:.7)}for(let j=0;j<5;j++)C((j-2)*.3,Math.sin(j+phase)*.25,.055,gold)}
+ else if(kind===4){for(let j=0;j<13;j++){let a=j*TAU/13+phase*.25;let xx=Math.cos(a)*.49,yy=Math.sin(a)*.49;C(xx,yy,.23,'',j%2?ink:gold,.8)}C(0,0,.31,'',ink)}
+ else if(kind===5){for(let j=0;j<6;j++){let a=j*Math.PI/3;L(Math.cos(a)*.15,Math.sin(a)*.15,Math.cos(a)*.84,Math.sin(a)*.84,ink);C(Math.cos(a)*.84,Math.sin(a)*.84,.09,gold)}C(0,0,.21,gold);for(let j=0;j<4;j++){let a=j*TAU/4+phase;C(Math.cos(a)*.5,Math.sin(a)*.5,.08,ink)}}
+ else if(kind===6){for(let j=0;j<5;j++){let a=(j+.5)*TAU/5+phase*.18;ctx.beginPath();ctx.ellipse(Math.cos(a)*q*.3,Math.sin(a)*q*.3,q*.52,q*.16,a,0,TAU);ctx.strokeStyle=j%2?gold:ink;ctx.lineWidth=full?1.3:.7;ctx.stroke()}C(0,0,.11,gold)}
+ else if(kind===7){for(let j=0;j<4;j++){let a=j*TAU/4;L(Math.cos(a)*.25,Math.sin(a)*.25,Math.cos(a)*.83,Math.sin(a)*.83,ink);C(Math.cos(a)*.83,Math.sin(a)*.83,.12,gold)}ctx.rotate(phase);ctx.strokeStyle=gold;ctx.lineWidth=full?1.6:1;ctx.strokeRect(-q*.39,-q*.39,q*.78,q*.78);ctx.rotate(Math.PI/4);ctx.strokeRect(-q*.39,-q*.39,q*.78,q*.78)}
+ else if(kind===8){let a=phase;for(let j=0;j<9;j++){let xx=(j-4)*.2;let yy=.42*Math.sin(j*.8+a);C(xx,yy,.05+(j%3)*.02,j%2?gold:ink);if(j) L(xx-.2,.42*Math.sin((j-1)*.8+a),xx,yy,ink,.8)}L(-.9,-.6,.9,-.6,gold);L(-.9,.7,.9,.7,gold)}
+ else if(kind===9){for(let j=0;j<6;j++){let a=j*TAU/6;C(Math.cos(a)*.56,Math.sin(a)*.56,.2,'',ink);C(Math.cos(a)*.56,Math.sin(a)*.56,.06,gold)}C(0,0,.45,'',gold);for(let j=0;j<12;j++){let a=j*TAU/12+phase;L(Math.cos(a)*.18,Math.sin(a)*.18,Math.cos(a)*.38,Math.sin(a)*.38,ink)}}
+ else {ctx.beginPath();for(let j=0;j<=100;j++){let a=j/100*TAU*3,rr=.04+j/100*.75;let xx=Math.cos(a+phase)*rr*q,yy=Math.sin(a+phase)*rr*q;if(j)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)}ctx.strokeStyle=ink;ctx.lineWidth=full?1.8:.8;ctx.stroke();for(let j=0;j<6;j++)C(Math.cos(j*1.8)*.78,Math.sin(j*1.8)*.78,.06,gold)}
+ ctx.restore();}
+
+function largeSpecimen(n,r,t){
+ const P=SCENES[scene],f1=2+n%5,f2=3+(n*3)%6,seed=rnd(n*73+19),ph=t*.11*P.motion;
+ ctx.save();ctx.rotate(-ph*.15);
+ // Five slow engraving passes follow individually parameterized harmonic trajectories.
+ for(let layer=0;layer<5;layer++){
+  const shift=layer*.19+seed,scale=.72+layer*.03;
+  ctx.beginPath();
+  for(let j=0;j<=440;j++){
+   let u=j/440*TAU*2.5,
+       x=(Math.sin(u*f1+shift+.14*ph)*.7+Math.sin(u*.5+shift)*.13)*r*scale,
+       y=(Math.cos(u*f2+shift*.57-.09*ph)*.72+Math.sin(u*.65+shift)*.1)*r*scale;
+   if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=layer%2?P.cool+'6c':P.warm+'81';ctx.lineWidth=layer===0?1.7:.7;ctx.stroke();
+ }
+ const u=(t*.12+seed*TAU),px=Math.sin(u*f1)*r*.54,py=Math.cos(u*f2)*r*.54;
+ glow(px,py,17,P.spark,.5);circle(px,py,3.5,P.spark,'#eedcbb',1);
+ // Secondary gimballed rings and irregular facets give each object a physical chassis.
+ arc(0,0,r*.76,Math.PI*.13,Math.PI*.78,P.warm+'99',2);
+ arc(0,0,r*.76,Math.PI*1.06,Math.PI*1.86,P.cool+'77',1.4);
+ for(let k=0;k<8;k++){let a=k*TAU/8+seed;let rr=r*.83;
+  line(ctx,Math.cos(a)*rr,Math.sin(a)*rr,Math.cos(a)*(rr+7),Math.sin(a)*(rr+7),1,P.warm+'b0');
+ }
+ machinery(n,0,0,r*.22,t*.8,true);
+ ctx.restore();
+}
+function arch(x,y,w,h){const P=SCENES[scene];rect(x,y,w,h,'#07111a88',P.warm+'65',1);line(ctx,x-6,y-7,x+w+6,y-7,3,P.warm+'99');line(ctx,x-9,y-12,x+w+9,y-12,1,P.warm+'55');for(let i=0;i<16;i++){let xx=x+i*w/15;circle(xx,y-10,1.7,P.warm)}for(let i=0;i<8;i++){let xx=x+(i+.5)*w/8;line(ctx,xx,y+3,xx,y+h-2,.7,P.warm+'20')}}
+function background(){const P=SCENES[scene];let g=ctx.createLinearGradient(0,0,width,height);g.addColorStop(0,P.ground);g.addColorStop(.55,scene===2?'#201823':'#101a29');g.addColorStop(1,'#070d17');rect(0,0,width,height,g);glow(width*.5,height*.12,width*.72,P.mist,.35);glow(width*.72,height*.67,width*.52,P.mist,.27);for(let i=0;i<920;i++){let x=rnd(i*61+7)*width,y=rnd(i*97+3)*height;rect(x,y,1,1,(i%5===0?P.spark:'#e2d4bc')+(i%3===0?'17':'09'))}const ed=mobile?18:21;rect(ed,ed,width-2*ed,height-2*ed,null,P.warm+'60');rect(ed+7,ed+7,width-2*(ed+7),height-2*(ed+7),null,P.warm+'21');for(let j=0;j<4;j++){let x=j%2?width-ed-7:ed+7,y=j>=2?height-ed-7:ed+7;circle(x,y,3,P.spark)} }
+function heading(){const P=SCENES[scene];const margin=mobile?36:58;let top=mobile?59:60;text('INVENTORY OF UNFINISHED MIRACLES',margin,top,`bold ${mobile?13:14}px Georgia`,P.ink);text('A CABINET OF 111 UNREALIZED THINGS',width-margin,top,`${mobile?9:11}px Arial`,P.warm,'right');line(ctx,margin,top+14,width-margin,top+14,.9,P.warm+'72');for(let i=0;i<19;i++)circle(margin+i*7,top+19,1,P.warm+'88');}
+function drawVitrine(x,y,w,h){const P=SCENES[scene],cx=x+w*.5,cy=y+h*.43,R=Math.min(w*.38,h*.35);arch(x,y,w,h);glow(cx,cy,R*1.5,P.cool,.15);ctx.save();ctx.translate(cx,cy);for(let ring=0;ring<5;ring++){arc(0,0,R+ring*6,0,TAU,ring%2?P.warm+'35':P.warm+'89',ring===0?2:1)}for(let a=0;a<120;a++){let theta=a*TAU/120;let rr=R+12,len=a%10===0?10:a%5===0?6:3;line(ctx,Math.cos(theta)*rr,Math.sin(theta)*rr,Math.cos(theta)*(rr+len),Math.sin(theta)*(rr+len),a%10===0?1.3:.8,P.warm+'9b')}
+ctx.save();ctx.beginPath();ctx.arc(0,0,R-3,0,TAU);ctx.clip();glow(0,0,R*1.2,P.mist,.65);for(let i=0;i<21;i++){let theta=i*TAU/21;let rr=R*.96;line(ctx,-rr,Math.sin(theta)*R*.84,rr,Math.sin(theta)*R*.84,.45,P.cool+'25')}for(let i=0;i<31;i++){let xx=(i/30-.5)*R*1.8;line(ctx,xx,-R,xx,R,.35,P.cool+'20')}
+let rot=(time*.08*P.motion);ctx.rotate(rot);largeSpecimen(selected,R*.91,time);ctx.restore();circle(0,0,R*.86,'',P.warm+'20');ctx.restore();
+let name=NAMES[selected],serial='S'+String(selected+1).padStart(3,'0'),size=mobile?23:25;
+text('S P E C I M E N   '+serial,cx,y+h*.77,`${mobile?14:12}px Arial`,P.warm,'center');if(name.length>22) size-=4;
+text(name,cx,y+h*.84,`normal ${size}px Georgia`,P.ink,'center');text(['KINETIC STUDY / AN UNBUILT PROTOTYPE','ARCHIVED WITH ITS ORIGINAL SILENCE','SURVIVING TRACE / NO MACHINE REQUIRED'][selected%3],cx,y+h*.895,`${mobile?9:10}px Arial`,P.warm+'cc','center');
+for(let a=0;a<4;a++){let px=x+(a%2?w-21:21),py=y+(a<2?21:h-21);circle(px,py,3,'#2f251d',P.warm,1);circle(px,py,1,P.spark)} }
+function drawers(x,y,w,h,cols,rows){const P=SCENES[scene];arch(x,y,w,h);const edge=mobile?12:15,gap=mobile?4:5,pW=(w-2*edge-(cols-1)*gap)/cols,pH=(h-2*edge-(rows-1)*gap)/rows;drawerBoxes=[];
+ctx.save();ctx.beginPath();ctx.rect(x+1,y+1,w-2,h-2);ctx.clip();if((awake||scene===1||scene===2)&&selected>=0){let col=selected%cols,row=Math.floor(selected/cols),tx=x+edge+col*(pW+gap)+pW/2,ty=y+edge+row*(pH+gap)+pH/2;glow(tx,ty,180,P.cool,.32)}
+for(let i=0;i<NAMES.length;i++){let c=i%cols,r=Math.floor(i/cols),sx=x+edge+c*(pW+gap),sy=y+edge+r*(pH+gap);if(sy+pH>y+h-edge+1)continue;drawerBoxes.push({i,x:sx,y:sy,w:pW,h:pH});const active=i===selected,illum=(.36+.64*rnd(i*7+17))*(scene===0?.65:scene===1?.85:1.1),p=clamp(illum,0,1);let light=active?P.spark:P.cool;
+let shade=ctx.createLinearGradient(sx,sy,sx+pW,sy+pH);shade.addColorStop(0,active?'#53442e':scene===2?'#352c37':'#102431');shade.addColorStop(.7,active?'#3b463e':'#132332');shade.addColorStop(1,'#050f1a');round(sx,sy,pW,pH,2,shade,active?P.spark:P.warm+'52',active?1.8:.65);
+ctx.save();ctx.globalAlpha=p;glow(sx+pW*.5,sy+pH*.53,pW*.55,active?P.spark:P.mist,active?.23:.12);machinery(i,sx+pW*.5,sy+pH*.49,Math.min(pW*.34,pH*.37),time*P.motion+ i*.7);ctx.restore();
+ctx.font=`${mobile?7:8}px ui-monospace,monospace`;ctx.textAlign='left';ctx.fillStyle=active?P.spark:P.warm+'b0';ctx.fillText(String(i+1).padStart(3,'0'),sx+5,sy+pH-5);ctx.fillStyle=P.warm+'45';ctx.fillRect(sx+pW-8,sy+5,3,3);
+if(scene===2){const u=(Math.sin(time*.45+i)+1)/2;if(u>.9)circle(sx+pW*.73,sy+pH*.2,1.5,P.spark)} }
+if(showLines||awake||scene===1){let S=drawerBoxes.find(d=>d.i===selected);if(S){let qx=S.x+S.w/2,qy=S.y+S.h/2;ctx.strokeStyle=P.cool+'72';ctx.lineWidth=1.1;for(let j=1;j<=5;j++){let d=drawerBoxes[(selected+j*19)%drawerBoxes.length];ctx.beginPath();ctx.moveTo(qx,qy);ctx.bezierCurveTo(qx+(d.x-qx)*.35,qy-50,d.x-12,d.y+50,d.x+d.w/2,d.y+d.h/2);ctx.stroke()}glow(qx,qy,24,P.spark,.5)}}
+ctx.restore();}
+function cornice(y,bot=false){const P=SCENES[scene];line(ctx,40,y,width-40,y,3,P.warm+'aa');for(let j=0;j<Math.floor((width-80)/18);j++){let xx=40+j*18;line(ctx,xx,y+(bot?-5:5),xx+7,y+(bot?-5:5),1,P.warm+'5d');circle(xx+12,y+(bot?-5:5),1,P.warm)}}
+function plinth(x,y,w,h){const P=SCENES[scene];rect(x,y,w,h,'#0d1926aa',P.warm+'8b');for(let i=0;i<5;i++){let xx=x+i*w/4;line(ctx,xx,y+5,xx,y+h-5,1,P.warm+'38')}text(SCENES[scene].story,x+15,y+h*.56,`${mobile?12:13}px Georgia`,P.ink)}
+function drawDesktop(){const P=SCENES[scene];heading();cornice(94);drawVitrine(57,121,395,522);drawers(472,121,671,522,12,10);cornice(664,true);text('MUSEUM REGISTER   /   111 INVENTIONS THAT NEVER HAD TO WORK',59,702,'12px Georgia',P.ink);text('THE '+['FIRST','SECOND','THIRD'][scene]+' WATCH   ·   '+P.clock+' HRS',1140,702,'11px Arial',P.warm,'right');text('An illuminated revision of the SALVAGE WALL OF SPECIMENS.',59,719,'10px Arial',P.warm+'ac');text('S100  →  EDITION 014',1140,719,'10px Arial',P.warm+'ab','right')}
+function drawMobile(){const P=SCENES[scene];heading();drawVitrine(42,108,636,442);cornice(569);text('THE PRIVATE CATALOGUE   /   ALL 111 EXHIBITS',48,594,'12px Arial',P.ink);drawers(42,610,636,370,14,8);text('A MUSEUM OF ALMOST EVERYTHING',48,1014,'14px Georgia',P.ink);text('S100   /   EDITION 014   ·   '+P.clock,676,1014,'11px Arial',P.warm,'right');text('ACTUAL PROCEDURAL DRAWERS · EACH ONE DIFFERENT',48,1042,'9px Arial',P.warm+'bb')}
+function draw(){const P=SCENES[scene];background();if(mobile)drawMobile();else drawDesktop();if(awake){for(const s of sparks){let a=(s.life-.0)/1.5;if(a<0)continue;glow(s.x,s.y,9,P.spark,Math.max(0,1-a)*.5);circle(s.x,s.y,1.7,P.spark)}}readout.textContent=`SPECIMEN ${String(selected+1).padStart(3,'0')} / ${NAMES.length} · ${awake?'AWAKENED':'IN REPOSE'} · ${P.clock}`;}
+function resize(){mobile=window.innerWidth<701;width=mobile?720:1200;height=mobile?1070:750;const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
+function tick(stamp){let dt=last?Math.min(.045,(stamp-last)/1000):0;last=stamp;if(!paused){time+=dt;for(const s of sparks)s.life+=dt;sparks=sparks.filter(s=>s.life<1.5);if(awake&&rnd(Math.floor(time*24)+7)>.85){let d=drawerBoxes[Math.floor(rnd(Math.floor(time*12)+22)*drawerBoxes.length)];if(d)sparks.push({x:d.x+d.w*.5,y:d.y+d.h*.5,life:0})}}draw();requestAnimationFrame(tick)}
+function setScene(s){scene=s;buttons.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===scene)));draw()}
+function whichTile(e){const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*width,y=(e.clientY-r.top)/r.height*height;return drawerBoxes.find(d=>x>=d.x&&x<=d.x+d.w&&y>=d.y&&y<=d.y+d.h)?.i??-1}
+canvas.addEventListener('pointermove',e=>{const i=whichTile(e);if(i!==-1&&!held){selected=i;hover=i}});
+canvas.addEventListener('pointerleave',()=>{hover=-1});
+canvas.addEventListener('pointerdown',e=>{const i=whichTile(e);if(i!==-1){selected=i;held=!held||hover!==i;sparks.push({x:drawerBoxes.find(d=>d.i===i).x+20,y:drawerBoxes.find(d=>d.i===i).y+20,life:0})}else held=false});
+buttons.forEach((b,i)=>b.addEventListener('click',()=>setScene(i)));
+document.querySelector('#wake').addEventListener('click',e=>{awake=!awake;e.currentTarget.setAttribute('aria-pressed',String(awake));e.currentTarget.textContent=awake?'Let the Cabinet Rest':'Rouse the Cabinet';draw()});
+document.querySelector('#pause').addEventListener('click',e=>{paused=!paused;e.currentTarget.setAttribute('aria-pressed',String(paused));e.currentTarget.textContent=paused?'Resume Time':'Stillness';draw()});
+document.querySelector('#labels').addEventListener('click',e=>{showLines=!showLines;e.currentTarget.setAttribute('aria-pressed',String(showLines));draw()});
+document.querySelector('#export').addEventListener('click',()=>{draw();const a=document.createElement('a');a.download=`museum-of-almost-everything-${scene+1}.png`;a.href=canvas.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove()});
+window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();let d=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:e.key==='ArrowUp'?-12:12;selected=(selected+d+NAMES.length*2)%NAMES.length;held=true}else if(e.key===' '&&e.target.tagName!=='BUTTON'){e.preventDefault();awake=!awake;document.querySelector('#wake').setAttribute('aria-pressed',String(awake))}else if(e.key.toLowerCase()==='p'){paused=!paused;document.querySelector('#pause').setAttribute('aria-pressed',String(paused))}});
+window.addEventListener('resize',resize);resize();requestAnimationFrame(tick);
+window.__museumState=()=>({scene,selected,awake,paused,showLines,drawers:drawerBoxes.length,time});
+})();
+</script></body></html>
