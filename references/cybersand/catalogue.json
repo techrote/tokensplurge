@@ -715,7 +715,7 @@
         "detail": "captures/breathing-citadel-detail.png",
         "status": "captured",
         "report": "captures/report.json",
-        "evidence": "Pending independently run source-pinned Playwright Chromium full/detail PNG capture and source/hash verification; author-local browser execution does not establish gallery evidence or native Godot acceptance."
+        "evidence": "Actual source-pinned Playwright Chromium full 1440×900 and detail 768×480 PNGs generated at run 42326228347, recorded under captures/report.json with per-image SHA-256 and original Git blob verification. Independent desktop/mobile Canvas pixel and export checks passed; not native CyberSand Godot or human artistic acceptance."
       },
       "source_url": "https://github.com/techrote/tokensplurge/blob/2f38d84ef7ffd03cd51e44057dda3aeb1c03b657/environments/007-the-breathing-citadel-source.html"
     }
